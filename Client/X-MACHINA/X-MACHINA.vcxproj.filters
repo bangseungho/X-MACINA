@@ -121,9 +121,6 @@
     <ClInclude Include="..\Common\Component\Component.h">
       <Filter>Common\Component</Filter>
     </ClInclude>
-    <ClInclude Include="..\Common\Component\ParticleSystem.h">
-      <Filter>Common\Component</Filter>
-    </ClInclude>
     <ClInclude Include="..\Common\Component\Rigidbody.h">
       <Filter>Common\Component</Filter>
     </ClInclude>

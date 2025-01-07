@@ -113,7 +113,8 @@ void Scene::UpdateMainPassCB()
 	PassConstants passCB;
 	passCB.MtxView = MAIN_CAMERA->GetViewMtx().Transpose();
 	passCB.MtxProj = MAIN_CAMERA->GetProjMtx().Transpose();
-	passCB.MtxInvProj = XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
+	auto determinantProj = XMMatrixDeterminant(proj);
+	passCB.MtxInvProj = XMMatrixInverse(&determinantProj, proj);
 	passCB.MtxShadow = mLight->GetShadowMtx().Transpose();
 	passCB.MtxNoLagView = MAIN_CAMERA->GetNoLagViewtx().Transpose();
 	passCB.CameraPos = MAIN_CAMERA->GetPosition();
@@ -498,7 +499,6 @@ void Scene::RenderForward()
 	RenderSkyBox();
 
 	RenderAbilities();
-	RenderParticles();
 }
 
 void Scene::RenderPostProcessing(int offScreenIndex)
@@ -543,8 +543,8 @@ void Scene::RenderDissolveObjects()
 	// [destroyTime]초 경과 후 객체 제거
 	constexpr float destroyTime = 1.f;
 	std::set<sptr<GridObject>> destroyedObjects{};
-	for (auto& it = mDissolveObjects.begin(); it != mDissolveObjects.end(); ++it) {
-		auto& object = *it;
+	for (auto it = mDissolveObjects.begin(); it != mDissolveObjects.end(); ++it) {
+		auto object = *it;
 
 		object->mObjectCB.DeathElapsed += DeltaTime() / 2.f;
 		object->Render();
@@ -562,13 +562,6 @@ void Scene::RenderDissolveObjects()
 void Scene::RenderSkyBox()
 {
 	mSkyBox->Render();
-}
-
-void Scene::RenderParticles()
-{
-	CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
-	ParticleManager::I->Render();
-	CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void Scene::RenderAbilities()
@@ -690,17 +683,17 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 	RESOURCE<Shader>("Wire")->Set();
 	MeshRenderer::RenderBox(Vec3(100, 13.5f, 105), Vec3(.2f,.2f,.2f));
 
-	//// 오픈 리스트를 초록색으로 출력
-	//for (auto& path : mOpenList) {
-	//	path.y = GetTerrainHeight(path.x, path.z);
-	//	MeshRenderer::RenderBox(path, Vec3{ 0.1f, 0.1f, 0.1f }, Vec4{ 0.f, 1.f, 0.f, 1.f });
-	//}
+	// 오픈 리스트를 초록색으로 출력
+	for (auto& path : mOpenList) {
+		path.y = GetTerrainHeight(path.x, path.z);
+		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 0.f, 1.f, 0.f, 1.f });
+	}
 
-	//// 클로즈드 리스트를 빨간색으로 출력
-	//for (auto& path : mClosedList) {
-	//	path.y = GetTerrainHeight(path.x, path.z);
-	//	MeshRenderer::RenderBox(path, Vec3{ 0.1f, 0.1f, 0.1f }, Vec4{ 1.f, 0.f, 0.f, 1.f });
-	//}
+	// 클로즈드 리스트를 빨간색으로 출력
+	for (auto& path : mClosedList) {
+		path.y = GetTerrainHeight(path.x, path.z);
+		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 0.f, 0.f, 1.f });
+	}
 
 	if (!mIsRenderBounds) {
 		return false;
@@ -770,7 +763,6 @@ void Scene::Update()
 	mGameManager->Update();
 	UpdateObjects();
 	mGameManager->LateUpdate();
-	ParticleManager::I->Update();
 
 	MainCamera::I->Update();
 	MAIN_CAMERA->UpdateViewMtx();
@@ -1069,7 +1061,7 @@ void Scene::ToggleFullScreen()
 std::vector<sptr<GridObject>> Scene::FindObjectsByName(const std::string& name)
 {
 	std::vector<sptr<GridObject>> result{};
-	auto& FindObjects = [&](sptr<GridObject> object) {
+	auto FindObjects = [&](sptr<GridObject> object) {
 		if (object->GetName() == name) {
 			result.push_back(object);
 		}

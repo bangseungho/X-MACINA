@@ -361,7 +361,7 @@ namespace Vector3 {
 	inline Vec3 Resize(const Vec3& vector, float size) noexcept
 	{
 		Vec3 result;
-		XMStoreFloat3(&result, _VECTOR(Vector3::Normalized(vector)) * size);
+		//XMStoreFloat3(&result, _VECTOR(Vector3::Normalized(vector)) * size);
 		return result;
 	}
 

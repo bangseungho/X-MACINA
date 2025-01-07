@@ -5,8 +5,6 @@
 #pragma endregion
 
 #pragma region ClassForwardDecl
-struct ParticleSharedData;
-struct ParticleSystemGPUData;
 #pragma endregion
 
 #pragma region EnumClass
@@ -18,8 +16,6 @@ enum class BufferType : UINT {
     Ssao,
     Ability,
     Material,
-    ParticleSystem,
-    ParticleShared,
 
     _count
 };
@@ -130,10 +126,7 @@ public:
     uptr<UploadBuffer<SkinnedConstants>>        SkinMeshCB{};           // 스킨메쉬 상수 버퍼
     uptr<UploadBuffer<SsaoConstants>>           SsaoCB{};               // SSAO 상수 버퍼
     uptr<UploadBuffer<AbilityConstants>>        AbilityCB{};            // Ability 상수 버퍼
-
     uptr<UploadBuffer<MaterialData>>            MaterialBuffer{};       // 머티리얼 버퍼
-    uptr<UploadBuffer<ParticleSystemGPUData>>   ParticleSystemBuffer{}; // 파티클 시스템 버퍼 
-    uptr<UploadBuffer<ParticleSharedData>>      ParticleSharedBuffer{}; // 파티클 공유 버퍼 
 
 public:
 #pragma region C/Dtor
@@ -175,8 +168,6 @@ public:
     const D3D12_GPU_VIRTUAL_ADDRESS GetSSAOCBGpuAddr(int elementIndex = 0) const;
     const D3D12_GPU_VIRTUAL_ADDRESS GetAbilityCBGpuAddr(int elementIndex = 0) const;
     const D3D12_GPU_VIRTUAL_ADDRESS GetMatBufferGpuAddr(int elementIndex = 0) const;
-    const D3D12_GPU_VIRTUAL_ADDRESS GetParticleSystemGpuAddr(int elementIndex = 0) const;
-    const D3D12_GPU_VIRTUAL_ADDRESS GetParticleSharedGpuAddr(int elementIndex = 0) const;
 
     template<typename T>
     static const D3D12_GPU_VIRTUAL_ADDRESS GetBufferGpuAddr(int elementIndex, UploadBuffer<T>* buffer);
@@ -207,11 +198,6 @@ public:
     void CopyData(int& elementIndex, const SkinnedConstants& data);
     // 어빌리티 당 상수 버퍼에 데이터 복사
     void CopyData(int& elementIndex, const AbilityConstants& data);
-
-    // 파티클 시스템 데이터 당 구조적 버퍼에 데이터 복사
-    void CopyData(int& elementIndex, const ParticleSystemGPUData& data);
-    // 파티클 공유 데이터 당 구조적 버퍼에 데이터 복사
-    void CopyData(int& elementIndex, const ParticleSharedData& data);
 
     // 사용중이지 않은 인덱스를 할당
     void AllocIndex(int& elementIndex, BufferType bufferType);

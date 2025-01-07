@@ -6,9 +6,13 @@
 #include "Component/Component.h"
 #pragma endregion
 
+#pragma region Using
+using namespace Path;
+#pragma endregion
 
 #pragma region ClassForwardDecl
 class GameObject;
+class GridObject;
 class Animator;
 class AnimatorMotion;
 class AnimatorController;
@@ -132,11 +136,14 @@ private:
 	static const float mkSprintSpeed;
 
 	static const float mkStartRotAngle;
+	static constexpr int mkWeight = 10;
+	static constexpr int mkMaxVisited = 2000;
 
 	// animator //
 	float mParamV{}, mParamH{};
 	sptr<Animator> mAnimator{};
 	sptr<AnimatorController> mController{};
+	GridObject* mGridObject{};
 
 	std::unordered_map<int, sptr<AnimatorMotion>> mReloadMotions;
 
@@ -164,6 +171,9 @@ private:
 	Vec3 mDirVec{};
 	Vec3 mSlideVec{};
 
+	std::stack<Vec3> mPath;
+	bool mHoldingClick{};
+
 public:
 	PlayerMotion GetPrevState() const  { return PlayerMotion::GetState(mPrevMovement); }
 	PlayerMotion GetPrevMotion() const { return PlayerMotion::GetMotion(mPrevMovement); }
@@ -184,6 +194,8 @@ public:
 
 	// direction 방향으로 이동한다.
 	virtual void Move(Dir dir);
+	void PickingTile();
+	void MoveToPath();
 	// [dir]방향을 바라보도록 회전한다.
 	void RotateTo(Dir dir);
 
@@ -201,6 +213,10 @@ public:
 
 	float GetMovementSpeed() const { return mMovementSpeed; }
 	float GetRotationSpeed() const { return mRotationSpeed; }
+
+protected:
+	bool PathPlanningAStar(Pos start, Pos dest);
+	Pos FindNoneTileFromBfs(const Pos& pos);
 
 private:
 	void InitWeapons();

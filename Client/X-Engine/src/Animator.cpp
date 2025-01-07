@@ -98,7 +98,7 @@ void Animator::InitBoneFrames(size_t skinMeshCount, GameObject* avatar, bool isM
 	}
 
 	if (isManualBoneCalc) {
-		auto& SetBoneFrame = [&](Transform* transform) {
+		auto SetBoneFrame = [&](Transform* transform) {
 			mFrames.push_back(transform);
 			};
 

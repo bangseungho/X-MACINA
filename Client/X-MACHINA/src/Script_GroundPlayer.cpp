@@ -32,6 +32,7 @@
 #include "ShieldAbility.h"
 #include "IRDetectorAbility.h"
 #include "MinimapAbility.h"
+#include "TaskPathPlanningAStar.h"
 
 
 
@@ -48,11 +49,217 @@ namespace {
 }
 #pragma endregion
 
+#pragma region Astar
+void Script_GroundPlayer::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
+{
+	base::ProcessMouseMsg(messageID, wParam, lParam);
 
+	switch (messageID) {
+	case WM_RBUTTONDOWN:
+		PickingTile();
+		//OnAim();
+		break;
 
+	case WM_RBUTTONUP:
+		OffAim();
+		mHoldingClick = false;
+		break;
 
+	default:
+		break;
+	}
+}
 
+void Script_GroundPlayer::PickingTile()
+{
+	if (mHoldingClick) {
+		return;
+	}
 
+	while (!mPath.empty()) {
+		Scene::I->ClearPathList();
+		mPath.pop();
+	}
+
+	const Vec3 dir = MAIN_CAMERA->ScreenToWorldRay(mObject->GetComponent<Script_AimController>()->GetAimPos());
+	const Vec3 pos = MAIN_CAMERA->GetPosition();
+	Ray ray{ pos, dir };
+	ray.Direction.Normalize();
+
+	for (auto grid : Scene::I->GetNeighborGrids(mGridObject->GetGridIndex(), true)) {
+		const Vec3& tilePos = grid->GetTilePosCollisionsRay(ray, mObject->GetPosition());
+		if (!Vector3::IsZero(tilePos)) {
+			Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
+			Pos dest = Scene::I->GetTileUniqueIndexFromPos(tilePos);
+			PathPlanningAStar(start, dest);
+			mHoldingClick = true;
+			return;
+		}
+	}
+}
+
+void Script_GroundPlayer::MoveToPath()
+{
+	if (mPath.empty()) {
+		Scene::I->ClearPathList();
+		return;
+	}
+
+	Vec3 nextPos = (mPath.top() - mObject->GetPosition()).xz();
+
+	mObject->RotateTargetAxisY(mPath.top(), 1000.f);
+	mObject->Translate(XMVector3Normalize(nextPos), mkStandWalkSpeed * DeltaTime());
+
+	// 다음 경로에 도착 시 해당 경로 삭제
+	const float kMinDistance = 0.1f;
+	if (nextPos.Length() < kMinDistance)
+		mPath.pop();
+}
+
+bool Script_GroundPlayer::PathPlanningAStar(Pos start, Pos dest)
+{
+	// 초기 위치 혹은 도착 지점이 Static이라면 bfs를 사용해 주변 None 지점 획득
+	if (Scene::I->GetTileFromUniqueIndex(start) == Tile::Static)
+		start = FindNoneTileFromBfs(start);
+	if (Scene::I->GetTileFromUniqueIndex(dest) == Tile::Static)
+		dest = FindNoneTileFromBfs(dest);
+
+	std::map<Pos, Pos>	mParent;
+	std::map<Pos, int>	mDistance;
+	std::map<Pos, bool>	mVisited;
+
+	// f = g + h
+	std::priority_queue<PQNode, std::vector<PQNode>, std::greater<PQNode>> pq;
+	int g = 0;
+	int h = (abs(dest.Z - start.Z) + abs(dest.X - start.X)) * mkWeight;
+	pq.push({ g + h, g, start });
+	mDistance[start] = g + h;
+	mParent[start] = start;
+
+	Pos prevDir;
+	while (!pq.empty()) {
+		PQNode curNode = pq.top();
+		prevDir = curNode.Pos - mParent[curNode.Pos];
+		pq.pop();
+
+		// 길찾기 실패 시 점수가 가장 높은 곳을 도착지로 설정
+		if (mVisited.size() > mkMaxVisited) {
+			dest = pq.top().Pos;
+		}
+
+		// 방문하지 않은 노드들만 방문
+		if (mVisited.contains(curNode.Pos))
+			continue;
+
+		if (mDistance[curNode.Pos] < curNode.F)
+			continue;
+
+		mVisited[curNode.Pos] = true;
+		Scene::I->GetClosedList().push_back(Scene::I->GetTilePosFromUniqueIndex(curNode.Pos));
+
+		// 해당 지점이 목적지인 경우 종료
+		if (curNode.Pos == dest)
+			break;
+
+		// 8방향으로 탐색
+		for (int dir = 0; dir < DirCount; ++dir) {
+			Pos nextPos = curNode.Pos + gkFront[dir];
+
+			// 다음 위치의 타일이 일정 범위를 벗어난 경우 continue
+			if (abs(start.X - nextPos.X) > Grid::mTileRows || abs(start.Z - nextPos.Z) > Grid::mTileCols)
+				continue;
+
+			// 다음 방향 노드의 상태가 static이라면 continue
+			if (Scene::I->GetTileFromUniqueIndex(nextPos) == Tile::Static)
+				continue;
+
+			// 이미 방문한 곳이면 continue
+			if (mVisited.contains(nextPos))
+				continue;
+
+			// 현재 거리 정보가 없다면 거리 비용을 최댓값으로 설정
+			if (!mDistance.contains(nextPos))
+				mDistance[nextPos] = INT32_MAX;
+
+			// 비용 계산 보통의 1 / 2
+			int addCost{};
+			if (prevDir != gkFront[dir])
+				addCost = gkCost[0] / 2;
+
+			int g = curNode.G + gkCost[dir] + addCost;
+			int h = (abs(dest.Z - nextPos.Z) + abs(dest.X - nextPos.X)) * mkWeight;
+
+			if (mDistance[nextPos] <= g + h)
+				continue;
+
+			mDistance[nextPos] = g + h;
+			pq.push({ g + h, g, nextPos });
+			mParent[nextPos] = curNode.Pos;
+		}
+	}
+
+	Pos pos = dest;
+	prevDir = { 0, 0 };
+
+	// 부모 경로를 따라가 스택에 넣어준다. top이 first path이다.
+	while (true) {
+		Pos dir = mParent[pos] - pos;
+
+		if (prevDir != dir) {
+			mPath.push(Scene::I->GetTilePosFromUniqueIndex(pos));
+			Scene::I->GetOpenList().push_back(mPath.top());
+		}
+
+		if (pos == mParent[pos])
+			break;
+
+		pos = mParent[pos];
+		prevDir = dir;
+	}
+
+	// 자연스러운 움직임을 위해 첫 번째 경로는 삭	제
+	Scene::I->GetOpenList().push_back(Scene::I->GetTilePosFromUniqueIndex(start));
+	if (!mPath.empty()) {
+		mPath.pop();
+	}
+
+	if (mPath.empty()) {
+		return false;
+	}
+
+	return true;
+}
+
+Pos Script_GroundPlayer::FindNoneTileFromBfs(const Pos& pos)
+{
+	std::queue<Pos> q;
+	std::map<Pos, bool> visited;
+	q.push(pos);
+
+	Pos curPos{};
+	while (!q.empty()) {
+		curPos = q.front();
+		q.pop();
+
+		if (Scene::I->GetTileFromUniqueIndex(curPos) == Tile::None)
+			return curPos;
+
+		if (visited[curPos])
+			continue;
+
+		visited[curPos] = true;
+
+		for (int dir = 0; dir < 4; ++dir) {
+			Pos nextPos = curPos + gkFront[dir];
+			q.push(nextPos);
+		}
+	}
+
+	return curPos;
+}
+#pragma endregion
+
+#pragma region Player
 bool Script_GroundPlayer::IsReloading() const
 {
 	return mController->GetParamValue<bool>("Reload");
@@ -87,8 +294,9 @@ void Script_GroundPlayer::Start()
 	mRotationSpeed = 360.f;
 	SetMaxHP(150.f);
 
-	constexpr Vec3 kSpawnPoint = Vec3(25, 0, 260);
-
+	constexpr Vec3 kSpawnPoint = Vec3(100, 0, 260);
+	mGridObject = dynamic_cast<GridObject*>(mObject);
+		
 	SetSpawn(kSpawnPoint);
 	mObject->SetPosition(kSpawnPoint);
 }
@@ -101,6 +309,8 @@ void Script_GroundPlayer::Update()
 	ProcessInput();
 
 	RecoverRecoil();
+
+	MoveToPath();
 }
 
 void Script_GroundPlayer::LateUpdate()
@@ -294,24 +504,6 @@ void Script_GroundPlayer::OnCollisionStay(Object& other)
 	}
 }
 
-void Script_GroundPlayer::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
-{
-	base::ProcessMouseMsg(messageID, wParam, lParam);
-
-	switch (messageID) {
-	case WM_RBUTTONDOWN:
-		OnAim();
-		break;
-
-	case WM_RBUTTONUP:
-		OffAim();
-		break;
-
-	default:
-		break;
-	}
-}
-
 void Script_GroundPlayer::ProcessKeyboardMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 {
 	base::ProcessKeyboardMsg(messageID, wParam, lParam);
@@ -393,8 +585,6 @@ void Script_GroundPlayer::BulletFired()
 		mCurRecoil = mMaxRecoil;
 	}
 }
-
-
 
 void Script_GroundPlayer::InitWeapons()
 {
@@ -503,9 +693,9 @@ void Script_GroundPlayer::InitWeapons()
 		// setting callbacks //
 		constexpr int kPutbackFrame = 15;	// the hand is over the shoulder
 
-		auto& realodMotion  = mReloadMotions[static_cast<int>(weaponType)] = mController->FindMotionByName(reloadMotions.at(weaponType), "Body");
-		auto& drawMotion    = mController->FindMotionByName(drawMotions.at(weaponType), "Body");
-		auto& putbackMotion = mController->FindMotionByName(putbackMotions.at(weaponType), "Body");
+		auto realodMotion  = mReloadMotions[static_cast<int>(weaponType)] = mController->FindMotionByName(reloadMotions.at(weaponType), "Body");
+		auto drawMotion    = mController->FindMotionByName(drawMotions.at(weaponType), "Body");
+		auto putbackMotion = mController->FindMotionByName(putbackMotions.at(weaponType), "Body");
 
 		// add callbacks
 		realodMotion->AddCallback(reloadCallback, realodMotion->GetMaxFrameRate() - 10); // for smooth animation, reload complete before [10] frame
@@ -519,7 +709,7 @@ void Script_GroundPlayer::InitWeapons()
 	// bolt action sniper 초기화
 	{
 		std::function<void()> boltActionCallback = std::bind(&Script_GroundPlayer::BoltActionCallback, this);
-		auto& boltActionMotion = mController->FindMotionByName("BoltActionSniper", "Body");
+		auto boltActionMotion = mController->FindMotionByName("BoltActionSniper", "Body");
 
 		// callback
 		boltActionMotion->AddEndCallback(boltActionCallback);
@@ -543,7 +733,7 @@ void Script_GroundPlayer::DrawWeaponStart(int weaponIdx, bool isDrawImmed)
 	constexpr int kPistolIndex = 1;
 	if (isDrawImmed && weaponIdx != kPistolIndex && GetCrntWeaponIdx() != kPistolIndex) {
 		mController->SetValue("Draw", true, true);
-		auto& motion = mController->GetCrntMotion("Body");
+		auto motion = mController->GetCrntMotion("Body");
 		motion->SetLength(motion->GetClip()->GetFrameTime(kDrawFrame));
 	}
 	else {
@@ -1188,3 +1378,4 @@ void Script_GroundPlayer::ComputeSlideVector(Object& other)
 		//prevSlideVec = mSlideVec;
 	}
 }
+#pragma endregion

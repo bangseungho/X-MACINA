@@ -25,8 +25,6 @@ FrameResource::FrameResource(ID3D12Device* pDevice, const std::array<int, Buffer
 	AbilityCB = std::make_unique<UploadBuffer<AbilityConstants>>(pDevice, bufferCounts[static_cast<int>(BufferType::Ability)], true);
 
 	MaterialBuffer = std::make_unique<UploadBuffer<MaterialData>>(pDevice, bufferCounts[static_cast<int>(BufferType::Material)], false);
-	ParticleSystemBuffer = std::make_unique<UploadBuffer<ParticleSystemGPUData>>(pDevice, bufferCounts[static_cast<int>(BufferType::ParticleSystem)], false);
-	ParticleSharedBuffer = std::make_unique<UploadBuffer<ParticleSharedData>>(pDevice, bufferCounts[static_cast<int>(BufferType::ParticleShared)], false);
 }
 #pragma endregion
 
@@ -43,8 +41,6 @@ FrameResourceMgr::FrameResourceMgr(ID3D12Fence* fence)
 	mBufferCounts[static_cast<int>(BufferType::Ssao)]			= 1;
 	mBufferCounts[static_cast<int>(BufferType::Ability)]		= 20;
 	mBufferCounts[static_cast<int>(BufferType::Material)]		= 500;
-	mBufferCounts[static_cast<int>(BufferType::ParticleSystem)] = 10000;
-	mBufferCounts[static_cast<int>(BufferType::ParticleShared)]	= 10000;
 
 	for (int bufferType = 0; bufferType < BufferTypeCount; ++bufferType) {
 		for (int index = 0; index < mBufferCounts[bufferType]; ++index) {
@@ -93,18 +89,6 @@ const D3D12_GPU_VIRTUAL_ADDRESS FrameResourceMgr::GetMatBufferGpuAddr(int elemen
 {
 	const auto& materialBuffer = mCurrFrameResource->MaterialBuffer;
 	return materialBuffer->Resource()->GetGPUVirtualAddress() + elementIndex * materialBuffer->GetElementByteSize();
-}
-
-const D3D12_GPU_VIRTUAL_ADDRESS FrameResourceMgr::GetParticleSystemGpuAddr(int elementIndex) const
-{
-	const auto& particleSystemBuffer = mCurrFrameResource->ParticleSystemBuffer;
-	return particleSystemBuffer->Resource()->GetGPUVirtualAddress() + elementIndex * particleSystemBuffer->GetElementByteSize();
-}
-
-const D3D12_GPU_VIRTUAL_ADDRESS FrameResourceMgr::GetParticleSharedGpuAddr(int elementIndex) const
-{
-	const auto& particleSharedBuffer = mCurrFrameResource->ParticleSharedBuffer;
-	return particleSharedBuffer->Resource()->GetGPUVirtualAddress() + elementIndex * particleSharedBuffer->GetElementByteSize();
 }
 
 void FrameResourceMgr::CreateFrameResources(ID3D12Device* pDevice)
@@ -180,18 +164,6 @@ void FrameResourceMgr::CopyData(int& elementIndex, const MaterialData& data)
 {
 	AllocIndex(elementIndex, BufferType::Material);
 	mCurrFrameResource->MaterialBuffer->CopyData(elementIndex, data);
-}
-
-void FrameResourceMgr::CopyData(int& elementIndex, const ParticleSystemGPUData& data)
-{
-	AllocIndex(elementIndex, BufferType::ParticleSystem);
-	mCurrFrameResource->ParticleSystemBuffer->CopyData(elementIndex, data);
-}
-
-void FrameResourceMgr::CopyData(int& elementIndex, const ParticleSharedData& data)
-{
-	AllocIndex(elementIndex, BufferType::ParticleSystem);
-	mCurrFrameResource->ParticleSharedBuffer->CopyData(elementIndex, data);
 }
 
 void FrameResourceMgr::AllocIndex(int& elementIndex, BufferType bufferType)

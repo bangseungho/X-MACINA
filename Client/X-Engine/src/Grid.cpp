@@ -182,6 +182,42 @@ void Grid::CheckCollisions(rsptr<Collider> collider, std::vector<GridObject*>& o
 	}
 }
 
+Vec3 Grid::GetTilePosCollisionsRay(const Ray& ray, const Vec3& target) const
+{
+	std::map<Pos, bool> visited;
+	std::queue<Pos> q;
+
+	Pos index = Scene::I->GetTileUniqueIndexFromPos(target);
+	q.push(index);
+
+	// q가 빌 때까지 BFS를 돌며 현재 타일이 오브젝트와 충돌 했다면 해당 타일을 업데이트
+	while (!q.empty()) {
+		Pos curNode = q.front();
+		q.pop();
+
+		if (visited[curNode])
+			continue;
+
+		visited[curNode] = true;
+
+		for (int dir = 0; dir < 4; ++dir) {
+			Pos nextPosT = curNode + gkFront[dir];
+			Vec3 nextPosW = Scene::I->GetTilePosFromUniqueIndex(nextPosT);
+			nextPosW.y = target.y;
+
+			BoundingBox bb{ nextPosW, Vec3{mkTileWidth, mkTileWidth, mkTileHeight} };
+			float temp{};
+			if (ray.Intersects(bb, temp)) {
+				return nextPosW;
+			}
+
+			q.push(nextPosT);
+		}
+	}
+
+	return Vec3{};
+}
+
 
 
 

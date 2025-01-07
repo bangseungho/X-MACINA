@@ -33,7 +33,7 @@ AnimatorController::AnimatorController(const AnimatorController& other)
 
 void AnimatorController::SetAnimation(int upperIndex, int lowerIndex, float v, float h)
 {
-	auto& SetIndex = [&](int layerIndex, int index) {
+	auto SetIndex = [&](int layerIndex, int index) {
 		if (mMotionMapInt.count(index)) {
 			std::string motionName = mMotionMapInt.at(index);
 			mLayers[layerIndex]->SetAnimation(motionName);
@@ -156,7 +156,7 @@ void AnimatorController::InitLayers()
 	int index = 0;
 	for (auto& layer : mLayers) {
 		layer->Init(this);
-		if (layer->GetName().contains("Legs")) {
+		if (layer->GetName().compare("Legs")) {
 			layer->SetSyncStateMachine(true);
 		}
 		layer->AddStates(index, mMotionMapInt, mMotionMapString);

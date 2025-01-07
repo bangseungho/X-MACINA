@@ -120,6 +120,7 @@ public:
 
 	std::vector<Vec3>& GetOpenList() { return mOpenList; }
 	std::vector<Vec3>& GetClosedList() { return mClosedList; }
+	void ClearPathList() { mOpenList.clear(); mClosedList.clear(); }
 
 #pragma endregion
 
@@ -195,7 +196,6 @@ private:
 	void RenderTransparentObjects();
 	void RenderDissolveObjects();
 	void RenderSkyBox();
-	void RenderParticles();
 	void RenderAbilities();
 
 	// [renderedObjects]와 grid의 bounds를 rendering한다.

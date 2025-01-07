@@ -34,6 +34,7 @@ private:
 public:
 	static constexpr float mkTileHeight = 0.5f;
 	static constexpr float mkTileWidth = 0.5f;
+	static constexpr Vec3 mkTileExtent = Vec3{ mkTileWidth, mkTileWidth, mkTileHeight };
 	static int mTileRows;
 	static int mTileCols;
 
@@ -68,6 +69,7 @@ public:
 	void CheckCollisions();
 	float CheckCollisionsRay(const Ray& ray) const;
 	void CheckCollisions(rsptr<Collider> collider, std::vector<GridObject*>& out, CollisionType type = CollisionType::All) const;
+	Vec3 GetTilePosCollisionsRay(const Ray& ray, const Vec3& target) const;
 
 private:
 	static void CheckCollisionObjects(std::unordered_set<GridObject*> objects);

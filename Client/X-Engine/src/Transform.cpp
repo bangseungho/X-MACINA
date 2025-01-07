@@ -291,9 +291,11 @@ void Transform::RotateGlobal(const Vec3& axis, float angle)
 	//// 3. 해당 좌표축은 월드 공간이다. 원하는 축으로 회전한다.
 	//// 4. 1에서 저장한 월드 회전값과 기존 회전값을 적용한다.
 
-	XMVECTOR originLocalRotation = _VECTOR4(GetLocalRotation());
+	auto localLotation = GetLocalRotation();
+	XMVECTOR originLocalRotation = _VECTOR4(localLotation);
 	SetLocalRotation(Quat::Identity);
-	XMVECTOR worldRotation = _VECTOR4(GetRotation());
+	auto lotation = GetRotation();
+	XMVECTOR worldRotation = _VECTOR4(lotation);
 	XMVECTOR localRotation = XMQuaternionInverse(worldRotation);
 
 	XMVECTOR quatAngle = XMQuaternionRotationAxis(_VECTOR(axis), XMConvertToRadians(angle));
@@ -309,12 +311,15 @@ void Transform::RotateGlobal(const Vec3& axis, float angle)
 
 void Transform::RotateGlobal(const Vec3& eulerAngles)
 {
-	XMVECTOR originLocalRotation = _VECTOR4(GetLocalRotation());
+	auto localLotation = GetLocalRotation();
+	XMVECTOR originLocalRotation = _VECTOR4(localLotation);
 	SetLocalRotation(Quat::Identity);
-	XMVECTOR worldRotation = _VECTOR4(GetRotation());
+	auto worldLotation = GetLocalRotation();
+	XMVECTOR worldRotation = _VECTOR4(worldLotation);
 	XMVECTOR localRotation = XMQuaternionInverse(worldRotation);
 
-	XMVECTOR quatAngle = _VECTOR4(Quaternion::ToQuaternion(eulerAngles));
+	auto quat = Quaternion::ToQuaternion(eulerAngles);
+	XMVECTOR quatAngle = _VECTOR4(quat);
 
 	localRotation = XMQuaternionMultiply(quatAngle, localRotation);
 	localRotation = XMQuaternionMultiply(worldRotation, localRotation);

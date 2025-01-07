@@ -22,7 +22,7 @@ void Script_GameManager::Awake()
 
 	{
 		sptr<GridObject> enemy = Scene::I->Instantiate("Ursacetus", ObjectTag::Enemy);
-		auto& script = enemy->AddComponent<Script_Ursacetus>();
+		auto script = enemy->AddComponent<Script_Ursacetus>();
 		enemy->AddComponent<Script_MeleeBT>();
 		enemy->SetPosition(160, 0, 280);
 	}
@@ -47,7 +47,7 @@ void Script_GameManager::Awake()
 
 		for (const auto& pos : positions) {
 			sptr<GridObject> enemy = Scene::I->Instantiate("Onyscidus", ObjectTag::Enemy);
-			auto& script = enemy->AddComponent<Script_Onyscidus>();
+			auto script = enemy->AddComponent<Script_Onyscidus>();
 			enemy->AddComponent<Script_MeleeBT>();
 			enemy->SetPosition(pos);
 			enemy->Rotate(0, rand() % 360, 0);
@@ -67,7 +67,7 @@ void Script_GameManager::Awake()
 
 		for (const auto& pos : positions) {
 			sptr<GridObject> enemy = Scene::I->Instantiate("AdvancedCombatDroid_5", ObjectTag::Enemy);
-			auto& script = enemy->AddComponent<Script_AdvancedCombatDroid_5>();
+			auto script = enemy->AddComponent<Script_AdvancedCombatDroid_5>();
 			enemy->AddComponent<Script_MeleeBT>();
 			enemy->SetPosition(pos);
 			enemy->Rotate(0, rand() % 360, 0);

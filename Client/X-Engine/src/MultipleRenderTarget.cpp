@@ -90,8 +90,8 @@ void MultipleRenderTarget::OMSetRenderTargets()
 {
 	CMD_LIST->RSSetViewports(1, &mViewport);
 	CMD_LIST->RSSetScissorRects(1, &mScissorRect);
-
-	CMD_LIST->OMSetRenderTargets(mRtCnt, &mRtvHeapBegin, TRUE, (mTextureDs) ? &mTextureDs->GetDsvCpuDescriptorHandle() : nullptr);
+	auto dsvHandle = mTextureDs->GetDsvCpuDescriptorHandle();
+	CMD_LIST->OMSetRenderTargets(mRtCnt, &mRtvHeapBegin, TRUE, (mTextureDs) ? &dsvHandle : nullptr);
 }
 
 void MultipleRenderTarget::OMSetRenderTargets(UINT count, UINT index)
@@ -99,8 +99,16 @@ void MultipleRenderTarget::OMSetRenderTargets(UINT count, UINT index)
 	CMD_LIST->RSSetViewports(1, &mViewport);
 	CMD_LIST->RSSetScissorRects(1, &mScissorRect);
 
-	CMD_LIST->OMSetRenderTargets(count, (mRtCnt != 0) ? &mRts[index].Target->GetRtvCpuDescriptorHandle() : nullptr, FALSE, 
-		(mTextureDs) ? &mTextureDs->GetDsvCpuDescriptorHandle() : nullptr);
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
+	if (mTextureDs) {
+		dsvHandle = mTextureDs->GetDsvCpuDescriptorHandle();
+	}
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+	if (mRtCnt != 0) {
+		rtvHandle = mRts[index].Target->GetRtvCpuDescriptorHandle();
+	}
+	CMD_LIST->OMSetRenderTargets(count, (mRtCnt != 0) ? &rtvHandle : nullptr, FALSE,
+		(mTextureDs) ? &dsvHandle : nullptr);
 }
 
 void MultipleRenderTarget::ClearRenderTargetView(float depthClearValue)

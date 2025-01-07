@@ -35,33 +35,33 @@ BT::Node* Script_MeleeBT::SetupTree()
 		maxDis = max(maxDis, Vec3::Distance(baryCenter, wayPoint));
 #pragma endregion
 
-	auto& enemy = mObject->GetComponent<Script_Enemy>();
+	auto enemy = mObject->GetComponent<Script_Enemy>();
 
 #pragma region BehaviorTree
-	BT::Node* root = new BT::Selector{ std::vector<BT::Node*>{
-		new CheckDeath(mObject, std::bind(&Script_Enemy::Death, enemy)),
-		new BT::Sequence{ std::vector<BT::Node*>{
-			new CheckAttackRange(mObject),
-			new TaskAttack(mObject, std::bind(&Script_Enemy::Attack, enemy)),
-			}},
-		new TaskGetHit(mObject),
-		new BT::Sequence{ std::vector<BT::Node*>{
-			new CheckDetectionRange(mObject),
-			new BT::Selector{ std::vector<BT::Node*>{
-				new TaskMoveToTarget(mObject),
-				new TaskPathPlanningToTarget(mObject),
-				}},
-			}},
-		new TaskMoveToPath(mObject),
-		new BT::Selector{ std::vector<BT::Node*>{
-			new BT::Sequence{ std::vector<BT::Node*>{
-				new CheckPatrolRange(mObject, baryCenter, maxDis),
-				new TaskPatrol(mObject, std::move(wayPoints)),
-				}},
-				new TaskPathPlanningToSpawn(mObject)
-			}}
-	}};
+	//BT::Node* root = new BT::Selector{ std::vector<BT::Node*>{
+	//	new CheckDeath(mObject, std::bind(&Script_Enemy::Death, enemy)),
+	//	new BT::Sequence{ std::vector<BT::Node*>{
+	//		new CheckAttackRange(mObject),
+	//		new TaskAttack(mObject, std::bind(&Script_Enemy::Attack, enemy)),
+	//		}},
+	//	new TaskGetHit(mObject),
+	//	new BT::Sequence{ std::vector<BT::Node*>{
+	//		new CheckDetectionRange(mObject),
+	//		new BT::Selector{ std::vector<BT::Node*>{
+	//			new TaskMoveToTarget(mObject),
+	//			new TaskPathPlanningToTarget(mObject),
+	//			}},
+	//		}},
+	//	new TaskMoveToPath(mObject),
+	//	new BT::Selector{ std::vector<BT::Node*>{
+	//		new BT::Sequence{ std::vector<BT::Node*>{
+	//			new CheckPatrolRange(mObject, baryCenter, maxDis),
+	//			new TaskPatrol(mObject, std::move(wayPoints)),
+	//			}},
+	//			new TaskPathPlanningToSpawn(mObject)
+	//		}}
+	//} };
 #pragma endregion
 
-	return root;
+	return nullptr;
 }

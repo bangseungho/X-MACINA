@@ -4,6 +4,10 @@
 
 void Script_BehaviorTree::Start()
 {
+	if (!mRoot) {
+		return;
+	}
+
 	mRoot = SetupTree();
 	mRoot->SetRoot();
 }

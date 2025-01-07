@@ -6,7 +6,6 @@
 #include "Script_Player.h"
 
 #include "Component/Rigidbody.h"
-#include "Component/ParticleSystem.h"
 
 #include "Scene.h"
 #include "Object.h"
@@ -57,8 +56,6 @@ void Script_Weapon::Update()
 void Script_Weapon::FireBullet()
 {
 	--mCurBulletCnt;
-	ParticleManager::I->Play("WFX_Muzzle_Flash", mMuzzle);
-	ParticleManager::I->Play("WFX_Muzzle_Smoke", mMuzzle);
 
 	mOwner->BulletFired();
 }
@@ -187,9 +184,9 @@ void Script_BulletWeapon::FireBullet()
 {
 	base::FireBullet();
 
-	auto& bullet = mBulletPool->Get(true);
+	auto bullet = mBulletPool->Get(true);
 	if (bullet) {
-		auto& bulletScript = bullet->GetComponent<Script_Bullet>();
+		auto bulletScript = bullet->GetComponent<Script_Bullet>();
 
 		Vec2 err = Vec2(Math::RandFloat(mErrX.x, mErrX.y), Math::RandFloat(mErrY.x, mErrY.y));
 		const float bulletSpeedErr = Math::RandFloat(0, mSpeerErr);
@@ -219,9 +216,6 @@ void Script_BulletWeapon::InitBullet(rsptr<InstObject> bullet, float damage, flo
 	bulletScript->Init();
 	bulletScript->SetDamage(damage);
 	bulletScript->SetSpeed(speed);
-
-	for (int bulletType = 0; bulletType < BulletPSTypeCount; ++bulletType)
-		bulletScript->SetParticleSystems(static_cast<BulletPSType>(bulletType), mPSNames[bulletType]);
 }
 
 

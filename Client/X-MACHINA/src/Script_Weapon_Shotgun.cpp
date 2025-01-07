@@ -19,7 +19,7 @@ void Script_Weapon_Shotgun::FireBullet()
 
 	const auto& bullets = mBulletPool->GetMulti(mBulletCntPerShot, true);
 	for (auto& bullet : bullets) {
-		auto& bulletScript = bullet->GetComponent<Script_Bullet>();
+		auto bulletScript = bullet->GetComponent<Script_Bullet>();
 
 		Vec2 err = Vec2(Math::RandFloat(mErrX.x, mErrX.y), Math::RandFloat(mErrY.x, mErrY.y));
 		const float bulletSpeedErr = Math::RandFloat(0, mSpeerErr);

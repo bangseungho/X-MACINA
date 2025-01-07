@@ -31,7 +31,7 @@
 #include "ClientNetwork/Include/ThreadManager.h"
 #include "ClientNetwork/Contents/Script_PlayerNetwork.h"
 
-#define SERVER_COMMUNICATION
+// #define SERVER_COMMUNICATION
 
 
 HINSTANCE GameFramework::mhInst = nullptr;
@@ -346,7 +346,7 @@ void GameFramework::InitPlayer(int sessionID)
 	mPlayerScript = mPlayer->AddComponent<Script_GroundPlayer>();
 
 #ifdef SERVER_COMMUNICATION
-	auto& networkScript = mPlayer->AddComponent<Script_PlayerNetwork>();
+	auto networkScript = mPlayer->AddComponent<Script_PlayerNetwork>();
 #endif
 
 	mIsLogin = true;

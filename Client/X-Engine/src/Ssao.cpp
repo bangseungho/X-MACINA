@@ -100,8 +100,9 @@ void Ssao::CreateRandomVectorTexture(ID3D12GraphicsCommandList* directCmdList)
 	texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
+	auto defaultProperty = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	DEVICE->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		&defaultProperty,
 		D3D12_HEAP_FLAG_NONE,
 		&texDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -110,11 +111,12 @@ void Ssao::CreateRandomVectorTexture(ID3D12GraphicsCommandList* directCmdList)
 
 	const UINT num2DSubresources = texDesc.DepthOrArraySize * texDesc.MipLevels;
 	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(mRandomVecMap.Get(), 0, num2DSubresources);
-
+	auto uploadProperty = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto uploadBuffer = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 	DEVICE->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&uploadProperty,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
+		&uploadBuffer,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(mRandomVecMapUploadBuffer.GetAddressOf()));

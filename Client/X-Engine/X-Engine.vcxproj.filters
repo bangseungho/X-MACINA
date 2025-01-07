@@ -258,9 +258,6 @@
     <ClCompile Include="src\BehaviorTree.cpp">
       <Filter>소스 파일\AI</Filter>
     </ClCompile>
-    <ClCompile Include="src\ParticleSystem.cpp">
-      <Filter>소스 파일\Manager</Filter>
-    </ClCompile>
     <ClCompile Include="src\AbilityMgr.cpp">
       <Filter>소스 파일\Manager</Filter>
     </ClCompile>
@@ -356,9 +353,6 @@
     <ClInclude Include="include\FrameResource.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="include\UploadBuffer.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="include\MultipleRenderTarget.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -440,9 +434,6 @@
     <ClInclude Include="..\Common\Component\Component.h">
       <Filter>Common\Component</Filter>
     </ClInclude>
-    <ClInclude Include="..\Common\Component\ParticleSystem.h">
-      <Filter>Common\Component</Filter>
-    </ClInclude>
     <ClInclude Include="..\Common\Component\Rigidbody.h">
       <Filter>Common\Component</Filter>
     </ClInclude>
@@ -454,6 +445,9 @@
     </ClInclude>
     <ClInclude Include="..\Common\AbilityMgr.h">
       <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="include\UploadBuffer.h">
+      <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

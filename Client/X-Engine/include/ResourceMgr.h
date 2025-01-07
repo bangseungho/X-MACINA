@@ -15,8 +15,6 @@ class ModelObjectMesh;
 class MasterModel;
 class AnimationClip;
 class AnimatorController;
-class ParticleSystemCPUData;
-class ParticleSystemGPULoadData;
 #pragma endregion
 
 #pragma region Class
@@ -59,7 +57,6 @@ public:
 	void Clear();
 	sptr<Texture> CreateTexture(const std::string& name, UINT width, UINT height, DXGI_FORMAT dxgiFormat, D3D12_RESOURCE_FLAGS resourcecFlags, D3D12_RESOURCE_STATES resourceStates, Vec4 clearColor = Vec4());
 	sptr<Texture> CreateTexture(const std::string& name, ComPtr<ID3D12Resource> resource);
-	void CreateParticleSystemCPUData();
 
 	sptr<ModelObjectMesh> LoadRectangleMesh();
 	sptr<ModelObjectMesh> LoadPointMesh();
@@ -70,7 +67,6 @@ private:
 	void LoadShaders();
 	void LoadAnimationClips();
 	void LoadAnimatorControllers();
-	void LoadParticleSystemCPUData();
 };
 #pragma endregion
 
@@ -161,8 +157,4 @@ inline ResourceType ResourceMgr::GetResourceType()
 		return ResourceType::AnimationClip;
 	if (std::is_same_v<T, AnimatorController>)
 		return ResourceType::AnimatorController;
-	if (std::is_same_v<T, ParticleSystemCPUData>)
-		return ResourceType::ParticleSystemCPUData;
-	if (std::is_same_v<T, ParticleSystemGPULoadData>)
-		return ResourceType::ParticleSystemGPUData;
 }

@@ -230,7 +230,7 @@ public:
 	void RemoveAllComponents()
 	{
 		std::erase_if(mComponents, [](const auto& component) {
-			const auto& result = std::dynamic_pointer_cast<T>(component)
+			const auto& result = std::dynamic_pointer_cast<T>(component);
 			if (result) {
 				result->OnDestroy();
 				return true;
