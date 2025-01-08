@@ -4,6 +4,7 @@
 #include "Scene.h"
 #include "Object.h"
 #include "Component/Collider.h"
+#include "MeshRenderer.h"
 
 int Grid::mTileRows = 0;
 int Grid::mTileCols = 0;
@@ -16,17 +17,27 @@ Grid::Grid(int index, int width, const BoundingBox& bb)
 {
 	mTileRows = static_cast<int>(width / mkTileHeight);
 	mTileCols = static_cast<int>(width / mkTileWidth);
-	mTiles = std::vector<std::vector<Tile>>(mTileCols, std::vector<Tile>(mTileRows, Tile::None));
+
+	mTiles = std::vector<std::vector<std::vector<Tile>>>(mTileHeightCount, std::vector<std::vector<Tile>>(mTileCols, std::vector<Tile>(mTileRows, Tile::None)));
 }
 
 Tile Grid::GetTileFromUniqueIndex(const Pos& tPos) const
 {
-	return mTiles[tPos.Z][tPos.X];
+	if (tPos.Y >= mTileHeightCount || tPos.Y <= 0.f) {
+		return Tile::None;
+	}
+
+	return mTiles[tPos.Y][tPos.Z][tPos.X];
 }
 
-void Grid::SetTileFromUniqueIndex(const Pos& tPos, Tile tile)
+void Grid::SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile)
 {
-	mTiles[tPos.Z][tPos.X] = tile;
+	if (tPos.Y >= mTileHeightCount || tPos.Y < 0.f) {
+		return;
+	}
+
+	mVoxelList.insert(Scene::I->GetTilePosFromUniqueIndex(index));
+	mTiles[tPos.Y][tPos.Z][tPos.X] = tile;
 }
 
 void Grid::AddObject(GridObject* object)
@@ -62,12 +73,12 @@ void Grid::UpdateTiles(Tile tile, GridObject* object)
 	if (IsNotBuilding(object->GetTag()))
 		return;
 
-	// BFS를 통해 주변 타일도 업데이트
-	std::queue<Pos> q;
-	std::map<Pos, bool> visited;
-
 	// 오브젝트의 충돌 박스
 	for (const auto& collider : object->GetComponent<ObjectCollider>()->GetColliders()) {
+		// BFS를 통해 주변 타일도 업데이트
+		std::queue<Pos> q;
+		std::map<Pos, bool> visited;
+
 		if (collider->GetType() != Collider::Type::Box) {
 			continue;
 		}
@@ -83,17 +94,21 @@ void Grid::UpdateTiles(Tile tile, GridObject* object)
 			Pos curNode = q.front();
 			q.pop();
 
-			if (visited[curNode])
-				continue;
+			for (int dir = 0; dir < 6; ++dir) {
+				Pos nextPosT = curNode + gkFront2[dir];
 
-			visited[curNode] = true;
+				if (nextPosT.Y < 0 || nextPosT.Y >= mTileHeightCount) {
+					continue;
+				}
 
-			for (int dir = 0; dir < 4; ++dir) {
-				Pos nextPosT = curNode + gkFront[dir];
+				if (visited[nextPosT]) {
+					continue;
+				}
+
 				Vec3 nextPosW = Scene::I->GetTilePosFromUniqueIndex(nextPosT);
-				nextPosW.y = pos.y;
+				BoundingBox bb{ nextPosW, mkTileExtent };
 
-				BoundingBox bb{ nextPosW, Vec3{mkTileWidth, mkTileWidth, mkTileHeight} };
+				visited[nextPosT] = true;
 
 				if (collider->Intersects(bb)) {
 					Scene::I->SetTileFromUniqueIndex(nextPosT, tile);
@@ -101,6 +116,22 @@ void Grid::UpdateTiles(Tile tile, GridObject* object)
 				}
 			}
 		}
+	}
+}
+
+void Grid::UpdateTilesOnTerrain()
+{
+	// 유니크 인덱스를 타일 인덱스로
+
+
+	// 타일 인덱스를 유니크 인덱스로 
+}
+
+void Grid::RenderVoxels()
+{
+	// 복셀 출력
+	for (auto& voxel : mVoxelList) {
+		MeshRenderer::RenderBox(voxel, Grid::mkTileExtent, Vec4{ 0.f, 1.f, 0.f, 1.f });
 	}
 }
 

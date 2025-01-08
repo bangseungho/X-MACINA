@@ -82,6 +82,7 @@ private:
 
 	/* Grid */
 	std::vector<sptr<Grid>>	mGrids{};				// all scene grids
+	std::set<Grid*>			mCullingGrids{};				// all scene grids
 	float					mGridStartPoint{};		// leftmost coord of the entire grid
 	int						mGridWidth{};			// length of x for one grid
 	int						mGridCols{};			// number of columns in the grid
@@ -142,6 +143,7 @@ private:
 public:
 	void BuildObjects();
 	void ReleaseObjects();
+	void UpdateVoxelsOnTerrain();
 
 private:
 	/* Object */

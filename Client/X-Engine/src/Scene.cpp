@@ -34,9 +34,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma region C/Dtor
 namespace {
-	constexpr int kGridWidthCount = 20;						// all grid count = n*n
+	constexpr int kGridWidthCount = 40;						// all grid count = n*n
 	constexpr Vec3 kBorderPos = Vec3(256, 200, 256);		// center of border
-	constexpr Vec3 kBorderExtents = Vec3(1500, 500, 1500);		// extents of border
+	constexpr Vec3 kBorderExtents = Vec3(1500, 500, 1500);	// extents of border
 }
 
 Scene::Scene()
@@ -301,6 +301,16 @@ void Scene::UpdateGridInfo()
 	mTerrain->UpdateGrid();
 }
 
+void Scene::UpdateVoxelsOnTerrain()
+{
+	for (int i = 0; i < static_cast<int>(kBorderExtents.z / Grid::mkTileWidth); ++i) {
+		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkTileWidth); ++j) {
+			Vec3 pos = GetTilePosFromUniqueIndex(Pos{i, j, 0});
+			Pos index = Pos{ i, j, static_cast<int>(std::round(GetTerrainHeight(pos.x, pos.z))) };
+			SetTileFromUniqueIndex(index, Tile::Terrain);
+		}
+	}
+}
 
 void Scene::LoadSceneObjects(const std::string& fileName)
 {
@@ -421,6 +431,7 @@ void Scene::ClearRenderedObjects()
 	mSkinMeshObjects.clear();
 	mTransparentObjects.clear();
 	mGridObjects.clear();
+	mCullingGrids.clear();
 }
 
 
@@ -585,12 +596,13 @@ void Scene::RenderGridObjects(RenderType type)
 	}
 
 	if (mRenderedObjects.empty()) {
-		for (const auto& grid : mGrids) {
+		for (auto& grid : mGrids) {
 			if (grid->Empty()) {
 				continue;
 			}
 
 			if (camFrustum.Intersects(grid->GetBB())) {
+				mCullingGrids.insert(grid.get());
 				auto& objects = grid->GetObjects();
 				for (auto& object : objects) {
 					if (camFrustum.Intersects(object->GetCollider()->GetBS())) {
@@ -702,6 +714,10 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 	RenderObjectBounds(renderedObjects);
 	RenderGridBounds();
 
+	for (const auto& cullingGrid : mCullingGrids) {
+		cullingGrid->RenderVoxels();
+	}
+
 	return true;
 }
 
@@ -754,6 +770,7 @@ void Scene::Start()
 	mGameManager->SetActive(true);
 
 	UpdateGridInfo();
+	UpdateVoxelsOnTerrain();
 }
 
 void Scene::Update()
@@ -850,9 +867,10 @@ Pos Scene::GetTileUniqueIndexFromPos(const Vec3& pos) const
 {
 	// 월드 포지션으로부터 타일의 고유 인덱스를 계산
 	const int tileGroupIndexX = static_cast<int>((pos.x - mGridStartPoint) / Grid::mkTileWidth);
-	const int tileGroupIndexZ = static_cast<int>((pos.z - mGridStartPoint) / Grid::mkTileHeight);
+	const int tileGroupIndexZ = static_cast<int>((pos.z - mGridStartPoint) / Grid::mkTileWidth);
+	const int tileGroupIndexY = static_cast<int>(pos.y / Grid::mkTileHeight);
 
-	return Pos{ tileGroupIndexZ, tileGroupIndexX };
+	return Pos{ tileGroupIndexZ, tileGroupIndexX, tileGroupIndexY };
 }
 
 Vec3 Scene::GetTilePosFromUniqueIndex(const Pos& index) const
@@ -860,8 +878,9 @@ Vec3 Scene::GetTilePosFromUniqueIndex(const Pos& index) const
 	// 타일의 고유 인덱스로부터 월드 포지션을 계산
 	const float posX = index.X * Grid::mkTileWidth + mGridStartPoint;
 	const float posZ = index.Z * Grid::mkTileWidth + mGridStartPoint;
+	const float posY = index.Y * Grid::mkTileHeight;
 
-	return Vec3{ posX, 0, posZ };
+	return Vec3{ posX, posY, posZ };
 }
 
 Tile Scene::GetTileFromPos(const Vec3& pos) const
@@ -877,22 +896,23 @@ Tile Scene::GetTileFromUniqueIndex(const Pos& index) const
 
 	const int tileX = index.X % Grid::mTileRows;
 	const int tileZ = index.Z % Grid::mTileCols;
+	const int tileY = index.Y;
 
-	return mGrids[gridZ * mGridCols + gridX]->GetTileFromUniqueIndex(Pos{tileZ, tileX});
+	return mGrids[gridZ * mGridCols + gridX]->GetTileFromUniqueIndex(Pos{tileZ, tileX, tileY });
 }
 
 void Scene::SetTileFromUniqueIndex(const Pos& index, Tile tile)
 {
 	// 타일의 고유 인덱스로부터 타일의 값을 반환
 	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileWidth / mGridWidth);
 
 	const int tileX = index.X % Grid::mTileRows;
 	const int tileZ = index.Z % Grid::mTileCols;
+	const int tileY = index.Y;
 
-	mGrids[gridZ * mGridCols + gridX]->SetTileFromUniqueIndex(Pos{ tileZ, tileX }, tile);
+	mGrids[gridZ * mGridCols + gridX]->SetTileFromUniqueIndex(Pos{ tileZ, tileX, tileY }, index, tile);
 }
-
 
 void Scene::ToggleDrawBoundings()
 {

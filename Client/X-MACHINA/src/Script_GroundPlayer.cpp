@@ -207,7 +207,7 @@ bool Script_GroundPlayer::PathPlanningAStar(Pos start, Pos dest)
 
 		if (prevDir != dir) {
 			mPath.push(Scene::I->GetTilePosFromUniqueIndex(pos));
-			Scene::I->GetOpenList().push_back(mPath.top());
+			//Scene::I->GetOpenList().push_back(mPath.top());
 		}
 
 		if (pos == mParent[pos])
@@ -218,7 +218,7 @@ bool Script_GroundPlayer::PathPlanningAStar(Pos start, Pos dest)
 	}
 
 	// 자연스러운 움직임을 위해 첫 번째 경로는 삭	제
-	Scene::I->GetOpenList().push_back(Scene::I->GetTilePosFromUniqueIndex(start));
+	//Scene::I->GetOpenList().push_back(Scene::I->GetTilePosFromUniqueIndex(start));
 	if (!mPath.empty()) {
 		mPath.pop();
 	}
@@ -425,7 +425,6 @@ void Script_GroundPlayer::ProcessInput()
 	if (KEY_PRESSED('P')) mCamera->ZoomIn();
 	if (KEY_PRESSED('I')) mCamera->ZoomReset();
 }
-
 
 
 void Script_GroundPlayer::Move(Dir dir)

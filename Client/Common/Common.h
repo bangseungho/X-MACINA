@@ -652,7 +652,7 @@ namespace Path {
 	{
 		bool operator==(Pos& other)
 		{
-			return Z == other.Z && X == other.X;
+			return Z == other.Z && X == other.X && Y == other.Y;
 		}
 
 		bool operator!=(Pos& other)
@@ -664,7 +664,9 @@ namespace Path {
 		{
 			if (Z != other.Z)
 				return Z < other.Z;
-			return X < other.X;
+			if (X != other.X)
+				return X < other.X;
+			return Y < other.Y;
 		}
 
 		Pos operator+(Pos& other)
@@ -672,6 +674,7 @@ namespace Path {
 			Pos ret;
 			ret.Z = Z + other.Z;
 			ret.X = X + other.X;
+			ret.Y = Y + other.Y;
 			return ret;
 		}
 
@@ -679,6 +682,7 @@ namespace Path {
 		{
 			Z += other.Z;
 			X += other.X;
+			Y += other.Y;
 			return *this;
 		}
 
@@ -687,6 +691,7 @@ namespace Path {
 			Pos ret;
 			ret.Z = Z - other.Z;
 			ret.X = X - other.X;
+			ret.Y = Y - other.Y;
 			return ret;
 		}
 
@@ -694,11 +699,13 @@ namespace Path {
 		{
 			Z -= other.Z;
 			X -= other.X;
+			Y -= other.Y;
 			return *this;
 		}
 
 		int Z{};
 		int X{};
+		int Y{};
 	};
 
 
@@ -715,6 +722,15 @@ namespace Path {
 		Pos {+1, +1},
 		Pos {+1, -1},
 		Pos {-1, -1},
+	};
+
+	static Pos gkFront2[] = {
+	Pos {+1, +0, 0},
+	Pos {+0, -1, 0},
+	Pos {-1, +0, 0},
+	Pos {+0, +1, 0},
+	Pos {+0, +0, +1},
+	Pos {+0, +0, -1},
 	};
 
 

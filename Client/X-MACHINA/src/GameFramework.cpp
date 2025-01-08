@@ -185,7 +185,6 @@ void GameFramework::ProcessKeyboardMsg(HWND hWnd, UINT message, WPARAM wParam, L
 		case 192:	// '`'
 			::SetFocus(NULL);
 			break;
-
 		default:
 			break;
 		}

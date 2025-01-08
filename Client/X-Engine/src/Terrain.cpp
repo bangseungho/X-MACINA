@@ -20,7 +20,7 @@ namespace {
 	MyBoundingSphere CalculateBoundingSphere(const Vec3& center, const std::vector<Vec3>& positions)
 	{
 		float maxDistanceSq = 0.f;
-
+		
 		// 모든 정점 위치에 대해 평균 중심간 최대 거리 계산
 		for (const auto& position : positions) {
 			float distanceSq = (position.x - center.x) * (position.x - center.x) +
