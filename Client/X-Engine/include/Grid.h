@@ -3,6 +3,7 @@
 #include "UploadBuffer.h"
 
 #pragma region ClassForwardDecl
+class Object;
 class GridObject;
 class Collider;
 class InstObject;
@@ -24,10 +25,21 @@ using namespace Path;
 
 #pragma region Class
 struct RenderVoxel {
-	Vec3 VPosition{};
 	Vec4 VColor{};
 	Tile VType{};
 	Matrix MtxWorld{};
+};
+
+class RenderVoxelManager {
+	Object* mPlayer{};
+	std::vector<uptr<UploadBuffer<InstanceData>>> mInstanceBuffers{};
+	std::vector<Pos> mRenderVoxels{};
+	static constexpr UINT mkMaxRenderVoxels = 30;
+
+public:
+	void Init(Object* player);
+	void Update();
+	void Render();
 };
 
 class Grid {
@@ -36,7 +48,6 @@ private:
 	const BoundingBox mBB{};
 
 	std::vector<std::vector<std::vector<Tile>>> mTiles{};
-	std::vector<uptr<UploadBuffer<InstanceData>>> mInstanceBuffers{};
 
 	std::unordered_set<GridObject*> mObjects{};			// all objects (env, static, dynamic, ...)
 	std::unordered_set<GridObject*> mEnvObjects{};
@@ -44,12 +55,14 @@ private:
 	std::unordered_set<GridObject*> mDynamicObjets{};
 
 public:
-	static constexpr float mkTileHeight = 0.5f;
-	static constexpr float mkTileWidth = 0.5f;
+	static constexpr float mkTileHeight = 1.0f;
+	static constexpr float mkTileWidth = 1.0f;
 	static constexpr Vec3 mkTileExtent = Vec3{ mkTileWidth, mkTileWidth, mkTileHeight };
 	static constexpr int mTileHeightCount = 10;
 	static int mTileRows;
 	static int mTileCols;
+
+	std::map<Pos, RenderVoxel> mRenderVoxels{};
 	std::vector<RenderVoxel> mRederVoxels{};
 
 public:
@@ -63,6 +76,7 @@ public:
 	const auto& GetObjects() const		{ return mObjects; }
 
 	Tile GetTileFromUniqueIndex(const Pos& tPos) const;
+	RenderVoxel GetVoxelFromUniqueIndex(const Pos& tPos) const;
 	void SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile);
 
 public:
@@ -79,7 +93,6 @@ public:
 	// BFS를 활용하여 타일 업데이트
 	void UpdateTiles(Tile tile, GridObject* object);
 	void UpdateMtx();
-	void RenderVoxels();
 
 	// collision check for objects contained in grid
 	void CheckCollisions();

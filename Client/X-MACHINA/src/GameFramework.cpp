@@ -343,7 +343,7 @@ void GameFramework::InitPlayer(int sessionID)
 	mPlayer = Scene::I->Instantiate("EliteTrooper", ObjectTag::Player);
 	mPlayer->ResetCollider();
 	mPlayerScript = mPlayer->AddComponent<Script_GroundPlayer>();
-
+	Scene::I->SetPlayer(mPlayer.get());
 #ifdef SERVER_COMMUNICATION
 	auto networkScript = mPlayer->AddComponent<Script_PlayerNetwork>();
 #endif

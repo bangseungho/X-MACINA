@@ -29,6 +29,7 @@ class ObjectPool;
 class TestCube;
 class MasterModel;
 class ObjectTag;
+class RenderVoxelManager;
 #pragma endregion
 
 
@@ -90,6 +91,9 @@ private:
 	std::vector<Vec3>	mOpenList{};
 	std::vector<Vec3>	mClosedList{};
 
+	uptr<RenderVoxelManager> mRenderVoxelManager{};
+	Object* mPlayer{};
+
 private:
 #pragma region C/Dtor
 	Scene();
@@ -115,6 +119,7 @@ public:
 	Tile GetTileFromUniqueIndex(const Pos& index) const;
 	void SetTileFromUniqueIndex(const Pos& index, Tile tile);
 	Tile GetTileFromPos(const Vec3& index) const;
+	RenderVoxel GetVoxelFromUniqueIndex(const Pos& index) const;
 
 	std::vector<Vec3>& GetOpenList() { return mOpenList; }
 	std::vector<Vec3>& GetClosedList() { return mClosedList; }
@@ -127,6 +132,7 @@ public:
 	void ReleaseUploadBuffers();
 	void UpdateAbilityCB(int& idx, const AbilityConstants& value);
 	void SetAbilityCB(int idx) const;
+	void SetPlayer(Object* player);
 
 private:
 	void UpdateShaderVars();

@@ -8,6 +8,7 @@
 
 #include "DXGIMgr.h"
 #include "FrameResource.h"
+#include "Component/Camera.h"
 
 int Grid::mTileRows = 0;
 int Grid::mTileCols = 0;
@@ -22,29 +23,34 @@ Grid::Grid(int index, int width, const BoundingBox& bb)
 	mTileCols = static_cast<int>(width / mkTileWidth);
 
 	mTiles = std::vector<std::vector<std::vector<Tile>>>(mTileHeightCount, std::vector<std::vector<Tile>>(mTileCols, std::vector<Tile>(mTileRows, Tile::None)));
-	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
-	for (auto& buffer : mInstanceBuffers) {
-		buffer = std::make_unique<UploadBuffer<InstanceData>>(DEVICE.Get(), mTileRows * mTileCols * mTileHeightCount, false);
-	}
 }
 
 Tile Grid::GetTileFromUniqueIndex(const Pos& tPos) const
 {
-	if (tPos.Y >= mTileHeightCount || tPos.Y <= 0.f) {
+	if (tPos.Y >= mTileHeightCount || tPos.Y < 0.f) {
 		return Tile::None;
 	}
 
 	return mTiles[tPos.Y][tPos.Z][tPos.X];
 }
 
+RenderVoxel Grid::GetVoxelFromUniqueIndex(const Pos& tPos) const
+{
+	if (tPos.Y > mTileHeightCount || tPos.Y < 0.f) {
+		return RenderVoxel{};
+	}
+
+	auto findIt = mRenderVoxels.find(tPos);
+	return findIt->second;
+}
+
 void Grid::SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile)
 {
-	if (tPos.Y >= mTileHeightCount || tPos.Y < 0.f) {
+	if (tPos.Y > mTileHeightCount || tPos.Y < 0.f) {
 		return;
 	}
 
 	RenderVoxel renderVoxel;
-	renderVoxel.VPosition = Scene::I->GetTilePosFromUniqueIndex(index);
 	renderVoxel.VType = tile;
 	switch (tile)
 	{
@@ -58,7 +64,7 @@ void Grid::SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile)
 		break;
 	}
 
-	mRederVoxels.push_back(renderVoxel);
+	mRenderVoxels.insert({ index, renderVoxel });
 	mTiles[tPos.Y][tPos.Z][tPos.X] = tile;
 }
 
@@ -143,28 +149,12 @@ void Grid::UpdateTiles(Tile tile, GridObject* object)
 
 void Grid::UpdateMtx()
 {
-	for (auto& voxel : mRederVoxels) {
+	for (auto& voxel : mRenderVoxels) {
 		const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
-		const Matrix translationMtx = Matrix::CreateTranslation(voxel.VPosition);
+		const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetTilePosFromUniqueIndex(voxel.first));
 		const Matrix matrix = scaleMtx * translationMtx;
-		voxel.MtxWorld = matrix.Transpose();
+		voxel.second.MtxWorld = matrix.Transpose();
 	}
-}
-
-void Grid::RenderVoxels()
-{
-	DXGIMgr::I->SetGraphicsRootShaderResourceView(RootParam::Instancing, FrameResourceMgr::GetBufferGpuAddr(0, mInstanceBuffers[CURR_FRAME_INDEX].get()));
-
-	int buffIdx{};
-	for (auto& voxel : mRederVoxels) {
-		InstanceData instData;
-		instData.MtxWorld = voxel.MtxWorld;
-		instData.Color = voxel.VColor;
-
-		mInstanceBuffers[CURR_FRAME_INDEX]->CopyData(buffIdx++, instData);
-	}
-
-	MeshRenderer::RenderInstancingBox(mRederVoxels.size());
 }
 
 void Grid::RemoveObject(GridObject* object)
@@ -382,4 +372,51 @@ void Grid::ProcessCollision(GridObject* objectA, GridObject* objectB)
 		objectA->OnCollisionStay(*objectB);
 		objectB->OnCollisionStay(*objectA);
 	}
+}
+
+void RenderVoxelManager::Init(Object* player)
+{
+	mPlayer = player;
+	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
+	for (auto& buffer : mInstanceBuffers) {
+		buffer = std::make_unique<UploadBuffer<InstanceData>>(DEVICE.Get(), mkMaxRenderVoxels * mkMaxRenderVoxels, false);
+	}
+}
+
+void RenderVoxelManager::Update()
+{
+	Pos pos = Scene::I->GetTileUniqueIndexFromPos(mPlayer->GetPosition());
+
+	int x = pos.X, y = pos.Z; // 중심 좌표
+
+	int halfSize = mkMaxRenderVoxels / 2; // 중심으로부터 확장 크기
+
+	// 정사각형 범위 순회
+	for (int i = x - halfSize; i < x + halfSize; ++i) {
+		for (int j = y - halfSize; j < y + halfSize; ++j) {
+			for (int k = 0; k < Grid::mTileHeightCount; ++k) {
+				if (Scene::I->GetTileFromUniqueIndex(Pos{ i, j, k }) != Tile::None) {
+ 					mRenderVoxels.push_back(Pos{ j, i, k });
+				}
+			}
+		}
+	}
+}
+
+void RenderVoxelManager::Render()
+{
+	Update();
+
+	DXGIMgr::I->SetGraphicsRootShaderResourceView(RootParam::Instancing, FrameResourceMgr::GetBufferGpuAddr(0, mInstanceBuffers[CURR_FRAME_INDEX].get()));
+
+	int buffIdx{};
+	for (auto& voxel : mRenderVoxels) {
+		InstanceData instData;
+		instData.MtxWorld = Scene::I->GetVoxelFromUniqueIndex(voxel).MtxWorld;
+		instData.Color = Scene::I->GetVoxelFromUniqueIndex(voxel).VColor;
+		mInstanceBuffers[CURR_FRAME_INDEX]->CopyData(buffIdx++, instData);
+	}
+
+	MeshRenderer::RenderInstancingBox(mkMaxRenderVoxels * mkMaxRenderVoxels);
+	mRenderVoxels.clear();
 }

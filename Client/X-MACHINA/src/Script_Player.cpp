@@ -8,6 +8,8 @@
 #include "Component/UI.h"
 
 #include "Object.h"
+#include "X-Engine.h"
+#include "Grid.h"
 
 namespace {
 	BoundingBox border = { Vec3(256, 100, 256), Vec3(240, 1100, 240) };
@@ -24,7 +26,6 @@ void Script_Player::SetSpawn(const Vec3& pos)
 void Script_Player::Awake()
 {
 	base::Awake();
-
 	mCamera = MainCamera::I->GetComponent<Script_MainCamera>().get();
 }
 

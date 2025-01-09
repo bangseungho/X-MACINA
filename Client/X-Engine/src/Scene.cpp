@@ -207,6 +207,13 @@ void Scene::SetAbilityCB(int idx) const
 	CMD_LIST->SetGraphicsRootConstantBufferView(DXGIMgr::I->GetGraphicsRootParamIndex(RootParam::Ability), FRAME_RESOURCE_MGR->GetAbilityCBGpuAddr(idx));
 }
 
+void Scene::SetPlayer(Object* player)
+{
+	mPlayer = player;
+	mRenderVoxelManager = std::make_unique<RenderVoxelManager>();
+	mRenderVoxelManager->Init(mPlayer);
+}
+
 void Scene::UpdateMaterialBuffer()
 {
 	ResourceMgr::I->ProcessFunc<MasterModel>(
@@ -301,6 +308,7 @@ void Scene::UpdateVoxelsOnTerrain()
 		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkTileWidth); ++j) {
 			Vec3 pos = GetTilePosFromUniqueIndex(Pos{i, j, 0});
 			Pos index = Pos{ i, j, static_cast<int>(GetTerrainHeight(pos.x, pos.z)) };
+
 			SetTileFromUniqueIndex(index, Tile::Terrain);
 		}
 	}
@@ -714,9 +722,7 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 
 	CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	RESOURCE<Shader>("Voxel")->Set();
-	for (const auto& cullingGrid : mCullingGrids) {
-		cullingGrid->RenderVoxels();
-	}
+	mRenderVoxelManager->Render();
 
 	return true;
 }
@@ -789,7 +795,6 @@ void Scene::Update()
 	UpdateShaderVars();
 
 	PopObjectBuffer();
-
 }
 
 void Scene::CheckCollisions()
@@ -899,6 +904,15 @@ Tile Scene::GetTileFromUniqueIndex(const Pos& index) const
 	const int tileY = index.Y;
 
 	return mGrids[gridZ * mGridCols + gridX]->GetTileFromUniqueIndex(Pos{tileZ, tileX, tileY });
+}
+
+RenderVoxel Scene::GetVoxelFromUniqueIndex(const Pos& index) const
+{
+	// 타일의 고유 인덱스로부터 타일의 값을 반환
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
+
+	return mGrids[gridZ * mGridCols + gridX]->GetVoxelFromUniqueIndex(index);
 }
 
 void Scene::SetTileFromUniqueIndex(const Pos& index, Tile tile)

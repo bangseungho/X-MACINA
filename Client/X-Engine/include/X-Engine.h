@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 class GridObject;
+class Object;
 
 class Engine : public Singleton<Engine> {
 	friend Singleton;
