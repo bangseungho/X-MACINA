@@ -72,6 +72,7 @@ void Script_GroundPlayer::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM 
 
 void Script_GroundPlayer::PickingTile()
 {
+	// 추후에 쿼드 트리 탐색으로 변경 예정
 	if (mHoldingClick) {
 		return;
 	}
@@ -86,8 +87,10 @@ void Script_GroundPlayer::PickingTile()
 	Ray ray{ pos, dir };
 	ray.Direction.Normalize();
 
+	// 추후에 플레이어 주변 복셀들만 픽킹 or 렌더링
 	for (auto grid : Scene::I->GetNeighborGrids(mGridObject->GetGridIndex(), true)) {
 		const Vec3& tilePos = grid->GetTilePosCollisionsRay(ray, mObject->GetPosition());
+		Scene::I->GetClosedList().push_back(tilePos);
 		if (!Vector3::IsZero(tilePos)) {
 			Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
 			Pos dest = Scene::I->GetTileUniqueIndexFromPos(tilePos);
@@ -118,11 +121,11 @@ void Script_GroundPlayer::MoveToPath()
 
 bool Script_GroundPlayer::PathPlanningAStar(Pos start, Pos dest)
 {
-	// 초기 위치 혹은 도착 지점이 Static이라면 bfs를 사용해 주변 None 지점 획득
-	if (Scene::I->GetTileFromUniqueIndex(start) == Tile::Static)
-		start = FindNoneTileFromBfs(start);
-	if (Scene::I->GetTileFromUniqueIndex(dest) == Tile::Static)
-		dest = FindNoneTileFromBfs(dest);
+	//// 초기 위치 혹은 도착 지점이 Static이라면 bfs를 사용해 주변 None 지점 획득
+	//if (Scene::I->GetTileFromUniqueIndex(start) == Tile::Static)
+	//	start = FindNoneTileFromBfs(start);
+	//if (Scene::I->GetTileFromUniqueIndex(dest) == Tile::Static)
+	//	dest = FindNoneTileFromBfs(dest);
 
 	std::map<Pos, Pos>	mParent;
 	std::map<Pos, int>	mDistance;
@@ -155,7 +158,7 @@ bool Script_GroundPlayer::PathPlanningAStar(Pos start, Pos dest)
 			continue;
 
 		mVisited[curNode.Pos] = true;
-		Scene::I->GetClosedList().push_back(Scene::I->GetTilePosFromUniqueIndex(curNode.Pos));
+		//Scene::I->GetClosedList().push_back(Scene::I->GetTilePosFromUniqueIndex(curNode.Pos));
 
 		// 해당 지점이 목적지인 경우 종료
 		if (curNode.Pos == dest)

@@ -126,7 +126,7 @@ void GraphicsRootSignature::CreateDefaultGraphicsRootSignature()
 	Push(RootParam::Ability, D3D12_ROOT_PARAMETER_TYPE_CBV, 7, 0, D3D12_SHADER_VISIBILITY_ALL);
 
 	// 머티리얼은 space1을 사용하여 t0을 TextureCube와 같이 사용하여도 겹치지 않음
-	Push(RootParam::Instancing, D3D12_ROOT_PARAMETER_TYPE_SRV, 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+	Push(RootParam::Instancing, D3D12_ROOT_PARAMETER_TYPE_SRV, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
 	Push(RootParam::Material, D3D12_ROOT_PARAMETER_TYPE_SRV, 0, 1, D3D12_SHADER_VISIBILITY_PIXEL);
 	Push(RootParam::Particle, D3D12_ROOT_PARAMETER_TYPE_SRV, 0, 2, D3D12_SHADER_VISIBILITY_ALL);
 

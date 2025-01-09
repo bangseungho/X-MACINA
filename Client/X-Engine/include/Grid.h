@@ -1,8 +1,11 @@
 #pragma once
 
+#include "UploadBuffer.h"
+
 #pragma region ClassForwardDecl
 class GridObject;
 class Collider;
+class InstObject;
 #pragma endregion
 
 
@@ -13,19 +16,27 @@ enum class Tile: UINT8{
 	Dynamic,
 	Terrain,
 };
-
+#pragma endregion
 
 #pragma region Using
 using namespace Path;
 #pragma endregion
 
 #pragma region Class
+struct RenderVoxel {
+	Vec3 VPosition{};
+	Vec4 VColor{};
+	Tile VType{};
+	Matrix MtxWorld{};
+};
+
 class Grid {
 private:
 	const int mIndex{};
 	const BoundingBox mBB{};
 
 	std::vector<std::vector<std::vector<Tile>>> mTiles{};
+	std::vector<uptr<UploadBuffer<InstanceData>>> mInstanceBuffers{};
 
 	std::unordered_set<GridObject*> mObjects{};			// all objects (env, static, dynamic, ...)
 	std::unordered_set<GridObject*> mEnvObjects{};
@@ -33,13 +44,13 @@ private:
 	std::unordered_set<GridObject*> mDynamicObjets{};
 
 public:
-	static constexpr float mkTileHeight = 1.f;
-	static constexpr float mkTileWidth = 1.f;
+	static constexpr float mkTileHeight = 0.5f;
+	static constexpr float mkTileWidth = 0.5f;
 	static constexpr Vec3 mkTileExtent = Vec3{ mkTileWidth, mkTileWidth, mkTileHeight };
 	static constexpr int mTileHeightCount = 10;
 	static int mTileRows;
 	static int mTileCols;
-	std::set<Vec3> mVoxelList{};
+	std::vector<RenderVoxel> mRederVoxels{};
 
 public:
 	Grid(int index, int width, const BoundingBox& bb);
@@ -67,7 +78,7 @@ public:
 
 	// BFS를 활용하여 타일 업데이트
 	void UpdateTiles(Tile tile, GridObject* object);
-	void UpdateTilesOnTerrain();
+	void UpdateMtx();
 	void RenderVoxels();
 
 	// collision check for objects contained in grid

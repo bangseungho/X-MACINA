@@ -215,6 +215,7 @@ struct AbilityInfo {
 
 struct InstanceInfo {
     matrix  MtxObject;
+    float4  Color;
 };
 
 ConstantBuffer<ObjectInfo> gObjectCB            : register(b0);
@@ -226,9 +227,9 @@ ConstantBuffer<SsaoInfo> gSsaoCB                : register(b5);
 ConstantBuffer<SsaoBlurInfo> gSsaoBlurCB        : register(b6);
 ConstantBuffer<AbilityInfo> gAbilityCB          : register(b7);
 
-StructuredBuffer<InstanceInfo> gInstBuffer   : register(t0);
+StructuredBuffer<InstanceInfo> gInstBuffer      : register(t0);
 StructuredBuffer<MaterialInfo> gMaterialBuffer  : register(t0, space1);
-StructuredBuffer<ParticleInfo> gInputPraticles   : register(t0, space2);
+StructuredBuffer<ParticleInfo> gInputPraticles  : register(t0, space2);
 
 TextureCube gSkyBoxMaps[gkMaxSkyBoxCount]       : register(t1, space1);
 Texture2D gTextureMaps[gkMaxTextureCount]       : register(t1); // t1, t2, t3...

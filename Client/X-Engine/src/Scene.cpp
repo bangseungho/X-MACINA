@@ -233,7 +233,6 @@ void Scene::BuildObjects()
 
 	// build settings
 	BuildTerrain();
-	BuildTest();
 
 	// build static meshes
 	MeshRenderer::BuildMeshes();
@@ -252,11 +251,6 @@ void Scene::BuildTerrain()
 	mTerrain = std::make_shared<Terrain>("Import/Terrain.bin");
 
 	BuildGrid();
-}
-
-void Scene::BuildTest()
-{
-
 }
 
 void Scene::BuildGrid()
@@ -306,10 +300,15 @@ void Scene::UpdateVoxelsOnTerrain()
 	for (int i = 0; i < static_cast<int>(kBorderExtents.z / Grid::mkTileWidth); ++i) {
 		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkTileWidth); ++j) {
 			Vec3 pos = GetTilePosFromUniqueIndex(Pos{i, j, 0});
-			Pos index = Pos{ i, j, static_cast<int>(std::round(GetTerrainHeight(pos.x, pos.z))) };
+			Pos index = Pos{ i, j, static_cast<int>(GetTerrainHeight(pos.x, pos.z)) };
 			SetTileFromUniqueIndex(index, Tile::Terrain);
 		}
 	}
+
+	for (auto& grid : mGrids) {
+		grid->UpdateMtx();
+ }
+
 }
 
 void Scene::LoadSceneObjects(const std::string& fileName)
@@ -693,17 +692,16 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 	CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
 
 	RESOURCE<Shader>("Wire")->Set();
-	MeshRenderer::RenderBox(Vec3(100, 13.5f, 105), Vec3(.2f,.2f,.2f));
+	//MeshRenderer::RenderBox(Vec3(100, 13.5f, 105), Vec3(.2f,.2f,.2f));
 
-	// 오픈 리스트를 초록색으로 출력
-	for (auto& path : mOpenList) {
-		path.y = GetTerrainHeight(path.x, path.z);
-		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 0.f, 1.f, 0.f, 1.f });
-	}
+	//// 오픈 리스트를 초록색으로 출력
+	//for (auto& path : mOpenList) {
+	//	path.y = GetTerrainHeight(path.x, path.z);
+	//	MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 0.f, 1.f, 0.f, 1.f });
+	//}
 
 	// 클로즈드 리스트를 빨간색으로 출력
 	for (auto& path : mClosedList) {
-		path.y = GetTerrainHeight(path.x, path.z);
 		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 0.f, 0.f, 1.f });
 	}
 
@@ -711,9 +709,11 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 		return false;
 	}
 
-	RenderObjectBounds(renderedObjects);
-	RenderGridBounds();
+	//RenderObjectBounds(renderedObjects);
+	//RenderGridBounds();
 
+	CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RESOURCE<Shader>("Voxel")->Set();
 	for (const auto& cullingGrid : mCullingGrids) {
 		cullingGrid->RenderVoxels();
 	}
@@ -775,7 +775,7 @@ void Scene::Start()
 
 void Scene::Update()
 {
-	CheckCollisions();
+	//CheckCollisions();
 
 	mGameManager->Update();
 	UpdateObjects();
@@ -826,7 +826,7 @@ void Scene::UpdateObjects()
 		});
 
 	ProcessActiveObjects([this](sptr<Object> object) {
-		if (object->IsActive()) {
+		if (object->GetTag() == ObjectTag::Player) {
 			object->Animate();
 		}
 		});

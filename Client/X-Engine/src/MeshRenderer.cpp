@@ -6,6 +6,7 @@
 
 
 
+uptr<ModelObjectMesh> MeshRenderer::mWireBoxMesh;
 uptr<ModelObjectMesh> MeshRenderer::mBoxMesh;
 uptr<ModelObjectMesh> MeshRenderer::mSphereMesh;
 uptr<ModelObjectMesh> MeshRenderer::mPlaneMesh;
@@ -21,7 +22,7 @@ void MeshRenderer::Render(const BoundingBox& box)
 	const XMMATRIX matrix = XMMatrixMultiply(scaleMtx, translationMtx);		// (Scale * Translate)
 
 	Transform::UpdateColliderShaderVars(matrix);
-	mBoxMesh->Render();
+	mWireBoxMesh->Render();
 }
 
 void MeshRenderer::Render(const BoundingOrientedBox& box)
@@ -38,7 +39,7 @@ void MeshRenderer::Render(const BoundingOrientedBox& box)
 	const XMMATRIX matrix = XMMatrixMultiply(XMMatrixMultiply(scaleMtx, rotationMtx), translationMtx);	// (Scale * Rotation) * Translate
 
 	Transform::UpdateColliderShaderVars(matrix);
-	mBoxMesh->Render();
+	mWireBoxMesh->Render();
 }
 
 void MeshRenderer::Render(const BoundingSphere& bs)
@@ -74,30 +75,39 @@ void MeshRenderer::RenderBox(const Vec3& pos, const Vec3& size, const Vec4& colo
 	const XMMATRIX matrix = XMMatrixMultiply(scaleMtx, translationMtx);	// (Scale * Translate)
 
 	Transform::UpdateColliderShaderVars(matrix, color);
-	mBoxMesh->Render();
+	mWireBoxMesh->Render();
+}
+
+void MeshRenderer::RenderInstancingBox(UINT instanceCnt)
+{
+	mBoxMesh->RenderInstanced(instanceCnt);
 }
 
 void MeshRenderer::BuildMeshes()
 {
-	mBoxMesh    = std::make_unique<ModelObjectMesh>();
-	mSphereMesh = std::make_unique<ModelObjectMesh>();
-	mPlaneMesh  = std::make_unique<ModelObjectMesh>();
+	mWireBoxMesh    = std::make_unique<ModelObjectMesh>();
+	mBoxMesh		= std::make_unique<ModelObjectMesh>();
+	mSphereMesh		= std::make_unique<ModelObjectMesh>();
+	mPlaneMesh		= std::make_unique<ModelObjectMesh>();
 
-	mBoxMesh->CreateCubeMesh(1.f, 1.f, 1.f, false, true);
+	mWireBoxMesh->CreateCubeMesh(1.f, 1.f, 1.f, false, true);
+	mBoxMesh->CreateCubeMesh(1.f, 1.f, 1.f, true, false);
 	mSphereMesh->CreateSphereMesh(1.f, 12, true);
 	mPlaneMesh->CreatePlaneMesh(1.f, 1.f, true);
 }
 
 void MeshRenderer::ReleaseUploadBuffers()
 {
-	mBoxMesh->ReleaseUploadBuffers();
+	mWireBoxMesh->ReleaseUploadBuffers();
 	mSphereMesh->ReleaseUploadBuffers();
 	mPlaneMesh->ReleaseUploadBuffers();
+	mBoxMesh->ReleaseUploadBuffers();
 }
 
 void MeshRenderer::Release()
 {
-	mBoxMesh    = nullptr;
-	mSphereMesh = nullptr;
-	mPlaneMesh  = nullptr;
+	mWireBoxMesh    = nullptr;
+	mSphereMesh		= nullptr;
+	mPlaneMesh		= nullptr;
+	mBoxMesh		= nullptr;
 }

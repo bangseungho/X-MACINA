@@ -163,6 +163,24 @@ void ResourceMgr::LoadShaders()
 		shader->Load(info, path);
 		Add<Shader>("Shadow_ObjectInst", shader);
 	}
+	{
+		ShaderInfo info = {
+			ShaderType::LDR,
+			RasterizerType::Cull_Back,
+			DepthStencilType::Less,
+			BlendType::Alpha_Blend,
+			InputLayoutType::Default,
+		};
+
+		ShaderPath path = {
+			 "VShader_Voxel.cso",
+			 "PShader_Voxel.cso",
+		};
+
+		sptr<Shader> shader = std::make_shared<Shader>();
+		shader->Load(info, path);
+		Add<Shader>("Voxel", shader);
+	}
 #pragma endregion
 #pragma region SkinMesh
 	{

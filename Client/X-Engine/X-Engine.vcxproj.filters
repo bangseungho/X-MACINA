@@ -586,6 +586,12 @@
     <FxCompile Include="shaders\PShader_MinimapAbility.hlsl">
       <Filter>소스 파일\Shader\PS\Forward\Abilities</Filter>
     </FxCompile>
+    <FxCompile Include="shaders\VShader_Voxel.hlsl">
+      <Filter>소스 파일\Shader\VS</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PShader_Voxel.hlsl">
+      <Filter>소스 파일\Shader\PS\Forward</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -6,6 +6,9 @@
 #include "Component/Collider.h"
 #include "MeshRenderer.h"
 
+#include "DXGIMgr.h"
+#include "FrameResource.h"
+
 int Grid::mTileRows = 0;
 int Grid::mTileCols = 0;
 
@@ -19,6 +22,10 @@ Grid::Grid(int index, int width, const BoundingBox& bb)
 	mTileCols = static_cast<int>(width / mkTileWidth);
 
 	mTiles = std::vector<std::vector<std::vector<Tile>>>(mTileHeightCount, std::vector<std::vector<Tile>>(mTileCols, std::vector<Tile>(mTileRows, Tile::None)));
+	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
+	for (auto& buffer : mInstanceBuffers) {
+		buffer = std::make_unique<UploadBuffer<InstanceData>>(DEVICE.Get(), mTileRows * mTileCols * mTileHeightCount, false);
+	}
 }
 
 Tile Grid::GetTileFromUniqueIndex(const Pos& tPos) const
@@ -36,7 +43,22 @@ void Grid::SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile)
 		return;
 	}
 
-	mVoxelList.insert(Scene::I->GetTilePosFromUniqueIndex(index));
+	RenderVoxel renderVoxel;
+	renderVoxel.VPosition = Scene::I->GetTilePosFromUniqueIndex(index);
+	renderVoxel.VType = tile;
+	switch (tile)
+	{
+	case Tile::Static:
+		renderVoxel.VColor = Vec4{ 1.f, 0.f, 0.f, 1.f };
+		break;
+	case Tile::Terrain:
+		renderVoxel.VColor = Vec4{ 0.f, 1.f, 0.f, 1.f };
+		break;
+	default:
+		break;
+	}
+
+	mRederVoxels.push_back(renderVoxel);
 	mTiles[tPos.Y][tPos.Z][tPos.X] = tile;
 }
 
@@ -106,7 +128,7 @@ void Grid::UpdateTiles(Tile tile, GridObject* object)
 				}
 
 				Vec3 nextPosW = Scene::I->GetTilePosFromUniqueIndex(nextPosT);
-				BoundingBox bb{ nextPosW, mkTileExtent };
+				BoundingBox bb{ nextPosW, mkTileExtent / 2.f };
 
 				visited[nextPosT] = true;
 
@@ -119,20 +141,30 @@ void Grid::UpdateTiles(Tile tile, GridObject* object)
 	}
 }
 
-void Grid::UpdateTilesOnTerrain()
+void Grid::UpdateMtx()
 {
-	// 유니크 인덱스를 타일 인덱스로
-
-
-	// 타일 인덱스를 유니크 인덱스로 
+	for (auto& voxel : mRederVoxels) {
+		const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
+		const Matrix translationMtx = Matrix::CreateTranslation(voxel.VPosition);
+		const Matrix matrix = scaleMtx * translationMtx;
+		voxel.MtxWorld = matrix.Transpose();
+	}
 }
 
 void Grid::RenderVoxels()
 {
-	// 복셀 출력
-	for (auto& voxel : mVoxelList) {
-		MeshRenderer::RenderBox(voxel, Grid::mkTileExtent, Vec4{ 0.f, 1.f, 0.f, 1.f });
+	DXGIMgr::I->SetGraphicsRootShaderResourceView(RootParam::Instancing, FrameResourceMgr::GetBufferGpuAddr(0, mInstanceBuffers[CURR_FRAME_INDEX].get()));
+
+	int buffIdx{};
+	for (auto& voxel : mRederVoxels) {
+		InstanceData instData;
+		instData.MtxWorld = voxel.MtxWorld;
+		instData.Color = voxel.VColor;
+
+		mInstanceBuffers[CURR_FRAME_INDEX]->CopyData(buffIdx++, instData);
 	}
+
+	MeshRenderer::RenderInstancingBox(mRederVoxels.size());
 }
 
 void Grid::RemoveObject(GridObject* object)
@@ -221,6 +253,8 @@ Vec3 Grid::GetTilePosCollisionsRay(const Ray& ray, const Vec3& target) const
 	Pos index = Scene::I->GetTileUniqueIndexFromPos(target);
 	q.push(index);
 
+	Pos firstPos{};
+	Vec3 result{};
 	// q가 빌 때까지 BFS를 돌며 현재 타일이 오브젝트와 충돌 했다면 해당 타일을 업데이트
 	while (!q.empty()) {
 		Pos curNode = q.front();
@@ -231,22 +265,74 @@ Vec3 Grid::GetTilePosCollisionsRay(const Ray& ray, const Vec3& target) const
 
 		visited[curNode] = true;
 
-		for (int dir = 0; dir < 4; ++dir) {
-			Pos nextPosT = curNode + gkFront[dir];
+		bool isEnd{};
+
+		for (int dir = 0; dir < 6; ++dir) {
+			Pos nextPosT = curNode + gkFront2[dir];
 			Vec3 nextPosW = Scene::I->GetTilePosFromUniqueIndex(nextPosT);
-			nextPosW.y = target.y;
 
 			BoundingBox bb{ nextPosW, Vec3{mkTileWidth, mkTileWidth, mkTileHeight} };
 			float temp{};
 			if (ray.Intersects(bb, temp)) {
-				return nextPosW;
+				isEnd = true;
+				firstPos = nextPosT;
+				while (!q.empty()) {
+					q.pop();
+					visited.clear();
+				}
+				result = nextPosW;
+				q.push(firstPos);
+				visited[firstPos] = true;
+				break;
 			}
 
 			q.push(nextPosT);
 		}
+
+		if (isEnd) {
+			break;
+		}
 	}
 
-	return Vec3{};
+	int cnt{};
+	float minValue{ FLT_MAX };
+	while (!q.empty()) {
+		Pos curNode = q.front();
+		q.pop();
+
+		if (cnt > 100) {
+			break;
+		}
+
+		for (int dir = 0; dir < 6; ++dir) {
+			Pos nextPosT = curNode + gkFront2[dir];
+			Vec3 nextPosW = Scene::I->GetTilePosFromUniqueIndex(nextPosT);
+
+			if (Scene::I->GetTileFromUniqueIndex(nextPosT) != Tile::Terrain) {
+				continue;
+			}
+
+			if (visited[nextPosT]) {
+				continue;
+			}
+
+			BoundingBox bb{ nextPosW, mkTileExtent / 2.f };
+			float dist{};
+			if (ray.Intersects(bb, dist)) {
+				if (minValue > dist) {
+					minValue = dist;
+					result = nextPosW;
+				}
+			}
+
+			q.push(nextPosT);
+			visited[nextPosT] = true;
+		}
+
+		cnt++;
+	}
+
+	return result;
 }
 
 

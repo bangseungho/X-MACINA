@@ -73,9 +73,6 @@ private:
 	std::set<GridObject*>	    mSkinMeshObjects{};
 	std::set<GridObject*>	    mGridObjects{};
 
-	/* TestCube */
-	sptr<GridObject>			mMaskTestObject{};
-
 	/* Map */
 	sptr<Terrain>		mTerrain{};
 	BoundingBox			mMapBorder{};			// max scene range	(grid will be generated within this border)
