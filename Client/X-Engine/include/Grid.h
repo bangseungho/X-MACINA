@@ -34,7 +34,7 @@ class RenderVoxelManager {
 	Object* mPlayer{};
 	std::vector<uptr<UploadBuffer<InstanceData>>> mInstanceBuffers{};
 	std::vector<Pos> mRenderVoxels{};
-	static constexpr UINT mkMaxRenderVoxels = 30;
+	static constexpr UINT mkMaxRenderVoxels = 10;
 
 public:
 	void Init(Object* player);
