@@ -19,34 +19,55 @@ Grid::Grid(int index, int width, const BoundingBox& bb)
 	mIndex(index),
 	mBB(bb)
 {
-	mTileRows = static_cast<int>(width / mkTileHeight);
+	mTileRows = static_cast<int>(width / mkTileWidth);
 	mTileCols = static_cast<int>(width / mkTileWidth);
-
 	mTiles = std::vector<std::vector<std::vector<Tile>>>(mTileHeightCount, std::vector<std::vector<Tile>>(mTileCols, std::vector<Tile>(mTileRows, Tile::None)));
 }
 
 Tile Grid::GetTileFromUniqueIndex(const Pos& tPos) const
 {
-	if (tPos.Y >= mTileHeightCount || tPos.Y < 0.f) {
+	if (tPos.Y >= mTileHeightCount || tPos.Y < 0) {
+		return Tile::None;
+	}
+	if (tPos.Z >= mTileCols || tPos.Z < 0) {
+		return Tile::None;
+	}
+	if (tPos.X >= mTileRows || tPos.X < 0) {
 		return Tile::None;
 	}
 
 	return mTiles[tPos.Y][tPos.Z][tPos.X];
 }
 
-RenderVoxel Grid::GetVoxelFromUniqueIndex(const Pos& tPos) const
+RenderVoxel Grid::GetVoxelFromUniqueIndex(const Pos& uniqueIndex) const
 {
-	if (tPos.Y > mTileHeightCount || tPos.Y < 0.f) {
+	if (uniqueIndex.Y >= mTileHeightCount || uniqueIndex.Y < 0) {
+		return RenderVoxel{};
+	}
+	if (uniqueIndex.X < 0 || uniqueIndex.Z < 0) {
+		return RenderVoxel{};
+	}
+	if (uniqueIndex.X >= 3000 || uniqueIndex.Z >= 3000) {
 		return RenderVoxel{};
 	}
 
-	auto findIt = mRenderVoxels.find(tPos);
+	auto findIt = mRenderVoxels.find(uniqueIndex);
+	if (findIt == mRenderVoxels.end()) {
+		return RenderVoxel{};
+	}
+
 	return findIt->second;
 }
 
 void Grid::SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile)
 {
-	if (tPos.Y > mTileHeightCount || tPos.Y < 0.f) {
+	if (tPos.Y >= mTileHeightCount || tPos.Y < 0) {
+		return;
+	}
+	if (tPos.X < 0 || tPos.Z < 0) {
+		return;
+	}
+	if (tPos.X >= 3000 || tPos.Z >= 3000) {
 		return;
 	}
 
@@ -66,6 +87,12 @@ void Grid::SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile)
 
 	mRenderVoxels.insert({ index, renderVoxel });
 	mTiles[tPos.Y][tPos.Z][tPos.X] = tile;
+}
+
+void Grid::SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color)
+{
+	// TODO 예외처리
+	mRenderVoxels[index].VColor = color;
 }
 
 void Grid::AddObject(GridObject* object)
@@ -134,7 +161,7 @@ void Grid::UpdateTiles(Tile tile, GridObject* object)
 				}
 
 				Vec3 nextPosW = Scene::I->GetTilePosFromUniqueIndex(nextPosT);
-				BoundingBox bb{ nextPosW, mkTileExtent / 2.f };
+				BoundingBox bb{ nextPosW, mkTileExtent };
 
 				visited[nextPosT] = true;
 
@@ -154,6 +181,8 @@ void Grid::UpdateMtx()
 		const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetTilePosFromUniqueIndex(voxel.first));
 		const Matrix matrix = scaleMtx * translationMtx;
 		voxel.second.MtxWorld = matrix.Transpose();
+
+
 	}
 }
 
@@ -306,7 +335,7 @@ Vec3 Grid::GetTilePosCollisionsRay(const Ray& ray, const Vec3& target) const
 				continue;
 			}
 
-			BoundingBox bb{ nextPosW, mkTileExtent / 2.f };
+			BoundingBox bb{ nextPosW, mkTileExtent };
 			float dist{};
 			if (ray.Intersects(bb, dist)) {
 				if (minValue > dist) {
@@ -379,12 +408,14 @@ void RenderVoxelManager::Init(Object* player)
 	mPlayer = player;
 	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
 	for (auto& buffer : mInstanceBuffers) {
-		buffer = std::make_unique<UploadBuffer<InstanceData>>(DEVICE.Get(), mkMaxRenderVoxels * mkMaxRenderVoxels, false);
+		buffer = std::make_unique<UploadBuffer<InstanceData>>(DEVICE.Get(), mkMaxRenderVoxels * mkMaxRenderVoxels * Grid::mTileHeightCount, false);
 	}
 }
 
 void RenderVoxelManager::Update()
 {
+	mRenderVoxels.clear();
+
 	Pos pos = Scene::I->GetTileUniqueIndexFromPos(mPlayer->GetPosition());
 
 	int x = pos.X, y = pos.Z; // 중심 좌표
@@ -395,8 +426,8 @@ void RenderVoxelManager::Update()
 	for (int i = x - halfSize; i < x + halfSize; ++i) {
 		for (int j = y - halfSize; j < y + halfSize; ++j) {
 			for (int k = 0; k < Grid::mTileHeightCount; ++k) {
-				if (Scene::I->GetTileFromUniqueIndex(Pos{ i, j, k }) != Tile::None) {
- 					mRenderVoxels.push_back(Pos{ j, i, k });
+				if (Scene::I->GetTileFromUniqueIndex(Pos{ j, i, k }) != Tile::None) {
+					mRenderVoxels.push_back(Pos{ j, i, k });
 				}
 			}
 		}
@@ -417,6 +448,29 @@ void RenderVoxelManager::Render()
 		mInstanceBuffers[CURR_FRAME_INDEX]->CopyData(buffIdx++, instData);
 	}
 
-	MeshRenderer::RenderInstancingBox(mkMaxRenderVoxels * mkMaxRenderVoxels);
-	mRenderVoxels.clear();
+	MeshRenderer::RenderInstancingBox(mRenderVoxels.size());
+}
+
+Pos RenderVoxelManager::PickTopVoxel(const Ray& ray)
+{
+	Pos result{};
+	// 추후 분할정복으로 변경 예정
+	int pickIdx{};
+	for (int i = 0; i < mRenderVoxels.size(); ++i) {
+		Vec3 voxelPosW = Scene::I->GetTilePosFromUniqueIndex(mRenderVoxels[i]);
+		BoundingBox bb{ voxelPosW, Grid::mkTileExtent };
+
+		float minValue{ FLT_MAX }, dist{};
+		if (ray.Intersects(bb, dist)) {
+			if (minValue > dist) {
+				minValue = dist;
+				result = mRenderVoxels[i];
+				pickIdx = i;
+			}
+		}
+	}
+	
+	Scene::I->SetVoxelColorFromUniqueIndex(mRenderVoxels[pickIdx], Vec4{ 1.f, 0.f, 0.f, 1.f });
+
+	return result;
 }

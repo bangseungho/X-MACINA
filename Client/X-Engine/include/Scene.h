@@ -91,8 +91,9 @@ private:
 	std::vector<Vec3>	mOpenList{};
 	std::vector<Vec3>	mClosedList{};
 
-	uptr<RenderVoxelManager> mRenderVoxelManager{};
 	Object* mPlayer{};
+public:
+	uptr<RenderVoxelManager> mRenderVoxelManager{};
 
 private:
 #pragma region C/Dtor
@@ -120,6 +121,7 @@ public:
 	void SetTileFromUniqueIndex(const Pos& index, Tile tile);
 	Tile GetTileFromPos(const Vec3& index) const;
 	RenderVoxel GetVoxelFromUniqueIndex(const Pos& index) const;
+	void SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color) const;
 
 	std::vector<Vec3>& GetOpenList() { return mOpenList; }
 	std::vector<Vec3>& GetClosedList() { return mClosedList; }

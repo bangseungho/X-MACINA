@@ -1,0 +1,2 @@
+﻿  stdafx.cpp
+C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\src\stdafx.cpp(1,10): fatal error C1083: 포함 파일을 열 수 없습니다. 'stdafx.h': No such file or directory

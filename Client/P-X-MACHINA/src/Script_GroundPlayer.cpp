@@ -87,17 +87,12 @@ void Script_GroundPlayer::PickingTile()
 	Ray ray{ pos, dir };
 	ray.Direction.Normalize();
 
-	// 추후에 플레이어 주변 복셀들만 픽킹 or 렌더링
-	for (auto grid : Scene::I->GetNeighborGrids(mGridObject->GetGridIndex(), true)) {
-		const Vec3& tilePos = grid->GetTilePosCollisionsRay(ray, mObject->GetPosition());
-		Scene::I->GetClosedList().push_back(tilePos);
-		if (!Vector3::IsZero(tilePos)) {
-			Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
-			Pos dest = Scene::I->GetTileUniqueIndexFromPos(tilePos);
-			PathPlanningAStar(start, dest);
-			mHoldingClick = true;
-			return;
-		}
+	Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
+	Pos dest = Scene::I->mRenderVoxelManager->PickTopVoxel(ray);
+	
+	if (dest != Pos{}) {
+		PathPlanningAStar(start, dest);
+		mHoldingClick = true;
 	}
 }
 
@@ -165,8 +160,8 @@ bool Script_GroundPlayer::PathPlanningAStar(Pos start, Pos dest)
 			break;
 
 		// 8방향으로 탐색
-		for (int dir = 0; dir < DirCount; ++dir) {
-			Pos nextPos = curNode.Pos + gkFront[dir];
+		for (int dir = 0; dir < 26; ++dir) {
+			Pos nextPos = curNode.Pos + gkFront3D[dir];
 
 			// 다음 위치의 타일이 일정 범위를 벗어난 경우 continue
 			if (abs(start.X - nextPos.X) > Grid::mTileRows || abs(start.Z - nextPos.Z) > Grid::mTileCols)
@@ -186,8 +181,8 @@ bool Script_GroundPlayer::PathPlanningAStar(Pos start, Pos dest)
 
 			// 비용 계산 보통의 1 / 2
 			int addCost{};
-			if (prevDir != gkFront[dir])
-				addCost = gkCost[0] / 2;
+			if (prevDir != gkFront3D[dir])
+				addCost = gkCost3D[0] / 2;
 
 			int g = curNode.G + gkCost[dir] + addCost;
 			int h = (abs(dest.Z - nextPos.Z) + abs(dest.X - nextPos.X)) * mkWeight;

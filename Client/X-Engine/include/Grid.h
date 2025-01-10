@@ -34,12 +34,13 @@ class RenderVoxelManager {
 	Object* mPlayer{};
 	std::vector<uptr<UploadBuffer<InstanceData>>> mInstanceBuffers{};
 	std::vector<Pos> mRenderVoxels{};
-	static constexpr UINT mkMaxRenderVoxels = 10;
-
+	static constexpr UINT mkMaxRenderVoxels = 50;
+	
 public:
 	void Init(Object* player);
 	void Update();
 	void Render();
+	Pos PickTopVoxel(const Ray& ray);
 };
 
 class Grid {
@@ -55,9 +56,9 @@ private:
 	std::unordered_set<GridObject*> mDynamicObjets{};
 
 public:
-	static constexpr float mkTileHeight = 1.0f;
-	static constexpr float mkTileWidth = 1.0f;
-	static constexpr Vec3 mkTileExtent = Vec3{ mkTileWidth, mkTileWidth, mkTileHeight };
+	static constexpr float mkTileHeight = 0.5f;
+	static constexpr float mkTileWidth = 0.5f;
+	static constexpr Vec3 mkTileExtent = Vec3{ mkTileWidth / 2.f, mkTileWidth / 2.f, mkTileHeight / 2.f };
 	static constexpr int mTileHeightCount = 10;
 	static int mTileRows;
 	static int mTileCols;
@@ -76,8 +77,9 @@ public:
 	const auto& GetObjects() const		{ return mObjects; }
 
 	Tile GetTileFromUniqueIndex(const Pos& tPos) const;
-	RenderVoxel GetVoxelFromUniqueIndex(const Pos& tPos) const;
+	RenderVoxel GetVoxelFromUniqueIndex(const Pos& uniqueIndex) const;
 	void SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile);
+	void SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color);
 
 public:
 	bool Empty() const { return mObjects.empty(); }

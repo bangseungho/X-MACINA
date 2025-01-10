@@ -79,6 +79,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(SolutionDir)P-X-MACHINA\lib\;$(LibraryPath)</LibraryPath>
+    <OutDir>$(ProjectDir)\build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)\build\$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>$(SolutionDir)P-X-MACHINA\ClientNetwork\Include\Protocol\FlatBuffers\flatbuffers-24.3.7\include\;$(SolutionDir)P-X-MACHINA\;$(SolutionDir)P-X-MACHINA\include\;$(SolutionDir)P-X-MACHINA\src\;$(SolutionDir)Common\;$(SolutionDir)X-Engine\;$(SolutionDir)X-Engine\include\</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -121,12 +124,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>X-Engine.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\lib\Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)P-X-MACHINA\lib\Debug\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

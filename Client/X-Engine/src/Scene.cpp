@@ -34,7 +34,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma region C/Dtor
 namespace {
-	constexpr int kGridWidthCount = 40;						// all grid count = n*n
+	constexpr int kGridWidthCount = 20;						// all grid count = n*n
 	constexpr Vec3 kBorderPos = Vec3(256, 200, 256);		// center of border
 	constexpr Vec3 kBorderExtents = Vec3(1500, 500, 1500);	// extents of border
 }
@@ -307,7 +307,7 @@ void Scene::UpdateVoxelsOnTerrain()
 	for (int i = 0; i < static_cast<int>(kBorderExtents.z / Grid::mkTileWidth); ++i) {
 		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkTileWidth); ++j) {
 			Vec3 pos = GetTilePosFromUniqueIndex(Pos{i, j, 0});
-			Pos index = Pos{ i, j, static_cast<int>(GetTerrainHeight(pos.x, pos.z)) };
+			Pos index = Pos{ i, j, static_cast<int>(std::round(GetTerrainHeight(pos.x, pos.z))) };
 
 			SetTileFromUniqueIndex(index, Tile::Terrain);
 		}
@@ -710,7 +710,7 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 
 	// 클로즈드 리스트를 빨간색으로 출력
 	for (auto& path : mClosedList) {
-		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 0.f, 0.f, 1.f });
+		MeshRenderer::RenderBox(path, Grid::mkTileExtent * 2.f, Vec4{ 1.f, 0.f, 0.f, 1.f });
 	}
 
 	if (!mIsRenderBounds) {
@@ -908,11 +908,17 @@ Tile Scene::GetTileFromUniqueIndex(const Pos& index) const
 
 RenderVoxel Scene::GetVoxelFromUniqueIndex(const Pos& index) const
 {
-	// 타일의 고유 인덱스로부터 타일의 값을 반환
 	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
 	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
 
 	return mGrids[gridZ * mGridCols + gridX]->GetVoxelFromUniqueIndex(index);
+}
+
+void Scene::SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color) const
+{
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
+	mGrids[gridZ * mGridCols + gridX]->SetVoxelColorFromUniqueIndex(index, color);
 }
 
 void Scene::SetTileFromUniqueIndex(const Pos& index, Tile tile)
