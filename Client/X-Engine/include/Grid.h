@@ -28,6 +28,7 @@ struct RenderVoxel {
 	Vec4 VColor{};
 	Tile VType{};
 	Matrix MtxWorld{};
+	bool IsPicked{};
 };
 
 class RenderVoxelManager {
@@ -35,7 +36,7 @@ class RenderVoxelManager {
 	std::vector<uptr<UploadBuffer<InstanceData>>> mInstanceBuffers{};
 	std::vector<Pos> mRenderVoxels{};
 	static constexpr UINT mkMaxRenderVoxels = 50;
-	
+
 public:
 	void Init(Object* player);
 	void Update();
@@ -80,6 +81,7 @@ public:
 	RenderVoxel GetVoxelFromUniqueIndex(const Pos& uniqueIndex) const;
 	void SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile);
 	void SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color);
+	void SetPickingFlagFromUniqueIndex(const Pos& index, bool isPicked);
 
 public:
 	bool Empty() const { return mObjects.empty(); }

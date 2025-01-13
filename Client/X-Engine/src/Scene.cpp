@@ -308,8 +308,16 @@ void Scene::UpdateVoxelsOnTerrain()
 		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkTileWidth); ++j) {
 			Vec3 pos = GetTilePosFromUniqueIndex(Pos{i, j, 0});
 			Pos index = Pos{ i, j, static_cast<int>(std::round(GetTerrainHeight(pos.x, pos.z))) };
+			Pos upIndex = index; 
+			upIndex.Y += 1;
 
-			SetTileFromUniqueIndex(index, Tile::Terrain);
+			// 위 복셀이 스태틱이면 해당 아래 복셀도 스태틱으로 설정
+			if (GetTileFromUniqueIndex(upIndex) == Tile::Static) {
+				SetTileFromUniqueIndex(index, Tile::Static);
+			}
+			else {
+				SetTileFromUniqueIndex(index, Tile::Terrain);
+			}
 		}
 	}
 
@@ -702,11 +710,11 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 	RESOURCE<Shader>("Wire")->Set();
 	//MeshRenderer::RenderBox(Vec3(100, 13.5f, 105), Vec3(.2f,.2f,.2f));
 
-	//// 오픈 리스트를 초록색으로 출력
-	//for (auto& path : mOpenList) {
-	//	path.y = GetTerrainHeight(path.x, path.z);
-	//	MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 0.f, 1.f, 0.f, 1.f });
-	//}
+	// 오픈 리스트를 초록색으로 출력
+	for (auto& path : mOpenList) {
+		path.y = GetTerrainHeight(path.x, path.z);
+		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 0.f, 1.f, 0.f, 1.f });
+	}
 
 	// 클로즈드 리스트를 빨간색으로 출력
 	for (auto& path : mClosedList) {
@@ -919,6 +927,13 @@ void Scene::SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color) co
 	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
 	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
 	mGrids[gridZ * mGridCols + gridX]->SetVoxelColorFromUniqueIndex(index, color);
+}
+
+void Scene::SetPickingFlagFromUniqueIndex(const Pos& index, bool isPicked) const
+{
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
+	mGrids[gridZ * mGridCols + gridX]->SetPickingFlagFromUniqueIndex(index, isPicked);
 }
 
 void Scene::SetTileFromUniqueIndex(const Pos& index, Tile tile)

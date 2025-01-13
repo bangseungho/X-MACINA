@@ -95,6 +95,11 @@ void Grid::SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color)
 	mRenderVoxels[index].VColor = color;
 }
 
+void Grid::SetPickingFlagFromUniqueIndex(const Pos& index, bool isPicked)
+{
+	mRenderVoxels[index].IsPicked = isPicked;
+}
+
 void Grid::AddObject(GridObject* object)
 {
 	if (mObjects.count(object)) {
@@ -444,7 +449,14 @@ void RenderVoxelManager::Render()
 	for (auto& voxel : mRenderVoxels) {
 		InstanceData instData;
 		instData.MtxWorld = Scene::I->GetVoxelFromUniqueIndex(voxel).MtxWorld;
-		instData.Color = Scene::I->GetVoxelFromUniqueIndex(voxel).VColor;
+		
+		if (Scene::I->GetVoxelFromUniqueIndex(voxel).IsPicked) {
+			instData.Color = Vec4{ 1.f, 0.f, 1.f, 1.f };
+		}
+		else {
+			instData.Color = Scene::I->GetVoxelFromUniqueIndex(voxel).VColor;
+		}
+
 		mInstanceBuffers[CURR_FRAME_INDEX]->CopyData(buffIdx++, instData);
 	}
 
@@ -458,6 +470,7 @@ Pos RenderVoxelManager::PickTopVoxel(const Ray& ray)
 	int pickIdx{};
 	for (int i = 0; i < mRenderVoxels.size(); ++i) {
 		Vec3 voxelPosW = Scene::I->GetTilePosFromUniqueIndex(mRenderVoxels[i]);
+		Scene::I->SetPickingFlagFromUniqueIndex(mRenderVoxels[i], false);
 		BoundingBox bb{ voxelPosW, Grid::mkTileExtent };
 
 		float minValue{ FLT_MAX }, dist{};
@@ -470,7 +483,6 @@ Pos RenderVoxelManager::PickTopVoxel(const Ray& ray)
 		}
 	}
 	
-	Scene::I->SetVoxelColorFromUniqueIndex(mRenderVoxels[pickIdx], Vec4{ 1.f, 0.f, 0.f, 1.f });
-
+	Scene::I->SetPickingFlagFromUniqueIndex(result, true);
 	return result;
 }

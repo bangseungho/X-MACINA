@@ -23,6 +23,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 #endif
 
 	GameFramework::I->Init(hInstance, 1920, 1080);
+	//GameFramework::I->Init(hInstance, 1920, 1080);
 	GameFramework::I->Launch();
 	GameFramework::I->Release();
 

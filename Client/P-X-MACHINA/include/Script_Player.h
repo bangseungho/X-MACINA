@@ -173,6 +173,7 @@ private:
 
 	std::stack<Vec3> mPath;
 	bool mHoldingClick{};
+	bool mIsMovingPath{};
 
 public:
 	PlayerMotion GetPrevState() const  { return PlayerMotion::GetState(mPrevMovement); }
@@ -194,7 +195,7 @@ public:
 
 	// direction 방향으로 이동한다.
 	virtual void Move(Dir dir);
-	void PickingTile();
+	void PickingTile(bool makePath);
 	void MoveToPath();
 	// [dir]방향을 바라보도록 회전한다.
 	void RotateTo(Dir dir);

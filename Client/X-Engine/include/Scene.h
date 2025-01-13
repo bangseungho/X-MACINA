@@ -122,6 +122,7 @@ public:
 	Tile GetTileFromPos(const Vec3& index) const;
 	RenderVoxel GetVoxelFromUniqueIndex(const Pos& index) const;
 	void SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color) const;
+	void SetPickingFlagFromUniqueIndex(const Pos& index, bool isPicked) const;
 
 	std::vector<Vec3>& GetOpenList() { return mOpenList; }
 	std::vector<Vec3>& GetClosedList() { return mClosedList; }
