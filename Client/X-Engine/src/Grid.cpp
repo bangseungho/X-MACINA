@@ -9,6 +9,7 @@
 #include "DXGIMgr.h"
 #include "FrameResource.h"
 #include "Component/Camera.h"
+#include "InputMgr.h"
 
 int Grid::mTileRows = 0;
 int Grid::mTileCols = 0;
@@ -408,8 +409,35 @@ void Grid::ProcessCollision(GridObject* objectA, GridObject* objectB)
 	}
 }
 
-void RenderVoxelManager::Init(Object* player)
+void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 {
+	switch (messageID) {
+	case WM_RBUTTONDOWN:
+		mReadyMakePath = !mReadyMakePath;
+		break;
+	default:
+		break;
+	}
+
+	switch (messageID) {
+	case WM_RBUTTONDOWN:
+		PickTopVoxel(true);
+		break;
+	case WM_RBUTTONUP:
+		mHoldingClick = false;
+		break;
+	case WM_MOUSEMOVE:
+		PickTopVoxel(false);
+		break;
+
+	default:
+		break;
+	}
+}
+
+void VoxelManager::Init(Object* player)
+{
+	mReadyMakePath = true;
 	mPlayer = player;
 	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
 	for (auto& buffer : mInstanceBuffers) {
@@ -417,7 +445,7 @@ void RenderVoxelManager::Init(Object* player)
 	}
 }
 
-void RenderVoxelManager::Update()
+void VoxelManager::Update()
 {
 	mRenderVoxels.clear();
 
@@ -439,7 +467,7 @@ void RenderVoxelManager::Update()
 	}
 }
 
-void RenderVoxelManager::Render()
+void VoxelManager::Render()
 {
 	Update();
 
@@ -463,26 +491,49 @@ void RenderVoxelManager::Render()
 	MeshRenderer::RenderInstancingBox(mRenderVoxels.size());
 }
 
-Pos RenderVoxelManager::PickTopVoxel(const Ray& ray)
+void VoxelManager::PickTopVoxel(bool makePath)
 {
-	Pos result{};
+	// 추후에 쿼드 트리 탐색으로 변경 예정
+	if (mHoldingClick) {
+		return;
+	}
+
+	const Vec2& aimPos = InputMgr::I->GetMousePos();
+	const Ray& ray = MAIN_CAMERA->ScreenToWorldRay(aimPos);
+
+	Pos start = Scene::I->GetTileUniqueIndexFromPos(mPlayer->GetPosition());
+	Pos dest{};
+
 	// 추후 분할정복으로 변경 예정
 	int pickIdx{};
 	for (int i = 0; i < mRenderVoxels.size(); ++i) {
 		Vec3 voxelPosW = Scene::I->GetTilePosFromUniqueIndex(mRenderVoxels[i]);
 		Scene::I->SetPickingFlagFromUniqueIndex(mRenderVoxels[i], false);
+		mSelectedVoxel = Pos{};
 		BoundingBox bb{ voxelPosW, Grid::mkTileExtent };
 
 		float minValue{ FLT_MAX }, dist{};
 		if (ray.Intersects(bb, dist)) {
 			if (minValue > dist) {
 				minValue = dist;
-				result = mRenderVoxels[i];
+				dest = mRenderVoxels[i];
 				pickIdx = i;
 			}
 		}
 	}
 	
-	Scene::I->SetPickingFlagFromUniqueIndex(result, true);
-	return result;
+	Scene::I->SetPickingFlagFromUniqueIndex(dest, true);
+	mSelectedVoxel = dest;
+
+	if (makePath && mReadyMakePath) {
+		mStartPos = mSelectedVoxel;
+		mPlayer->SetPosition(Scene::I->GetTilePosFromUniqueIndex(mSelectedVoxel));
+	}
+	// TODO : 엔진에서 에이전트 컴포넌트를 받아올 수 있게 만들것 
+	//if (dest != Pos{}) {
+		//if (makePath) {
+		//	PathPlanningAStar(start, dest);
+		//	mHoldingClick = true;
+		//}
+	//}
 }

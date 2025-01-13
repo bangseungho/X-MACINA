@@ -210,8 +210,7 @@ void Scene::SetAbilityCB(int idx) const
 void Scene::SetPlayer(Object* player)
 {
 	mPlayer = player;
-	mRenderVoxelManager = std::make_unique<RenderVoxelManager>();
-	mRenderVoxelManager->Init(mPlayer);
+	VoxelManager::I->Init(mPlayer);
 }
 
 void Scene::UpdateMaterialBuffer()
@@ -730,7 +729,7 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 
 	CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	RESOURCE<Shader>("Voxel")->Set();
-	mRenderVoxelManager->Render();
+	VoxelManager::I->Render();
 
 	return true;
 }

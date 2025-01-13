@@ -11,6 +11,7 @@
 #include "Object.h"
 #include "Component/ParticleSystem.h"
 #include <iostream>
+#include "Grid.h"
 
 ImGuiMgr::ImGuiMgr()
 {
@@ -59,8 +60,10 @@ bool ImGuiMgr::Init()
 
     uptr<ImGuiFunc> hierachyFunc = std::make_unique<ImGuiHierarchyFunc>(Vec2{ 0, 0 }, Vec2{ 300, 400 });
     uptr<ImGuiFunc> inspectorFunc = std::make_unique<ImGuiInspectorFunc>(Vec2{ 0, 400 }, Vec2{ 300, 400 });
+    uptr<ImGuiFunc> voxelFunc = std::make_unique<ImGuiVoxelFunc>(Vec2{ 0, 800 }, Vec2{ 300, 200 });
     mFuncs.emplace_back(std::move(hierachyFunc));
     mFuncs.emplace_back(std::move(inspectorFunc));
+    mFuncs.emplace_back(std::move(voxelFunc));
 
     return true;
 }
@@ -156,4 +159,12 @@ void ImGuiHierarchyFunc::Execute(GameObject* selectedObject)
 
 void ImGuiInspectorFunc::Execute(GameObject* selectedObject)
 {
+}
+
+void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
+{
+    const Pos& selectedVoxelIndex = VoxelManager::I->GetSelectedVoxelPos();
+    const Vec3& selectedVoxelPosW = Scene::I->GetTilePosFromUniqueIndex(selectedVoxelIndex);
+    ImGui::Text("Idx : x = %d, y = %d, z = %d", selectedVoxelIndex.X, selectedVoxelIndex.Y, selectedVoxelIndex.Z);
+	ImGui::Text("Pos : x = %.1f, y = %.1f, z = %.1f", selectedVoxelPosW.x, selectedVoxelPosW.y, selectedVoxelPosW.z);
 }

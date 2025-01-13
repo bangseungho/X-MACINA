@@ -172,7 +172,6 @@ private:
 	Vec3 mSlideVec{};
 
 	std::stack<Vec3> mPath;
-	bool mHoldingClick{};
 	bool mIsMovingPath{};
 
 public:

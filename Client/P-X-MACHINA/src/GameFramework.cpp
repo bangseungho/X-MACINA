@@ -202,6 +202,7 @@ void GameFramework::ProcessMouseMsg(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	if (const auto& playerScript = mPlayerScript.lock()) {
 		playerScript->ProcessMouseMsg(message, wParam, lParam);
 	}
+	VoxelManager::I->ProcessMouseMsg(message, wParam, lParam);
 }
 
 ATOM GameFramework::CreateGameClientWindow()

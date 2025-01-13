@@ -67,52 +67,52 @@ void Script_GroundPlayer::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM 
 {
 	base::ProcessMouseMsg(messageID, wParam, lParam);
 
-	switch (messageID) {
-	case WM_RBUTTONDOWN:
-		PickingTile(true);
-		//OnAim();
-		break;
+	//switch (messageID) {
+	//case WM_RBUTTONDOWN:
+	//	PickingTile(true);
+	//	//OnAim();
+	//	break;
 
-	case WM_RBUTTONUP:
-		OffAim();
-		mHoldingClick = false;
-		break;
+	//case WM_RBUTTONUP:
+	//	OffAim();
+	//	mHoldingClick = false;
+	//	break;
 
-	case WM_MOUSEMOVE:
-		if (!mIsMovingPath) {
-			PickingTile(false);
-		}
-		break;
+	//case WM_MOUSEMOVE:
+	//	if (!mIsMovingPath) {
+	//		PickingTile(false);
+	//	}
+	//	break;
 
-	default:
-		break;
-	}
+	//default:
+	//	break;
+	//}
 }
 
 void Script_GroundPlayer::PickingTile(bool makePath)
 {
-	// 추후에 쿼드 트리 탐색으로 변경 예정
-	if (mHoldingClick) {
-		return;
-	}
+	//// 추후에 쿼드 트리 탐색으로 변경 예정
+	//if (mHoldingClick) {
+	//	return;
+	//}
 
-	while (!mPath.empty()) {
-		Scene::I->ClearPathList();
-		mPath.pop();
-	}
+	//while (!mPath.empty()) {
+	//	Scene::I->ClearPathList();
+	//	mPath.pop();
+	//}
 
-	const Vec2& aimPos = InputMgr::I->GetMousePos();
-	const Ray& ray = MAIN_CAMERA->ScreenToWorldRay(aimPos);
+	//const Vec2& aimPos = InputMgr::I->GetMousePos();
+	//const Ray& ray = MAIN_CAMERA->ScreenToWorldRay(aimPos);
 
-	Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
-	Pos dest = Scene::I->mRenderVoxelManager->PickTopVoxel(ray);
-	
-	if (dest != Pos{}) {
-		if (makePath) {
-			PathPlanningAStar(start, dest);
-			mHoldingClick = true;
-		}
-	}
+	//Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
+	//Pos dest = VoxelManager::I->PickTopVoxel(ray);
+	//
+	//if (dest != Pos{}) {
+	//	if (makePath) {
+	//		PathPlanningAStar(start, dest);
+	//		mHoldingClick = true;
+	//	}
+	//}
 }
 
 void Script_GroundPlayer::MoveToPath()

@@ -29,7 +29,7 @@ class ObjectPool;
 class TestCube;
 class MasterModel;
 class ObjectTag;
-class RenderVoxelManager;
+class VoxelManager;
 #pragma endregion
 
 
@@ -92,8 +92,6 @@ private:
 	std::vector<Vec3>	mClosedList{};
 
 	Object* mPlayer{};
-public:
-	uptr<RenderVoxelManager> mRenderVoxelManager{};
 
 private:
 #pragma region C/Dtor

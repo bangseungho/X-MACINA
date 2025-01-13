@@ -46,6 +46,17 @@ public:
 };
 
 
+class ImGuiVoxelFunc : public ImGuiFunc {
+	using base = ImGuiFunc;
+
+public:
+	ImGuiVoxelFunc(const Vec2& pos, const Vec2& size) : ImGuiFunc(pos, size, "Voxel") {}
+
+public:
+	virtual void Execute(GameObject* selectedObject) override;
+};
+
+
 class ImGuiMgr : public Singleton<ImGuiMgr>
 {
 	friend Singleton;
