@@ -1,1 +1,23 @@
-﻿
+﻿  pch.cpp
+  ClientNetwork.cpp
+C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\X-NetworkLibrary\Network\ClientNetwork.cpp(18,20): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+  Listener.cpp
+  Lock.cpp
+  LogManager.cpp
+  MemoryManager.cpp
+  NetworkInterface.cpp
+  NetworkManager.cpp
+  NetworkObject.cpp
+  OverlappedObject.cpp
+  PacketHeader.cpp
+  PacketRecvBuf.cpp
+  PacketSendBuf.cpp
+  SendBuffersFactory.cpp
+  ServerNetwork.cpp
+  Session.cpp
+  SessionController.cpp
+C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\X-NetworkLibrary\Network\SessionController.cpp(33,22): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+  SListMemoryPool.cpp
+  SocketData.cpp
+  ThreadManager.cpp
+  X-NetworkLibrary.vcxproj -> C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\X-NetworkLibrary\Executable\Release\X-NetworkLibrary.lib

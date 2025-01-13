@@ -5,6 +5,7 @@
 
 #include "Object.h"
 
+#include "../Imgui/ImGuiMgr.h"
 
 void Script_ShootingPlayer::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 {

@@ -49,7 +49,7 @@ void InputMgr::InitFocus()
 {
 	POINT clientCenter = mClientCenter;
 	::ClientToScreen(DXGIMgr::I->GetHwnd(), &clientCenter);
-	::ShowCursor(FALSE);
+	::ShowCursor(TRUE);
 }
 
 void InputMgr::UpdateClient()
@@ -81,14 +81,12 @@ void InputMgr::Update()
 		mMousePos = Vec2(static_cast<float>(ptMouse.x), static_cast<float>(ptMouse.y));
 		mMouseDir.x = mMousePos.x - mClientCenter.x;
 		mMouseDir.y = -(mMousePos.y - mClientCenter.y);
-
 		SetCursorCenter();
 	}
 	else {
 		WindowFocusOff();
 	}
 }
-
 
 void InputMgr::WindowFocusOn() const
 {
@@ -127,11 +125,10 @@ void InputMgr::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 void InputMgr::SetCursorCenter() const
 {
-	POINT clientCenter = mClientCenter;
-	::ClientToScreen(DXGIMgr::I->GetHwnd(), &clientCenter);
-	::SetCursorPos(clientCenter.x, clientCenter.y);
+	//POINT clientCenter = mClientCenter;
+	//::ClientToScreen(DXGIMgr::I->GetHwnd(), &clientCenter);
+	//::SetCursorPos(clientCenter.x, clientCenter.y);
 }
-
 
 void InputMgr::ProcessKeyboardMsg(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {

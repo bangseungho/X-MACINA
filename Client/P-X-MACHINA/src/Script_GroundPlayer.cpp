@@ -101,11 +101,8 @@ void Script_GroundPlayer::PickingTile(bool makePath)
 		mPath.pop();
 	}
 
-	const Vec2& aimPos = mObject->GetComponent<Script_AimController>()->GetAimPos();
-	const Vec3& dir = MAIN_CAMERA->ScreenToWorldRay(aimPos);
-	const Vec3& pos = MAIN_CAMERA->GetPosition();
-	Ray ray{ pos, dir };
-	ray.Direction.Normalize();
+	const Vec2& aimPos = InputMgr::I->GetMousePos();
+	const Ray& ray = MAIN_CAMERA->ScreenToWorldRay(aimPos);
 
 	Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
 	Pos dest = Scene::I->mRenderVoxelManager->PickTopVoxel(ray);
@@ -906,9 +903,9 @@ float Script_GroundPlayer::GetAngleSpineToAim(const Vec3& aimWorldPos) const
 Vec3 Script_GroundPlayer::GetAimWorldPos(const Vec2& aimScreenPos) const
 {
 	// aim에서 발사된 광선에서 총구의 y값과 일치하는 지점을 찾는다.
-	const Vec3 ray = MAIN_CAMERA->ScreenToWorldRay(aimScreenPos);
-	const Vec3 camPos = MAIN_CAMERA->GetPosition();
-	return Vector3::RayOnPoint(camPos, ray, mMuzzle->GetPosition().y).xz();
+	const Ray& ray = MAIN_CAMERA->ScreenToWorldRay(aimScreenPos);
+	const Vec3& camPos = MAIN_CAMERA->GetPosition();
+	return Vector3::RayOnPoint(camPos, ray.Direction, mMuzzle->GetPosition().y).xz();
 }
 
 void Script_GroundPlayer::RotateToAim(Dir dir, float& rotAngle)

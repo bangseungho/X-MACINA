@@ -718,7 +718,7 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 
 	// 클로즈드 리스트를 빨간색으로 출력
 	for (auto& path : mClosedList) {
-		MeshRenderer::RenderBox(path, Grid::mkTileExtent * 2.f, Vec4{ 1.f, 0.f, 0.f, 1.f });
+		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 0.f, 0.f, 1.f });
 	}
 
 	if (!mIsRenderBounds) {

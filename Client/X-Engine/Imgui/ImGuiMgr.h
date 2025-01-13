@@ -5,67 +5,41 @@ class GameObject;
 
 class ImGuiFunc {
 protected:
-	GameObject* mSelectedObject{};
-	std::string mLabel{};
-	bool mNoMoveWindow = true;
+	Vec2			mPosition{};
+	Vec2			mSize{};
+	std::string		mName{};
 
 public:
-	ImGuiFunc(std::string label) : mLabel(label) {}
+	ImGuiFunc(const Vec2& pos, const Vec2& size, std::string label);
 	virtual ~ImGuiFunc() = default;
 
 public:
-	virtual void Execute(GameObject* selectedObject);
+	std::string GetLabel() const { return mName; }
 
-	void SetNoMoveWindow(bool val) { mNoMoveWindow = val; }
-	GameObject* GetSelectedObject() { return mSelectedObject; }
+public:
+	void ExecuteBegin();
+	void ExecuteEnd();
+
+	virtual void Execute(GameObject* selectedObject) abstract;
 };
 
 
-class ImGuiHierachy : public ImGuiFunc {
+class ImGuiHierarchyFunc : public ImGuiFunc {
 	using base = ImGuiFunc;
 
 public:
-	ImGuiHierachy() : ImGuiFunc("Hierachy") {}
-
-public:
-	virtual void Execute(GameObject* selectedObject) override;
-
-private:
-	void DrawNode(GameObject* node, size_t& entityID);
-};
-
-
-class ImGuiTransform : public ImGuiFunc {
-	using base = ImGuiFunc;
-
-public:
-	ImGuiTransform() : ImGuiFunc("Transform") {}
+	ImGuiHierarchyFunc(const Vec2& pos, const Vec2& size) : ImGuiFunc(pos, size, "Hierarchy") {}
 
 public:
 	virtual void Execute(GameObject* selectedObject) override;
 };
 
 
-class ImGuiParticleSystem : public ImGuiFunc {
+class ImGuiInspectorFunc : public ImGuiFunc {
 	using base = ImGuiFunc;
 
 public:
-	ImGuiParticleSystem() : ImGuiFunc("ParticleSystem") {}
-
-public:
-	virtual void Execute(GameObject* selectedObject) override;
-};
-
-
-class ImGuiInspector : public ImGuiFunc {
-	using base = ImGuiFunc;
-
-private:
-	ImGuiParticleSystem	mParticleSystemFunc;
-	ImGuiTransform		mTransformFunc;
-
-public:
-	ImGuiInspector() : ImGuiFunc("Inspector") {}
+	ImGuiInspectorFunc(const Vec2& pos, const Vec2& size) : ImGuiFunc(pos, size, "Inspector") {}
 
 public:
 	virtual void Execute(GameObject* selectedObject) override;
@@ -77,27 +51,33 @@ class ImGuiMgr : public Singleton<ImGuiMgr>
 	friend Singleton;
 
 private:
-	bool							mIsOn = false;
-	
-	ComPtr<ID3D12DescriptorHeap>	mSrvDescHeap{};
-	bool							mIsShowDemo = true;
+	bool							mOnImGui = true;
+	bool							mShowDemo = false;
+	bool							mIsFocused = false;
+	bool							mNoMoveWindow = true;
 
-	ImGuiHierachy					mHierachyFunc;
-	ImGuiInspector					mInspector;
-	bool mIsFocused{};
+private:
+	ComPtr<ID3D12DescriptorHeap>	mSrvDescHeap{};
+
+private:
+	std::vector<uptr<ImGuiFunc>>	mFuncs{};
 
 public:
 	ImGuiMgr();
 	~ImGuiMgr();
 
 public:
-	void ToggleImGui() { mIsOn = !mIsOn; }
+	void ToggleImGui() { mOnImGui = !mOnImGui; }
 	bool Init();
 	void Render_Prepare();
 	void Update();
 	void Render();
 	void DestroyImGui();
 
+public:
+	bool GetMoveWindow() const { return mNoMoveWindow; }
+
+public:
 	bool IsFocused() const { return mIsFocused ; }
 	void FocusOff();
 };

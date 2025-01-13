@@ -68,7 +68,7 @@ public:
 	const BoundingFrustum& GetFrustumShadow() const { return mFrustumWorldShadow; }
 
 	Vec2 WorldToScreenPoint(const Vec3& pos);
-	Vec3 ScreenToWorldRay(const Vec2& pos);
+	Ray ScreenToWorldRay(const Vec2& pos);
 
 	Vec2 ScreenToNDC(const Vec2& pos);
 
