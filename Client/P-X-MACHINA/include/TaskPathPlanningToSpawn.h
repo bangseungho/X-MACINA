@@ -21,7 +21,7 @@ class Script_EnemyManager;
 class TaskPathPlanningToSpawn : public TaskPathPlanningAStar {
 	using base = TaskPathPlanningAStar;
 
-private:
+private:/*
 	Vec3 mSpawnPos{};
 
 public:
@@ -29,6 +29,6 @@ public:
 	virtual ~TaskPathPlanningToSpawn() = default;
 
 public:
-	virtual BT::NodeState Evaluate() override;
+	virtual BT::NodeState Evaluate() override;*/
 };
 #pragma endregion

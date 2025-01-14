@@ -261,6 +261,12 @@
     <ClCompile Include="src\AbilityMgr.cpp">
       <Filter>소스 파일\Manager</Filter>
     </ClCompile>
+    <ClCompile Include="src\Agent.cpp">
+      <Filter>소스 파일\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\VoxelManager.cpp">
+      <Filter>소스 파일\Framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DDSTextureLoader12.h">
@@ -447,6 +453,12 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="include\UploadBuffer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Component\Agent.h">
+      <Filter>Common\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="include\VoxelManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

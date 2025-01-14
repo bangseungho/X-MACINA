@@ -16,6 +16,7 @@
 #include "Component/Rigidbody.h"
 #include "Component/Camera.h"
 #include "Component/Collider.h"
+#include "Component/Agent.h"
 
 #include "Scene.h"
 #include "Object.h"
@@ -41,203 +42,37 @@ const float Script_GroundPlayer::mkSitWalkSpeed   = 1.5f;
 const float Script_GroundPlayer::mkStandWalkSpeed = 2.2f;
 const float Script_GroundPlayer::mkRunSpeed       = 5.f;
 const float Script_GroundPlayer::mkSprintSpeed    = 8.f;
-
 const float Script_GroundPlayer::mkStartRotAngle = 40.f;
+#pragma endregion
 
+
+#pragma region Namespace
 namespace {
-	constexpr int kDrawFrame = 13;	// the hand is over the shoulder
-
-	int HeuristicManhattan(const Pos& start, const Pos& dest) {
-		return std::abs(dest.X - start.X) +
-			std::abs(dest.Y - start.Y) +
-			std::abs(dest.Z - start.Z);
-	}
-
-	// 유클리드 거리 기반 휴리스틱 함수
-	int HeuristicEuclidean(const Pos& start, const Pos& dest) {
-		return static_cast<int>(std::sqrt(std::pow(dest.X - start.X, 2) +
-			std::pow(dest.Y - start.Y, 2) +
-			std::pow(dest.Z - start.Z, 2)));
-	}
+	constexpr int kDrawFrame = 13;
 }
 #pragma endregion
+
 
 #pragma region Astar
 void Script_GroundPlayer::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 {
 	base::ProcessMouseMsg(messageID, wParam, lParam);
 
-	//switch (messageID) {
-	//case WM_RBUTTONDOWN:
-	//	PickingTile(true);
-	//	//OnAim();
-	//	break;
+	switch (messageID) {
+	case WM_RBUTTONDOWN:
+		//OnAim();
+		break;
 
-	//case WM_RBUTTONUP:
-	//	OffAim();
-	//	mHoldingClick = false;
-	//	break;
+	case WM_RBUTTONUP:
+		//OffAim();
+		break;
 
-	//case WM_MOUSEMOVE:
-	//	if (!mIsMovingPath) {
-	//		PickingTile(false);
-	//	}
-	//	break;
+	case WM_MOUSEMOVE:
+		break;
 
-	//default:
-	//	break;
-	//}
-}
-
-void Script_GroundPlayer::PickingTile(bool makePath)
-{
-	//// 추후에 쿼드 트리 탐색으로 변경 예정
-	//if (mHoldingClick) {
-	//	return;
-	//}
-
-	//while (!mPath.empty()) {
-	//	Scene::I->ClearPathList();
-	//	mPath.pop();
-	//}
-
-	//const Vec2& aimPos = InputMgr::I->GetMousePos();
-	//const Ray& ray = MAIN_CAMERA->ScreenToWorldRay(aimPos);
-
-	//Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
-	//Pos dest = VoxelManager::I->PickTopVoxel(ray);
-	//
-	//if (dest != Pos{}) {
-	//	if (makePath) {
-	//		PathPlanningAStar(start, dest);
-	//		mHoldingClick = true;
-	//	}
-	//}
-}
-
-void Script_GroundPlayer::MoveToPath()
-{
-	if (mPath.empty()) {
-		mIsMovingPath = false;
-		Scene::I->ClearPathList();
-		return;
+	default:
+		break;
 	}
-
-	mIsMovingPath = true;
-
-	Vec3 nextPos = (mPath.top() - mObject->GetPosition()).xz();
-
-	mObject->RotateTargetAxisY(mPath.top(), 1000.f);
-	mObject->Translate(XMVector3Normalize(nextPos), mkStandWalkSpeed * DeltaTime());
-
-	// 다음 경로에 도착 시 해당 경로 삭제
-	const float kMinDistance = 0.1f;
-	if (nextPos.Length() < kMinDistance)
-		mPath.pop();
-}
-
-bool Script_GroundPlayer::PathPlanningAStar(Pos start, Pos dest)
-{
-	//// 초기 위치 혹은 도착 지점이 Static이라면 bfs를 사용해 주변 None 지점 획득
-	//if (Scene::I->GetTileFromUniqueIndex(start) == Tile::Static)
-	//	start = FindNoneTileFromBfs(start);
-	//if (Scene::I->GetTileFromUniqueIndex(dest) == Tile::Static)
-	//	dest = FindNoneTileFromBfs(dest);
-
-	std::map<Pos, Pos>	mParent;
-	std::map<Pos, int>	mDistance;
-	std::map<Pos, bool>	mVisited;
-
-	// f = g + h
-	std::priority_queue<PQNode, std::vector<PQNode>, std::greater<PQNode>> pq;
-	int g = 0;
-	int h = HeuristicManhattan(start, dest) * mkWeight;
-	pq.push({ g + h, g, start });
-	mDistance[start] = g + h;
-	mParent[start] = start;
-
-	Pos prevDir;
-	while (!pq.empty()) {
-		PQNode curNode = pq.top();
-		prevDir = curNode.Pos - mParent[curNode.Pos];
-		pq.pop();
-
-		// 방문하지 않은 노드들만 방문
-		if (mVisited.contains(curNode.Pos))
-			continue;
-
-		mVisited[curNode.Pos] = true;
-		Scene::I->GetClosedList().push_back(Scene::I->GetTilePosFromUniqueIndex(curNode.Pos));
-
-		// 해당 지점이 목적지인 경우 종료
-		if (curNode.Pos == dest)
-			break;
-
-		// 8방향으로 탐색
-		for (int dir = 0; dir < 26; ++dir) {
-			Pos nextPos = curNode.Pos + gkFront3D[dir];
-
-			// 다음 방향 노드의 상태가 static이라면 continue
-			if (Scene::I->GetTileFromUniqueIndex(nextPos) == Tile::Static)
-				continue;
-
-			if (Scene::I->GetTileFromUniqueIndex(nextPos) == Tile::None)
-				continue;
-
-			// 이미 방문한 곳이면 continue
-			if (mVisited.contains(nextPos))
-				continue;
-
-			// 현재 거리 정보가 없다면 거리 비용을 최댓값으로 설정
-			if (!mDistance.contains(nextPos))
-				mDistance[nextPos] = INT32_MAX;
-
-			// 비용 계산 보통의 1 / 2
-			int addCost{};
-			if (prevDir != gkFront3D[dir])
-				addCost = gkCost3D[dir] / 2;
-
-			int g = curNode.G + gkCost3D[dir] + addCost;
-			int h = HeuristicManhattan(nextPos, dest) * mkWeight;
-			if (mDistance[nextPos] <= g + h)
-				continue;
-
-			mDistance[nextPos] = g + h;
-			pq.push({ g + h, g, nextPos });
-			mParent[nextPos] = curNode.Pos;
-		}
-	}
-
-	Pos pos = dest;
-	prevDir = { 0, 0 };
-
-	// 부모 경로를 따라가 스택에 넣어준다. top이 first path이다.
-	while (true) {
-		Pos dir = mParent[pos] - pos;
-
-		if (prevDir != dir) {
-			mPath.push(Scene::I->GetTilePosFromUniqueIndex(pos));
-			Scene::I->GetOpenList().push_back(mPath.top());
-		}
-
-		if (pos == mParent[pos])
-			break;
-
-		pos = mParent[pos];
-		prevDir = dir;
-	}
-
-	// 자연스러운 움직임을 위해 첫 번째 경로는 삭	제
-	Scene::I->GetOpenList().push_back(Scene::I->GetTilePosFromUniqueIndex(start));
-	if (!mPath.empty()) {
-		mPath.pop();
-	}
-
-	if (mPath.empty()) {
-		return false;
-	}
-
-	return true;
 }
 
 Pos Script_GroundPlayer::FindNoneTileFromBfs(const Pos& pos)
@@ -281,6 +116,7 @@ void Script_GroundPlayer::Awake()
 
 	// add scripts //
 	mObject->AddComponent<Script_GroundObject>();
+	mObject->AddComponent<Agent>();
 	mObject->AddComponent<Script_AbilityHolder>()->SetAbility('T', std::make_shared<ShieldAbility>(30.f));
 	mObject->AddComponent<Script_AbilityHolder>()->SetAbility('Y', std::make_shared<IRDetectorAbility>());
 	mObject->AddComponent<Script_AbilityHolder>()->SetAbility(VK_TAB, std::make_shared<MinimapAbility>());
@@ -319,8 +155,6 @@ void Script_GroundPlayer::Update()
 	ProcessInput();
 
 	RecoverRecoil();
-
-	MoveToPath();
 }
 
 void Script_GroundPlayer::LateUpdate()

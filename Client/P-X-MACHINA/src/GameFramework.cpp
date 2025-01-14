@@ -30,6 +30,7 @@
 #include "ClientNetwork/Contents/ClientNetworkManager.h"
 #include "ClientNetwork/Include/ThreadManager.h"
 #include "ClientNetwork/Contents/Script_PlayerNetwork.h"
+#include "VoxelManager.h"
 
 // #define SERVER_COMMUNICATION
 

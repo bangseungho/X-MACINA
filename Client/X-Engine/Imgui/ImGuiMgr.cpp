@@ -10,6 +10,8 @@
 #include "Scene.h"
 #include "Object.h"
 #include "Component/ParticleSystem.h"
+#include "Component/Agent.h"
+#include "VoxelManager.h"
 #include <iostream>
 #include "Grid.h"
 

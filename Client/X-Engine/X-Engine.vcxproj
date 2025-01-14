@@ -211,6 +211,7 @@
     <ClCompile Include="Imgui\ImGuiMgr.cpp" />
     <ClCompile Include="include\TLS.cpp" />
     <ClCompile Include="src\AbilityMgr.cpp" />
+    <ClCompile Include="src\Agent.cpp" />
     <ClCompile Include="src\AnimatorBlendTree.cpp" />
     <ClCompile Include="src\AnimatorState.cpp" />
     <ClCompile Include="src\AnimatorStateMachine.cpp" />
@@ -268,11 +269,13 @@
     <ClCompile Include="src\Timer.cpp" />
     <ClCompile Include="src\Transform.cpp" />
     <ClCompile Include="src\UI.cpp" />
+    <ClCompile Include="src\VoxelManager.cpp" />
     <ClCompile Include="src\X-Engine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\AbilityMgr.h" />
     <ClInclude Include="..\Common\Common.h" />
+    <ClInclude Include="..\Common\Component\Agent.h" />
     <ClInclude Include="..\Common\Component\Camera.h" />
     <ClInclude Include="..\Common\Component\Collider.h" />
     <ClInclude Include="..\Common\Component\Component.h" />
@@ -332,6 +335,7 @@
     <ClInclude Include="include\Timer.h" />
     <ClInclude Include="include\TLS.h" />
     <ClInclude Include="include\UploadBuffer.h" />
+    <ClInclude Include="include\VoxelManager.h" />
     <ClInclude Include="include\X-Engine.h" />
   </ItemGroup>
   <ItemGroup>

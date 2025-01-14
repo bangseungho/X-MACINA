@@ -20,12 +20,12 @@ class Script_EnemyManager;
 #pragma region Class
 class TaskPathPlanningToTarget : public TaskPathPlanningAStar {
 	using base = TaskPathPlanningAStar;
-
-public:
-	TaskPathPlanningToTarget(Object* object);
-	virtual ~TaskPathPlanningToTarget() = default;
-
-public:
-	virtual BT::NodeState Evaluate() override;
+//
+//public:
+//	TaskPathPlanningToTarget(Object* object);
+//	virtual ~TaskPathPlanningToTarget() = default;
+//
+//public:
+//	virtual BT::NodeState Evaluate() override;
 };
 #pragma endregion

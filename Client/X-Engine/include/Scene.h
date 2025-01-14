@@ -29,7 +29,6 @@ class ObjectPool;
 class TestCube;
 class MasterModel;
 class ObjectTag;
-class VoxelManager;
 #pragma endregion
 
 
@@ -80,7 +79,7 @@ private:
 
 	/* Grid */
 	std::vector<sptr<Grid>>	mGrids{};				// all scene grids
-	std::set<Grid*>			mCullingGrids{};				// all scene grids
+	std::set<Grid*>			mCullingGrids{};		// all scene grids
 	float					mGridStartPoint{};		// leftmost coord of the entire grid
 	int						mGridWidth{};			// length of x for one grid
 	int						mGridCols{};			// number of columns in the grid

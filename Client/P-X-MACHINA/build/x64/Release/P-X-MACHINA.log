@@ -1,7 +1,8 @@
-﻿  Script_MainCamera.cpp
+﻿  Script_GroundPlayer.cpp
+  X-MACHINA.cpp
   코드를 생성하고 있습니다.
-  8 of 16020 functions (<0.1%) were compiled, the rest were copied from previous compilation.
-    3 functions were new in current compilation
-    125 functions had inline decision re-evaluated but remain unchanged
+  3 of 16291 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    94 functions had inline decision re-evaluated but remain unchanged
   코드를 생성했습니다.
   P-X-MACHINA.vcxproj -> C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\build\Release\P-X-MACHINA.exe

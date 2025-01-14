@@ -10,29 +10,29 @@
 #include "MeshRenderer.h"
 #include "Grid.h"
 
-
-TaskPathPlanningToSpawn::TaskPathPlanningToSpawn(Object* object) : TaskPathPlanningAStar(object)
-{
-	mEnemyMgr = object->GetComponent<Script_EnemyManager>();
-
-	mSpawnPos = object->GetPosition();
-}
-
-BT::NodeState TaskPathPlanningToSpawn::Evaluate()
-{
-	// 경로가 비었다면 경로 재 탐색
-	if (mEnemyMgr->mPath.empty()) {
-		mEnemyMgr->mController->SetValue("Return", true);
-
-		// 시작 지점과 목적지 위치 값을 타일 고유 인덱스로 변환
-		Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
-		Pos dest = Scene::I->GetTileUniqueIndexFromPos(mSpawnPos);
-
-		// 경로 계획에 실패했다면 Failure를 호출하여 다음 노드로 넘어감
-		if (base::PathPlanningAStar(start, dest)) {
-			return BT::NodeState::Success;
-		}
-	}
-
-	return BT::NodeState::Failure;
-}
+//
+//TaskPathPlanningToSpawn::TaskPathPlanningToSpawn(Object* object) : TaskPathPlanningAStar(object)
+//{
+//	mEnemyMgr = object->GetComponent<Script_EnemyManager>();
+//
+//	mSpawnPos = object->GetPosition();
+//}
+//
+//BT::NodeState TaskPathPlanningToSpawn::Evaluate()
+//{
+//	// 경로가 비었다면 경로 재 탐색
+//	if (mEnemyMgr->mPath.empty()) {
+//		mEnemyMgr->mController->SetValue("Return", true);
+//
+//		// 시작 지점과 목적지 위치 값을 타일 고유 인덱스로 변환
+//		Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
+//		Pos dest = Scene::I->GetTileUniqueIndexFromPos(mSpawnPos);
+//
+//		// 경로 계획에 실패했다면 Failure를 호출하여 다음 노드로 넘어감
+//		if (base::PathPlanningAStar(start, dest)) {
+//			return BT::NodeState::Success;
+//		}
+//	}
+//
+//	return BT::NodeState::Failure;
+//}

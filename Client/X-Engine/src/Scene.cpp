@@ -26,6 +26,7 @@
 
 #include "TestCube.h"
 #include "Ssao.h"
+#include "VoxelManager.h"
 #pragma endregion
 
 
