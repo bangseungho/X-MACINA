@@ -105,6 +105,8 @@ Ray Camera::ScreenToWorldRay(const Vec2& pos)
 
 	Vec3 rayOrigin = Vec3{ 0.f, 0.f, 0.f };
 	Vec3 rayDir = Vec3{ pickPos.x, pickPos.y, 1.f };
+	rayDir.Normalize();
+
 	Ray ray = Ray{ rayOrigin, rayDir };
 
 	// 월드공간으로 변환 후 카메라와의 차이 계산
@@ -118,7 +120,7 @@ Ray Camera::ScreenToWorldRay(const Vec2& pos)
 
 Vec2 Camera::ScreenToNDC(const Vec2& pos)
 {
-	return Vec2(2 * pos.x / mViewport.Width - 1.f, -2 * pos.y / mViewport.Height + 1.f);
+	return Vec2(2.f * pos.x / mViewport.Width - 1.f, -2.f * pos.y / mViewport.Height + 1.f);
 }
 
 void Camera::CalculateFrustumPlanes()

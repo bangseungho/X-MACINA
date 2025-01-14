@@ -47,6 +47,7 @@ public:
 
 public:
 	sptr<Animator> GetAnimator() const { return mAnimator; }
+	sptr<const MasterModel> GetModel() const { return mMasterModel; }
 
 protected:
 	virtual void Animate() override;

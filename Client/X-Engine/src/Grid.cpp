@@ -118,7 +118,7 @@ void Grid::AddObject(GridObject* object)
 		break;
 	default:
 		mStaticObjects.insert(object);
-		UpdateTiles(Tile::Static, object);
+		UpdateTiles(Tile::Terrain, object);
 		break;
 	}
 }

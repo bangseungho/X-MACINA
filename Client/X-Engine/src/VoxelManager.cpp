@@ -100,22 +100,17 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	Pos start = Scene::I->GetTileUniqueIndexFromPos(mPlayer->GetPosition());
 	mSelectedVoxel = Pos{};
 	// 추후 분할정복으로 변경 예정
-	int pickIdx{};
+	float minValue{ FLT_MAX };
 	for (int i = 0; i < mRenderVoxels.size(); ++i) {
 		Vec3 voxelPosW = Scene::I->GetTilePosFromUniqueIndex(mRenderVoxels[i]);
 		Scene::I->SetPickingFlagFromUniqueIndex(mRenderVoxels[i], false);
 		BoundingBox bb{ voxelPosW, Grid::mkTileExtent };
 
-		float minValue{ FLT_MAX }, dist{};
-		if (makePath) {
-			int a = 3;
-		}
-
+		float dist{};
 		if (ray.Intersects(bb, dist)) {
 			if (minValue > dist) {
 				minValue = dist;
 				mSelectedVoxel = mRenderVoxels[i];
-				pickIdx = i;
 			}
 		}
 	}
