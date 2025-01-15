@@ -364,7 +364,7 @@ void ResourceMgr::LoadShaders()
 		ShaderInfo info = {
 			ShaderType::LDR,
 			RasterizerType::WireFrame,
-			DepthStencilType::Less,
+			DepthStencilType::No_DepthTest,
 			BlendType::Default,
 			InputLayoutType::Wire,
 			D3D_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST

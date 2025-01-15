@@ -31,8 +31,8 @@ bool ImGuiMgr::Init()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls    
-    //io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
 
     //ImGui::StyleColorsLight();
     ImGui::StyleColorsDark();
@@ -60,11 +60,11 @@ bool ImGuiMgr::Init()
         , mSrvDescHeap.Get(), mSrvDescHeap->GetCPUDescriptorHandleForHeapStart()
         , mSrvDescHeap.Get()->GetGPUDescriptorHandleForHeapStart());
 
-    uptr<ImGuiFunc> hierachyFunc = std::make_unique<ImGuiHierarchyFunc>(Vec2{ 0, 0 }, Vec2{ 300, 400 });
-    uptr<ImGuiFunc> inspectorFunc = std::make_unique<ImGuiInspectorFunc>(Vec2{ 0, 400 }, Vec2{ 300, 400 });
-    uptr<ImGuiFunc> voxelFunc = std::make_unique<ImGuiVoxelFunc>(Vec2{ 0, 800 }, Vec2{ 300, 200 });
-    mFuncs.emplace_back(std::move(hierachyFunc));
-    mFuncs.emplace_back(std::move(inspectorFunc));
+    //uptr<ImGuiFunc> hierachyFunc = std::make_unique<ImGuiHierarchyFunc>(Vec2{ 0, 0 }, Vec2{ 300, 400 });
+    //uptr<ImGuiFunc> inspectorFunc = std::make_unique<ImGuiInspectorFunc>(Vec2{ 0, 400 }, Vec2{ 300, 400 });
+    uptr<ImGuiFunc> voxelFunc = std::make_unique<ImGuiVoxelFunc>(Vec2{ 0, 0 }, Vec2{ 300, 200 });
+    //mFuncs.emplace_back(std::move(hierachyFunc));
+    //mFuncs.emplace_back(std::move(inspectorFunc));
     mFuncs.emplace_back(std::move(voxelFunc));
 
     return true;
@@ -125,8 +125,8 @@ void ImGuiMgr::DestroyImGui()
 
 void ImGuiMgr::FocusOff()
 {
-	ImGui::FocusWindow(NULL);
-	mIsFocused = false;
+	//ImGui::FocusWindow(NULL);
+	//mIsFocused = false;
 }
 
 ImGuiFunc::ImGuiFunc(const Vec2& pos, const Vec2& size, std::string label)
@@ -139,14 +139,11 @@ ImGuiFunc::ImGuiFunc(const Vec2& pos, const Vec2& size, std::string label)
 
 void ImGuiFunc::ExecuteBegin()
 {
-    // 창 색상 조정
-	ImGuiStyle& style = ImGui::GetStyle();
-	style.Colors[ImGuiCol_WindowBg].w = 0.5f;
-
     // 창 크기 및 위치 조정
-    ImGui::SetNextWindowPos(ImVec2{ mPosition.x, mPosition.y });
-    ImGui::SetNextWindowSize(ImVec2{ mSize.x, mSize.y });
-    
+    RECT rect;
+	GetWindowRect(DXGIMgr::I->GetHwnd(), &rect);
+	ImGui::SetNextWindowPos(ImVec2{ rect.left + mPosition.x + 5, rect.top + mPosition.y + 32 });
+	ImGui::SetNextWindowSize(ImVec2{ mSize.x, mSize.y });
 	ImGui::Begin(mName.c_str(), nullptr, ImGuiMgr::I->GetMoveWindow() ? ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove : ImGuiWindowFlags_None);
 }
 
@@ -165,8 +162,27 @@ void ImGuiInspectorFunc::Execute(GameObject* selectedObject)
 
 void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 {
+    // index
     const Pos& selectedVoxelIndex = VoxelManager::I->GetSelectedVoxelPos();
-    const Vec3& selectedVoxelPosW = Scene::I->GetTilePosFromUniqueIndex(selectedVoxelIndex);
     ImGui::Text("Idx : x = %d, y = %d, z = %d", selectedVoxelIndex.X, selectedVoxelIndex.Y, selectedVoxelIndex.Z);
+
+    // position
+    const Vec3& selectedVoxelPosW = Scene::I->GetTilePosFromUniqueIndex(selectedVoxelIndex);
 	ImGui::Text("Pos : x = %.1f, y = %.1f, z = %.1f", selectedVoxelPosW.x, selectedVoxelPosW.y, selectedVoxelPosW.z);
+
+    // agent speed
+    {
+		float value = PathOption::I->GetAgentSpeed();
+		ImGui::Text("AgentSpeed :"); // 안내 텍스트
+		ImGui::InputFloat("##float_input", &value, 0.5f, 1.0f, "%.3f"); // float 입력 박스
+		PathOption::I->SetAgentSpeed(value);
+    }
+
+    // allowed height
+    {
+		int value = PathOption::I->GetAllowedHeight();
+		ImGui::Text("AllowedHeight :"); // 안내 텍스트
+        ImGui::InputInt("##int_input", &value);
+		PathOption::I->SetAllowedHeight(value);
+    }
 }

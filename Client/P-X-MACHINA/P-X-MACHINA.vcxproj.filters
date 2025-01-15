@@ -39,9 +39,6 @@
     <ClCompile Include="src\Script_AdvancedCombatDroid_5.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Script_Agent.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\Script_AimController.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -180,9 +177,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="include\Script_AdvancedCombatDroid_5.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Script_Agent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="include\Script_AimController.h">

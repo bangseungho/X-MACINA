@@ -15,7 +15,7 @@ class VoxelManager : public Singleton<VoxelManager> {
 	friend Singleton;
 
 private:
-	Object*				mPlayer{};
+	Object* mPlayer{};
 	Pos					mSelectedVoxel{};
 	std::vector<Pos>	mRenderVoxels{};
 	bool				mReadyMakePath{};

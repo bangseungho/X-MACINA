@@ -9,7 +9,7 @@ class Collider;
 
 
 #pragma region enum
-enum class Tile: UINT8{
+enum class Tile : UINT8{
 	None = 0,
 	Static,
 	Dynamic,
@@ -42,6 +42,8 @@ private:
 	std::unordered_set<GridObject*> mStaticObjects{};
 	std::unordered_set<GridObject*> mDynamicObjets{};
 
+	std::unordered_map<int, Tile> mVoxels{};
+
 public:
 	static constexpr float mkTileHeight = 0.5f;
 	static constexpr float mkTileWidth = 0.5f;
@@ -49,9 +51,10 @@ public:
 	static constexpr int mTileHeightCount = 10;
 	static int mTileRows;
 	static int mTileCols;
+	static int mVoxelCount;
+	static float mVoxelSize;
 
 	std::map<Pos, RenderVoxel> mRenderVoxels{};
-	std::vector<RenderVoxel> mRederVoxels{};
 
 public:
 	Grid(int index, int width, const BoundingBox& bb);

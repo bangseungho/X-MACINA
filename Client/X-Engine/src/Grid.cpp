@@ -14,7 +14,8 @@
 
 int Grid::mTileRows = 0;
 int Grid::mTileCols = 0;
-
+int Grid::mVoxelCount = 0;
+float Grid::mVoxelSize = 0;
 
 Grid::Grid(int index, int width, const BoundingBox& bb)
 	:
@@ -23,7 +24,15 @@ Grid::Grid(int index, int width, const BoundingBox& bb)
 {
 	mTileRows = static_cast<int>(width / mkTileWidth);
 	mTileCols = static_cast<int>(width / mkTileWidth);
+	mVoxelCount = static_cast<int>(width / mkTileWidth);
+	mVoxelSize = mkTileWidth / 2.f;
 	mTiles = std::vector<std::vector<std::vector<Tile>>>(mTileHeightCount, std::vector<std::vector<Tile>>(mTileCols, std::vector<Tile>(mTileRows, Tile::None)));
+}
+
+int GetVoxelKey(const Vec3& position)
+{
+	//Pos index = floor(position / Grid::mVoxelSize);
+	return 1;
 }
 
 Tile Grid::GetTileFromUniqueIndex(const Pos& tPos) const
@@ -118,7 +127,7 @@ void Grid::AddObject(GridObject* object)
 		break;
 	default:
 		mStaticObjects.insert(object);
-		UpdateTiles(Tile::Terrain, object);
+		UpdateTiles(Tile::Static, object);
 		break;
 	}
 }

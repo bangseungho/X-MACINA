@@ -354,7 +354,6 @@ void Scene::LoadGameObjects(std::ifstream& file)
 	bool isInstancing{};
 	ObjectTag tag{};
 	ObjectLayer layer{};
-
 	for (int i = 0; i < objectCount; ++i) {
 		sptr<GridObject> object{};
 
@@ -362,7 +361,7 @@ void Scene::LoadGameObjects(std::ifstream& file)
 			FileIO::ReadString(file, token); //"<Tag>:"
 			FileIO::ReadString(file, token);
 			tag = GetTagByString(token);
-
+			
 			int layerNum{};
 			FileIO::ReadString(file, token); //"<Layer>:"
 			FileIO::ReadVal(file, layerNum);
@@ -488,7 +487,9 @@ void Scene::RenderDeferred()
 	RenderSkinMeshObjects(RenderType::Deferred);
 #pragma endregion
 #pragma region Terrain
-	RenderTerrain();
+	if (!mIsRenderBounds) {
+		RenderTerrain();
+	}
 #pragma endregion
 }
 
@@ -522,9 +523,8 @@ void Scene::RenderForward()
 {
 	RenderTransparentObjects(); 
 	RenderDissolveObjects();
-	RenderSkyBox();
-
-	RenderAbilities();
+	//RenderSkyBox();
+	//RenderAbilities();
 }
 
 void Scene::RenderPostProcessing(int offScreenIndex)
@@ -712,14 +712,13 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 
 	// 오픈 리스트를 초록색으로 출력
 	for (auto& path : mOpenList) {
-		path.y = GetTerrainHeight(path.x, path.z);
 		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 0.f, 1.f, 0.f, 1.f });
 	}
 
-	// 클로즈드 리스트를 빨간색으로 출력
-	for (auto& path : mClosedList) {
-		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 0.f, 0.f, 1.f });
-	}
+	//// 클로즈드 리스트를 빨간색으로 출력
+	//for (auto& path : mClosedList) {
+	//	MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 0.f, 0.f, 1.f });
+	//}
 
 	if (!mIsRenderBounds) {
 		return false;
@@ -879,8 +878,8 @@ int Scene::GetGridIndexFromPos(Vec3 pos) const
 Pos Scene::GetTileUniqueIndexFromPos(const Vec3& pos) const
 {
 	// 월드 포지션으로부터 타일의 고유 인덱스를 계산
-	const int tileGroupIndexX = static_cast<int>((pos.x - mGridStartPoint) / Grid::mkTileWidth);
-	const int tileGroupIndexZ = static_cast<int>((pos.z - mGridStartPoint) / Grid::mkTileWidth);
+	const int tileGroupIndexX = static_cast<int>(round(pos.x - mGridStartPoint) / Grid::mkTileWidth);
+	const int tileGroupIndexZ = static_cast<int>(round(pos.z - mGridStartPoint) / Grid::mkTileWidth);
 	const int tileGroupIndexY = static_cast<int>(pos.y / Grid::mkTileHeight);
 
 	return Pos{ tileGroupIndexZ, tileGroupIndexX, tileGroupIndexY };

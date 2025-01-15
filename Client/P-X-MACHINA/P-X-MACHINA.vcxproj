@@ -188,9 +188,6 @@
     <ClCompile Include="src\Script_AdvancedCombatDroid_5.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Script_Agent.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="src\Script_AimController.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
     </ClCompile>
@@ -318,7 +315,6 @@
     <ClInclude Include="include\Resource.h" />
     <ClInclude Include="include\Script_AbilityHolder.h" />
     <ClInclude Include="include\Script_AdvancedCombatDroid_5.h" />
-    <ClInclude Include="include\Script_Agent.h" />
     <ClInclude Include="include\Script_AimController.h" />
     <ClInclude Include="include\Script_BehaviorTree.h" />
     <ClInclude Include="include\Script_Billboard.h" />

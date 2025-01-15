@@ -31,6 +31,21 @@ struct PQNode {
 
 
 #pragma region Class
+class PathOption : public Singleton<PathOption> {
+	friend Singleton;
+	
+private:
+	float mAgentSpeed = 4.2f;
+	int mAllowedHeight = 1;
+
+public:
+	float GetAgentSpeed() const { return mAgentSpeed; }
+	int GetAllowedHeight() const { return mAllowedHeight; }
+	
+	void SetAgentSpeed(float speed) { mAgentSpeed = speed; }
+	void SetAllowedHeight(int height) { mAllowedHeight = height; }
+};
+
 
 class Agent : public Component {
 	COMPONENT(Agent, Component)
@@ -40,7 +55,6 @@ private:
 	
 private:
 	std::stack<Vec3> mPath{};
-	float mWalkSpeed = 3.2f;
 
 public:
 	virtual void Update() override;
@@ -50,5 +64,6 @@ public:
 
 private:
 	void MoveToPath();
+	int GetOnVoxelCount(const Pos& pos);
 };
 #pragma endregion
