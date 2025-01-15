@@ -22,10 +22,9 @@ using namespace Path;
 struct PQNode {
 	bool operator<(const PQNode& rhs) const { return F < rhs.F; }
 	bool operator>(const PQNode& rhs) const { return F > rhs.F; }
-
-	int	F;
-	int	G;
-	Pos	Pos;
+	int	F{};
+	int	G{};
+	Pos	Pos{};
 };
 #pragma endregion
 
@@ -37,13 +36,16 @@ class PathOption : public Singleton<PathOption> {
 private:
 	float mAgentSpeed = 4.2f;
 	int mAllowedHeight = 1;
+	int mMaxClosedListSize = 5000;
 
 public:
 	float GetAgentSpeed() const { return mAgentSpeed; }
 	int GetAllowedHeight() const { return mAllowedHeight; }
+	int GetMaxClosedListSize() const { return mMaxClosedListSize; }
 	
 	void SetAgentSpeed(float speed) { mAgentSpeed = speed; }
 	void SetAllowedHeight(int height) { mAllowedHeight = height; }
+	void SetMaxClosedListSize(int size) { mMaxClosedListSize = size; }
 };
 
 

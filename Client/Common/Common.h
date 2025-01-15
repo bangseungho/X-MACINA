@@ -651,12 +651,12 @@ public:
 namespace Path {
 	struct Pos
 	{
-		bool operator==(Pos& other)
+		bool operator==(const Pos& other)
 		{
 			return Z == other.Z && X == other.X && Y == other.Y;
 		}
 
-		bool operator!=(Pos& other)
+		bool operator!=(const Pos& other)
 		{
 			return !(*this == other);
 		}
@@ -670,7 +670,7 @@ namespace Path {
 			return Y < other.Y;
 		}
 
-		Pos operator+(Pos& other)
+		Pos operator+(const Pos& other)
 		{
 			Pos ret;
 			ret.Z = Z + other.Z;
@@ -679,7 +679,7 @@ namespace Path {
 			return ret;
 		}
 
-		Pos& operator+=(Pos& other)
+		Pos& operator+=(const Pos& other)
 		{
 			Z += other.Z;
 			X += other.X;
@@ -687,7 +687,7 @@ namespace Path {
 			return *this;
 		}
 
-		Pos operator-(Pos& other)
+		Pos operator-(const Pos& other)
 		{
 			Pos ret;
 			ret.Z = Z - other.Z;
@@ -696,7 +696,7 @@ namespace Path {
 			return ret;
 		}
 
-		Pos& operator-=(Pos& other)
+		Pos& operator-=(const Pos& other)
 		{
 			Z -= other.Z;
 			X -= other.X;

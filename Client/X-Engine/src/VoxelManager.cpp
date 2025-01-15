@@ -66,8 +66,6 @@ void VoxelManager::Update()
 
 void VoxelManager::Render()
 {
-	Update();
-
 	DXGIMgr::I->SetGraphicsRootShaderResourceView(RootParam::Instancing, FrameResourceMgr::GetBufferGpuAddr(0, mInstanceBuffers[CURR_FRAME_INDEX].get()));
 
 	int buffIdx{};
