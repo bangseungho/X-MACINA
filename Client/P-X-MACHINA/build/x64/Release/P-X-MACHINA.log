@@ -1,54 +1,5 @@
-﻿  stdafx.cpp
-  P-X-MACHINA.cpp
-  CheckAttackRange.cpp
-  CheckDeath.cpp
-  CheckDetectionRange.cpp
-  CheckPatrolRange.cpp
-  GameFramework.cpp
-  IRDetectorAbility.cpp
-  MinimapAbility.cpp
-  Script_AbilityHolder.cpp
-  Script_AdvancedCombatDroid_5.cpp
-  Script_AimController.cpp
-  Script_BehaviorTree.cpp
-  Script_Billboard.cpp
-  Script_Bullet.cpp
-  Script_Enemy.cpp
-  Script_EnemyManager.cpp
-  Script_GameManager.cpp
-  Script_GroundObject.cpp
-  Script_GroundPlayer.cpp
-  Script_LiveObject.cpp
-  컴파일하고 있습니다...
-  Script_MainCamera.cpp
-  Script_MeleeBT.cpp
-  Script_Missile.cpp
-C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\src\Script_Missile.cpp(41,72): warning C4305: '인수': 'double'에서 'float'(으)로 잘립니다.
-  Script_Onyscidus.cpp
-  Script_Player.cpp
-  Script_ShootingPlayer.cpp
-  Script_Sprite.cpp
-  Script_Ursacetus.cpp
-  Script_Weapon.cpp
-  Script_Weapon_MissileLauncher.cpp
-  Script_Weapon_Pistol.cpp
-  Script_Weapon_Rifle.cpp
-  Script_Weapon_Shotgun.cpp
-  Script_Weapon_Sniper.cpp
-  ShieldAbility.cpp
-  TaskAttack.cpp
-  TaskGetHit.cpp
-  TaskMoveToPath.cpp
-  TaskMoveToTarget.cpp
-  TaskPathPlanningAStar.cpp
-  컴파일하고 있습니다...
-  TaskPathPlanningToSpawn.cpp
-  TaskPathPlanningToTarget.cpp
-  TaskPatrol.cpp
-  Wait.cpp
-  X-MACHINA.cpp
-  코드를 생성하고 있습니다.
-  1 of 15956 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+﻿  코드를 생성하고 있습니다.
+  3 of 16021 functions (<0.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     95 functions had inline decision re-evaluated but remain unchanged
   코드를 생성했습니다.

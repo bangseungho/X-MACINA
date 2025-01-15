@@ -231,7 +231,7 @@ ATOM GameFramework::CreateGameClientWindow()
 	int adjustedHeight = rc.bottom - rc.top;
 
 	mhWnd = ::CreateWindow(L"X-MACHINA", L"X-MACHINA", dwStyle
-		, 0, 400, adjustedWidth, adjustedHeight
+		, CW_USEDEFAULT, 0, adjustedWidth, adjustedHeight
 		, nullptr, nullptr, mhInst, nullptr);
 
 

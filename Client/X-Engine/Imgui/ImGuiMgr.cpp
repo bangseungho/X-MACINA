@@ -32,7 +32,7 @@ bool ImGuiMgr::Init()
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls    
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
 
     //ImGui::StyleColorsLight();
     ImGui::StyleColorsDark();
@@ -62,7 +62,7 @@ bool ImGuiMgr::Init()
 
     //uptr<ImGuiFunc> hierachyFunc = std::make_unique<ImGuiHierarchyFunc>(Vec2{ 0, 0 }, Vec2{ 300, 400 });
     //uptr<ImGuiFunc> inspectorFunc = std::make_unique<ImGuiInspectorFunc>(Vec2{ 0, 400 }, Vec2{ 300, 400 });
-    uptr<ImGuiFunc> voxelFunc = std::make_unique<ImGuiVoxelFunc>(Vec2{ 0, 0 }, Vec2{ 300, 200 });
+    uptr<ImGuiFunc> voxelFunc = std::make_unique<ImGuiVoxelFunc>(Vec2{ 0, 0 }, Vec2{ 400, 300 });
     //mFuncs.emplace_back(std::move(hierachyFunc));
     //mFuncs.emplace_back(std::move(inspectorFunc));
     mFuncs.emplace_back(std::move(voxelFunc));
@@ -125,8 +125,8 @@ void ImGuiMgr::DestroyImGui()
 
 void ImGuiMgr::FocusOff()
 {
-	//ImGui::FocusWindow(NULL);
-	//mIsFocused = false;
+	ImGui::FocusWindow(NULL);
+	mIsFocused = false;
 }
 
 ImGuiFunc::ImGuiFunc(const Vec2& pos, const Vec2& size, std::string label)
@@ -139,10 +139,11 @@ ImGuiFunc::ImGuiFunc(const Vec2& pos, const Vec2& size, std::string label)
 
 void ImGuiFunc::ExecuteBegin()
 {
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.Colors[ImGuiCol_WindowBg].w = 0.5f;
+
     // 창 크기 및 위치 조정
-    RECT rect;
-	GetWindowRect(DXGIMgr::I->GetHwnd(), &rect);
-	ImGui::SetNextWindowPos(ImVec2{ rect.left + mPosition.x + 5, rect.top + mPosition.y + 32 });
+	ImGui::SetNextWindowPos(ImVec2{ mPosition.x, mPosition.y });
 	ImGui::SetNextWindowSize(ImVec2{ mSize.x, mSize.y });
 	ImGui::Begin(mName.c_str(), nullptr, ImGuiMgr::I->GetMoveWindow() ? ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove : ImGuiWindowFlags_None);
 }
@@ -174,6 +175,7 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
     {
 		float value = PathOption::I->GetAgentSpeed();
 		ImGui::Text("AgentSpeed :"); // 안내 텍스트
+        ImGui::SameLine();
 		ImGui::InputFloat("##float_input", &value, 0.5f, 1.0f, "%.3f"); // float 입력 박스
 		PathOption::I->SetAgentSpeed(value);
     }
@@ -182,7 +184,8 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
     {
 		int value = PathOption::I->GetAllowedHeight();
 		ImGui::Text("AllowedHeight :"); // 안내 텍스트
-        ImGui::InputInt("##int_input", &value);
+		ImGui::SameLine();
+		ImGui::InputInt("##int_input", &value);
 		PathOption::I->SetAllowedHeight(value);
     }
 }
