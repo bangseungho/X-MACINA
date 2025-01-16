@@ -51,6 +51,7 @@ public:
 		BigExplosion
 	};
 
+
 private:
 	/* Light */
 	sptr<Light> mLight{};
@@ -81,8 +82,6 @@ private:
 	std::vector<sptr<Grid>>	mGrids{};				// all scene grids
 	std::set<Grid*>			mCullingGrids{};		// all scene grids
 	float					mGridStartPoint{};		// leftmost coord of the entire grid
-	int						mGridWidth{};			// length of x for one grid
-	int						mGridCols{};			// number of columns in the grid
 
 	/* Others */
 	bool mIsRenderBounds = false;
@@ -114,11 +113,12 @@ public:
 	Pos GetTileUniqueIndexFromPos(const Vec3& pos) const;
 	Vec3 GetTilePosFromUniqueIndex(const Pos& index) const;
 
-	VoxelState GetTileFromUniqueIndex(const Pos& index) const;
 	void SetTileFromUniqueIndex(const Pos& index, VoxelState tile);
 	void SetTileFromUniqueIndex(const Pos& index, VoxelCondition tile);
-	VoxelState GetTileFromPos(const Vec3& index) const;
 	RenderVoxel GetVoxelFromUniqueIndex(const Pos& index) const;
+
+	VoxelState GetVoxelState(const Pos& index) const;
+	VoxelCondition GetVoxelCondition(const Pos& index) const;
 	void SetVoxelState(const Pos& index, VoxelState state) const;
 	void SetVoxelCondition(const Pos& index, VoxelCondition condition) const;
 

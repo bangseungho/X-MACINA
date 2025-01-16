@@ -25,7 +25,4 @@ public:
 
 private:
 	void BuildObjects();
-
-	void WindowFocusOn();
-	void WindowFocusOff();
 };

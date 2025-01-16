@@ -212,10 +212,6 @@ public:
 	float GetMovementSpeed() const { return mMovementSpeed; }
 	float GetRotationSpeed() const { return mRotationSpeed; }
 
-protected:
-	bool PathPlanningAStar(Pos start, Pos dest);
-	Pos FindNoneTileFromBfs(const Pos& pos);
-
 private:
 	void InitWeapons();
 	virtual void DrawWeaponStart(int weaponIdx, bool isDrawImmed) override;

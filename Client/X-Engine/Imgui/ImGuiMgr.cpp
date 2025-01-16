@@ -162,7 +162,7 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 	ImGui::Text("Pos : x = %.1f, y = %.1f, z = %.1f", selectedVoxelPosW.x, selectedVoxelPosW.y, selectedVoxelPosW.z);
     
     // tile
-    const VoxelState selectedVoxelTile = Scene::I->GetTileFromUniqueIndex(selectedVoxelIndex);
+    const VoxelState selectedVoxelTile = Scene::I->GetVoxelState(selectedVoxelIndex);
     std::string tileName{};
     switch (selectedVoxelTile)
     {

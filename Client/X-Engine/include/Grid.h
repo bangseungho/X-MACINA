@@ -72,6 +72,7 @@ public:
 	const auto& GetObjects() const		{ return mObjects; }
 
 	VoxelState GetVoxelState(const Pos& tPos);
+	VoxelCondition GetVoxelCondition(const Pos& tPos);
 	RenderVoxel GetVoxelFromUniqueIndex(const Pos& index) const;
 	void SetTileFromUniqueIndex(const Pos& index, VoxelState tile);
 	void SetTileFromUniqueIndex(const Pos& index, VoxelCondition condition);

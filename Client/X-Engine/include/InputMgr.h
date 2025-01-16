@@ -92,14 +92,9 @@ public:
 	// 각 키들의 정보(KeyInfo)를 업데이트한다.
 	void Update();
 
-	void WindowFocusOn() const;
-	void WindowFocusOff();
-
 	void WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 private:
-	void SetCursorCenter() const;
-
 	void ProcessKeyboardMsg(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	void ProcessMouseMsg(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 };

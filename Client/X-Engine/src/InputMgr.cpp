@@ -72,32 +72,13 @@ void InputMgr::Update()
 		mAwayKeys.pop();
 	}
 
-	// mouse move //
-	if (!ImGuiMgr::I->IsFocused() && ::GetFocus()) {
-		POINT ptMouse{};
-		::GetCursorPos(&ptMouse);
-		::ScreenToClient(DXGIMgr::I->GetHwnd(), &ptMouse);
+	POINT ptMouse{};
+	::GetCursorPos(&ptMouse);
+	::ScreenToClient(DXGIMgr::I->GetHwnd(), &ptMouse);
 
-		mMousePos = Vec2(static_cast<float>(ptMouse.x), static_cast<float>(ptMouse.y));
-		mMouseDir.x = mMousePos.x - mClientCenter.x;
-		mMouseDir.y = -(mMousePos.y - mClientCenter.y);
-		SetCursorCenter();
-	}
-	else {
-		WindowFocusOff();
-	}
-}
-
-void InputMgr::WindowFocusOn() const
-{
-	if (!ImGuiMgr::I->IsFocused()) {
-		SetCursorCenter();
-	}
-}
-
-void InputMgr::WindowFocusOff()
-{
-	mMousePos = Vec2(static_cast<float>(mClientCenter.x), static_cast<float>(mClientCenter.y));
+	mMousePos = Vec2(static_cast<float>(ptMouse.x), static_cast<float>(ptMouse.y));
+	mMouseDir.x = mMousePos.x - mClientCenter.x;
+	mMouseDir.y = -(mMousePos.y - mClientCenter.y);
 }
 
 
@@ -112,22 +93,13 @@ void InputMgr::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEMOVE:
 		ProcessMouseMsg(hWnd, msg, wParam, lParam);
 		break;
-
 	case WM_KEYDOWN:
 	case WM_KEYUP:
 		ProcessKeyboardMsg(hWnd, msg, wParam, lParam);
 		break;
-
 	default:
 		break;
 	}
-}
-
-void InputMgr::SetCursorCenter() const
-{
-	//POINT clientCenter = mClientCenter;
-	//::ClientToScreen(DXGIMgr::I->GetHwnd(), &clientCenter);
-	//::SetCursorPos(clientCenter.x, clientCenter.y);
 }
 
 void InputMgr::ProcessKeyboardMsg(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)

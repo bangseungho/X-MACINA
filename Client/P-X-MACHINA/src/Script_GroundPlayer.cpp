@@ -74,34 +74,6 @@ void Script_GroundPlayer::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM 
 		break;
 	}
 }
-
-Pos Script_GroundPlayer::FindNoneTileFromBfs(const Pos& pos)
-{
-	std::queue<Pos> q;
-	std::map<Pos, bool> visited;
-	q.push(pos);
-
-	Pos curPos{};
-	while (!q.empty()) {
-		curPos = q.front();
-		q.pop();
-
-		if (Scene::I->GetTileFromUniqueIndex(curPos) == VoxelState::None)
-			return curPos;
-
-		if (visited[curPos])
-			continue;
-
-		visited[curPos] = true;
-
-		for (int dir = 0; dir < 4; ++dir) {
-			Pos nextPos = curPos + gkFront[dir];
-			q.push(nextPos);
-		}
-	}
-
-	return curPos;
-}
 #pragma endregion
 
 #pragma region Player
@@ -140,7 +112,9 @@ void Script_GroundPlayer::Start()
 	mRotationSpeed = 360.f;
 	SetMaxHP(150.f);
 
-	constexpr Vec3 kSpawnPoint = Vec3(100, 0, 260);
+	Vec3 kSpawnPoint = Vec3(100, 0, 260);
+	kSpawnPoint.y = Scene::I->GetTerrainHeight(kSpawnPoint.x, kSpawnPoint.z);
+
 	mGridObject = dynamic_cast<GridObject*>(mObject);
 		
 	SetSpawn(kSpawnPoint);

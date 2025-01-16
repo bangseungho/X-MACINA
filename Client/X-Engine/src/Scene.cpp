@@ -38,12 +38,13 @@ namespace {
 	constexpr int kGridWidthCount = 20;						// all grid count = n*n
 	constexpr Vec3 kBorderPos = Vec3(256, 200, 256);		// center of border
 	constexpr Vec3 kBorderExtents = Vec3(1500, 500, 1500);	// extents of border
+	constexpr int kGridWidth = static_cast<int>(kBorderExtents.x / kGridWidthCount);		// length of x for one grid
+	static int kGridCols{};			// number of columns in the grid
 }
 
 Scene::Scene()
 	:
 	mMapBorder(kBorderPos, kBorderExtents),
-	mGridWidth(static_cast<int>(mMapBorder.Extents.x / kGridWidthCount)),
 	mLight(std::make_shared<Light>())
 {
 
@@ -265,30 +266,30 @@ void Scene::BuildGrid()
 	constexpr float kMaxHeight = 300.f;	// for 3D grid
 
 	// recalculate scene grid size
-	const int adjusted = Math::GetNearestMultiple((int)mMapBorder.Extents.x, mGridWidth);
+	const int adjusted = Math::GetNearestMultiple((int)mMapBorder.Extents.x, kGridWidth);
 	mMapBorder.Extents = Vec3((float)adjusted, mMapBorder.Extents.y, (float)adjusted);
 
 	// set grid start pos
 	mGridStartPoint = mMapBorder.Center.x - mMapBorder.Extents.x / 2;
 
 	// set grid count
-	mGridCols = adjusted / mGridWidth;
-	const int gridCount = mGridCols * mGridCols;
+	kGridCols = adjusted / kGridWidth;
+	const int gridCount = kGridCols * kGridCols;
 	mGrids.resize(gridCount);
 
 	// set grid bounds
-	const float gridExtent = (float)mGridWidth / 2.0f;
-	for (int y = 0; y < mGridCols; ++y) {
-		for (int x = 0; x < mGridCols; ++x) {
-			float gridX = (mGridWidth * x) + ((float)mGridWidth / 2) + mGridStartPoint;
-			float gridZ = (mGridWidth * y) + ((float)mGridWidth / 2) + mGridStartPoint;
+	const float gridExtent = (float)kGridWidth / 2.0f;
+	for (int y = 0; y < kGridCols; ++y) {
+		for (int x = 0; x < kGridCols; ++x) {
+			float gridX = (kGridWidth * x) + ((float)kGridWidth / 2) + mGridStartPoint;
+			float gridZ = (kGridWidth * y) + ((float)kGridWidth / 2) + mGridStartPoint;
 
 			BoundingBox bb{};
 			bb.Center = Vec3(gridX, kMaxHeight, gridZ);
 			bb.Extents = Vec3(gridExtent, kMaxHeight, gridExtent);
 
-			int index = (y * mGridCols) + x;
-			mGrids[index] = std::make_shared<Grid>(index, mGridWidth, bb);
+			int index = (y * kGridCols) + x;
+			mGrids[index] = std::make_shared<Grid>(index, kGridWidth, bb);
 		}
 	}
 }
@@ -312,7 +313,7 @@ void Scene::UpdateVoxelsOnTerrain()
 			upIndex.Y += 1;
 
 			// 위 복셀이 스태틱이면 해당 아래 복셀도 스태틱으로 설정
-			if (GetTileFromUniqueIndex(upIndex) == VoxelState::Static) {
+			if (GetVoxelState(upIndex) == VoxelState::Static) {
 				SetTileFromUniqueIndex(index, VoxelState::Static);
 			}
 			else {
@@ -740,7 +741,7 @@ void Scene::RenderGridBounds()
 		constexpr float kGirdHeight = 5.f;
 		Vec3 pos = grid->GetBB().Center;
 		pos.y = kGirdHeight;
-		MeshRenderer::RenderPlane(pos, (float)mGridWidth, (float)mGridWidth);
+		MeshRenderer::RenderPlane(pos, (float)kGridWidth, (float)kGridWidth);
 #endif
 	}
 }
@@ -854,15 +855,21 @@ void Scene::PopObjectBuffer()
 }
 
 //////////////////* Others *//////////////////
+int GetGridIndex(const Pos& index) {
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
+	return gridZ * kGridCols + gridX;
+}
+
 int Scene::GetGridIndexFromPos(Vec3 pos) const
 {
 	pos.x -= mGridStartPoint;
 	pos.z -= mGridStartPoint;
 
-	const int gridX = static_cast<int>(pos.x / mGridWidth);
-	const int gridZ = static_cast<int>(pos.z / mGridWidth);
+	const int gridX = static_cast<int>(pos.x / kGridWidth);
+	const int gridZ = static_cast<int>(pos.z / kGridWidth);
 
-	return gridZ * mGridCols + gridX;
+	return gridZ * kGridCols + gridX;
 }
 
 Pos Scene::GetTileUniqueIndexFromPos(const Vec3& pos) const
@@ -885,62 +892,60 @@ Vec3 Scene::GetTilePosFromUniqueIndex(const Pos& index) const
 	return Vec3{ posX, posY, posZ };
 }
 
-VoxelState Scene::GetTileFromPos(const Vec3& pos) const
+VoxelState Scene::GetVoxelState(const Pos& index) const
 {
-	return GetTileFromUniqueIndex(GetTileUniqueIndexFromPos(pos));
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
+
+	return mGrids[gridZ * kGridCols + gridX]->GetVoxelState(index);
 }
 
-VoxelState Scene::GetTileFromUniqueIndex(const Pos& index) const
+VoxelCondition Scene::GetVoxelCondition(const Pos& index) const
 {
-	// 타일의 고유 인덱스로부터 타일의 값을 반환
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
 
-	const int tileX = index.X % Grid::mTileRows;
-	const int tileZ = index.Z % Grid::mTileCols;
-	const int tileY = index.Y;
-
-	return mGrids[gridZ * mGridCols + gridX]->GetVoxelState(index);
+	return mGrids[gridZ * kGridCols + gridX]->GetVoxelCondition(index);
 }
 
 RenderVoxel Scene::GetVoxelFromUniqueIndex(const Pos& index) const
 {
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
 
-	return mGrids[gridZ * mGridCols + gridX]->GetVoxelFromUniqueIndex(index);
+	return mGrids[gridZ * kGridCols + gridX]->GetVoxelFromUniqueIndex(index);
 }
 
 void Scene::SetVoxelState(const Pos& index, VoxelState state) const
 {
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
-	mGrids[gridZ * mGridCols + gridX]->SetVoxelState(index, state);
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
+	mGrids[gridZ * kGridCols + gridX]->SetVoxelState(index, state);
 }
 
 void Scene::SetVoxelCondition(const Pos& index, VoxelCondition condition) const
 {
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
-	mGrids[gridZ * mGridCols + gridX]->SetVoxelCondition(index, condition);
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
+	mGrids[gridZ * kGridCols + gridX]->SetVoxelCondition(index, condition);
 }
 
 void Scene::SetTileFromUniqueIndex(const Pos& index, VoxelState tile)
 {
 	// 타일의 고유 인덱스로부터 타일의 값을 반환
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileWidth / mGridWidth);
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileWidth / kGridWidth);
 
-	mGrids[gridZ * mGridCols + gridX]->SetTileFromUniqueIndex(index, tile);
+	mGrids[gridZ * kGridCols + gridX]->SetTileFromUniqueIndex(index, tile);
 }
 
 void Scene::SetTileFromUniqueIndex(const Pos& index, VoxelCondition tile)
 {
 	// 타일의 고유 인덱스로부터 타일의 값을 반환
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileWidth / mGridWidth);
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileWidth / kGridWidth);
 
-	mGrids[gridZ * mGridCols + gridX]->SetTileFromUniqueIndex(index, tile);
+	mGrids[gridZ * kGridCols + gridX]->SetTileFromUniqueIndex(index, tile);
 }
 
 void Scene::ToggleDrawBoundings()
@@ -1078,8 +1083,8 @@ std::vector<sptr<Grid>> Scene::GetNeighborGrids(int gridIndex, bool includeSelf)
 	std::vector<sptr<Grid>> result;
 	result.reserve(9);
 
-	const int gridX = gridIndex % mGridCols;
-	const int gridZ = gridIndex / mGridCols;
+	const int gridX = gridIndex % kGridCols;
+	const int gridZ = gridIndex / kGridCols;
 
 	for (int offsetZ = -1; offsetZ <= 1; ++offsetZ) {
 		for (int offsetX = -1; offsetX <= 1; ++offsetX) {
@@ -1087,8 +1092,8 @@ std::vector<sptr<Grid>> Scene::GetNeighborGrids(int gridIndex, bool includeSelf)
 			const int neighborZ = gridZ + offsetZ;
 
 			// 인덱스가 전체 그리드 범위 내에 있는지 확인
-			if (neighborX >= 0 && neighborX < mGridCols && neighborZ >= 0 && neighborZ < mGridCols) {
-				const int neighborIndex = neighborZ * mGridCols + neighborX;
+			if (neighborX >= 0 && neighborX < kGridCols && neighborZ >= 0 && neighborZ < kGridCols) {
+				const int neighborIndex = neighborZ * kGridCols + neighborX;
 
 				if (neighborIndex == gridIndex && !includeSelf) {
 					continue;

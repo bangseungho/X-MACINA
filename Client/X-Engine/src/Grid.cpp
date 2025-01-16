@@ -38,6 +38,16 @@ VoxelState Grid::GetVoxelState(const Pos& index)
 	}
 }
 
+VoxelCondition Grid::GetVoxelCondition(const Pos& index)
+{
+	if (mRenderVoxels.count(index)) {
+		return mRenderVoxels[index].Condition;
+	}
+	else {
+		return VoxelCondition{};
+	}
+}
+
 RenderVoxel Grid::GetVoxelFromUniqueIndex(const Pos& index) const
 {
 	auto findIt = mRenderVoxels.find(index);

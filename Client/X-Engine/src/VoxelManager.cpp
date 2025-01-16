@@ -68,9 +68,9 @@ void VoxelManager::Update()
 	for (int i = x - halfSizeX; i < x + halfSizeX; ++i) {
 		for (int j = y - halfSizeZ; j < y + halfSizeZ; ++j) {
 			for (int k = 0; k < VoxelManager::mOption.RenderVoxelHeight; ++k) {
-				const RenderVoxel& voxel = Scene::I->GetVoxelFromUniqueIndex(Pos{ j, i, k });
-				if (voxel.State != VoxelState::None || voxel.Condition == VoxelCondition::ReadyCreate) {
-					mRenderVoxels.push_back(Pos{ j, i, k });
+				const Pos index = Pos{ j, i, k };
+				if (Scene::I->GetVoxelState(index) != VoxelState::None || Scene::I->GetVoxelCondition(index) == VoxelCondition::ReadyCreate) {
+					mRenderVoxels.push_back(index);
 				}
 			}
 		}
@@ -145,7 +145,7 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	for (int i = 0; i < mRenderVoxels.size(); ++i) {
 		Vec3 voxelPosW = Scene::I->GetTilePosFromUniqueIndex(mRenderVoxels[i]);
 		Scene::I->SetVoxelCondition(mRenderVoxels[i], VoxelCondition::None);
-		if (Scene::I->GetTileFromUniqueIndex(mRenderVoxels[i]) == VoxelState::None) continue;
+		if (Scene::I->GetVoxelState(mRenderVoxels[i]) == VoxelState::None) continue;
 		BoundingBox bb{ voxelPosW, Grid::mkTileExtent };
 		float dist{};
 		if (ray.Intersects(bb, dist)) {
@@ -169,9 +169,15 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	}
 	else {
 		Scene::I->SetVoxelCondition(mSelectedVoxel, VoxelCondition::Picked);
-
 		if (makePath) {
-			mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel);
+			if (mOption.CreateMode == CreateMode::Remove) {
+				if (Scene::I->GetVoxelState(mSelectedVoxel) == VoxelState::Static) {
+					Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::None);
+				}
+			}
+			else {
+				mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel);
+			}
 		}
 	}
 }

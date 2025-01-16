@@ -21,7 +21,6 @@ Engine::Engine()
 
 }
 
-
 void Engine::Init(HINSTANCE hInstance, HWND hWnd, short width, short height)
 {
 	ShowCursor(TRUE);
@@ -32,13 +31,7 @@ void Engine::Init(HINSTANCE hInstance, HWND hWnd, short width, short height)
 	DXGIMgr::I->Init(hInstance, windowInfo);
 
 	BuildObjects();
-
-#pragma region Imgui - 장재문 - 
 	ImGuiMgr::I->Init();
-#pragma endregion
-#pragma region Log - 장재문 -
-	//LogMgr::I->Init(""); // 이름을 지을 수 있다. 
-#pragma endregion
 }
 
 
@@ -96,7 +89,6 @@ LRESULT Engine::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	// 개선 필요
 	// ImGui가 포커싱되어 있다면 마우스 커서를 보이게 한다.
 	if (ImGuiMgr::I->IsFocused()) {
-		ShowCursor(TRUE);
 		ImGuiMgr::I->FocusOff();	// ImGui의 포커싱을 없앤다.
 		return true;
 	}
@@ -104,16 +96,11 @@ LRESULT Engine::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	switch (msg)
 	{
 	case WM_SETFOCUS:
-		WindowFocusOn();
 		break;
 	case WM_KILLFOCUS:
-		WindowFocusOff();
 		break;
 	case WM_LBUTTONDOWN:
 	case WM_RBUTTONDOWN:
-		if (!mIsWindowFocused) {
-			::SetFocus(hWnd);
-		}
 	break;
 	default:
 		break;
@@ -129,18 +116,4 @@ LRESULT Engine::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 void Engine::BuildObjects()
 {
 	Scene::I->Start();
-}
-
-void Engine::WindowFocusOn()
-{
-	InputMgr::I->WindowFocusOn();
-	while (ShowCursor(FALSE) >= 0);
-	mIsWindowFocused = true;
-}
-
-void Engine::WindowFocusOff()
-{
-	InputMgr::I->WindowFocusOff();
-	while (ShowCursor(TRUE) <= 0);
-	mIsWindowFocused = false;
 }

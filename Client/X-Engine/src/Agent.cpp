@@ -63,7 +63,7 @@ void Agent::PathPlanningToAstar(Pos dest)
 		// 26방향으로 탐색
 		for (int dir = 0; dir < 26; ++dir) {
 			Pos nextPos = curNode.Pos + gkFront3D[dir];
-			VoxelState nextTile = Scene::I->GetTileFromUniqueIndex(nextPos);
+			VoxelState nextTile = Scene::I->GetVoxelState(nextPos);
 
 			// 다음 방향 노드의 상태가 static이라면 continue
 			int onVoxelCount = GetOnVoxelCount(nextPos);
@@ -127,7 +127,7 @@ int Agent::GetOnVoxelCount(const Pos& pos)
 	int cnt{};
 	while (true) {
 		next.Y += 1;
-		if (Scene::I->GetTileFromUniqueIndex(next) == VoxelState::None) {
+		if (Scene::I->GetVoxelState(next) == VoxelState::None) {
 			break;
 		}
 		cnt++;
