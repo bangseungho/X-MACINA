@@ -1,5 +1,6 @@
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\p-x-machina.pch
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\stdafx.obj
+c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_liveobject.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_groundplayer.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_groundobject.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_gamemanager.obj
@@ -9,7 +10,6 @@ c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\rele
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_billboard.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_behaviortree.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_aimcontroller.obj
-c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_agent.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_advancedcombatdroid_5.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_abilityholder.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\minimapability.obj
@@ -20,6 +20,7 @@ c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\rele
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\checkdeath.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\checkattackrange.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\p-x-machina.obj
+c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\taskpathplanningastar.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\taskmovetotarget.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\taskmovetopath.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\taskgethit.obj
@@ -39,17 +40,16 @@ c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\rele
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_missile.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_meleebt.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_maincamera.obj
-c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_liveobject.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\x-machina.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\wait.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\taskpatrol.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\taskpathplanningtotarget.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\taskpathplanningtospawn.obj
-c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\taskpathplanningastar.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\release\p-x-machina.exe
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\p-x-machina.ipdb
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\p-x-machina.iobj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\release\p-x-machina.pdb
+c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\script_agent.obj
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\\build\release\p-x-machina.pdb
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\p-x-machina.tlog\cl.command.1.tlog
 c:\users\bangseungho\documents\github\x-macina\client\p-x-machina\build\x64\release\p-x-machina.tlog\cl.read.1.tlog

@@ -26,7 +26,6 @@ enum class VoxelCondition : UINT8 {
 
 
 #pragma region Using
-using namespace Path;
 #pragma endregion
 
 
@@ -47,8 +46,6 @@ private:
 	std::unordered_set<GridObject*> mStaticObjects{};
 	std::unordered_set<GridObject*> mDynamicObjets{};
 
-	std::unordered_map<int, VoxelState> mVoxels{};
-
 public:
 	static constexpr float mkTileHeight = 0.5f;
 	static constexpr float mkTileWidth = 0.5f;
@@ -59,7 +56,7 @@ public:
 	static int mVoxelCount;
 	static float mVoxelSize;
 
-	std::map<Pos, RenderVoxel> mRenderVoxels{};
+	std::unordered_map<Pos, RenderVoxel> mRenderVoxels{};
 
 public:
 	Grid(int index, int width, const BoundingBox& bb);

@@ -141,7 +141,7 @@ void Grid::UpdateTiles(VoxelState tile, GridObject* object)
 	for (const auto& collider : object->GetComponent<ObjectCollider>()->GetColliders()) {
 		// BFS를 통해 주변 타일도 업데이트
 		std::queue<Pos> q;
-		std::map<Pos, bool> visited;
+		std::unordered_map<Pos, bool> visited(2000);
 
 		if (collider->GetType() != Collider::Type::Box) {
 			continue;

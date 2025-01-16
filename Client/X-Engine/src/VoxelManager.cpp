@@ -48,6 +48,7 @@ void VoxelManager::Init(Object* player)
 	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
 	CalcRenderVoxelCount(50);
 	mClosedList.reserve(1000);
+	mRenderVoxels.reserve(5000);
 	for (auto& buffer : mInstanceBuffers) {
 		buffer = std::make_unique<UploadBuffer<InstanceData>>(DEVICE.Get(), mkMaxRenderVoxels * mkMaxRenderVoxels * Grid::mTileHeightCount, false);
 	}
@@ -125,7 +126,7 @@ void VoxelManager::Render()
 		mInstanceBuffers[CURR_FRAME_INDEX]->CopyData(buffIdx++, instData);
 	}
 
-	MeshRenderer::RenderInstancingBox(mRenderVoxels.size());
+	MeshRenderer::RenderInstancingBox(static_cast<UINT>(mRenderVoxels.size()));
 }
 
 void VoxelManager::PickTopVoxel(bool makePath)

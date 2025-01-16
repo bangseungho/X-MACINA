@@ -1,26 +1,5 @@
-﻿  CheckDetectionRange.cpp
-  GameFramework.cpp
-  MinimapAbility.cpp
-  Script_AbilityHolder.cpp
-  Script_Bullet.cpp
-  Script_GameManager.cpp
-  Script_GroundObject.cpp
-  Script_GroundPlayer.cpp
-  Script_MainCamera.cpp
-  Script_Missile.cpp
-C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\src\Script_Missile.cpp(41,72): warning C4305: '인수': 'double'에서 'float'(으)로 잘립니다.
-  Script_Player.cpp
-  Script_Weapon.cpp
-  Script_Weapon_MissileLauncher.cpp
-  ShieldAbility.cpp
-  TaskAttack.cpp
-  TaskMoveToTarget.cpp
-  TaskPathPlanningAStar.cpp
-  TaskPathPlanningToSpawn.cpp
-  TaskPathPlanningToTarget.cpp
-  TaskPatrol.cpp
-  코드를 생성하고 있습니다.
+﻿  코드를 생성하고 있습니다.
   Previous IPDB and IOBJ mismatch, fall back to full compilation.
-  All 15891 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  All 16057 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   코드를 생성했습니다.
   P-X-MACHINA.vcxproj -> C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\build\Release\P-X-MACHINA.exe

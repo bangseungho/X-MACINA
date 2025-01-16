@@ -29,10 +29,10 @@ void Agent::PathPlanningToAstar(Pos dest)
 	while (!mPath.empty()) mPath.pop();
 	VoxelManager::I->ClearClosedList();
 
-	std::map<Pos, Pos>	parent;
-	std::map<Pos, int>	onVoxel;
-	std::map<Pos, int>	distance;
-	std::map<Pos, bool>	visited;
+	std::unordered_map<Pos, Pos> parent;
+	std::unordered_map<Pos, int> onVoxel;
+	std::unordered_map<Pos, int> distance;
+	std::unordered_map<Pos, bool> visited;
 
 	// f = g + h
 	Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());

@@ -648,137 +648,158 @@ public:
 	}
 };
 
-namespace Path {
-	struct Pos
+struct Pos
+{
+	bool operator==(const Pos& other) const
 	{
-		bool operator==(const Pos& other)
+		return Z == other.Z && X == other.X && Y == other.Y;
+	}
+
+	bool operator!=(const Pos& other) const
+	{
+		return !(*this == other);
+	}
+
+	bool operator<(const Pos& other) const
+	{
+		if (Z != other.Z)
+			return Z < other.Z;
+		if (X != other.X)
+			return X < other.X;
+		return Y < other.Y;
+	}
+
+	bool operator>(const Pos& other) const
+	{
+		if (Z != other.Z)
+			return Z > other.Z;
+		if (X != other.X)
+			return X > other.X;
+		return Y > other.Y;
+	}
+
+	Pos operator+(const Pos& other)
+	{
+		Pos ret;
+		ret.Z = Z + other.Z;
+		ret.X = X + other.X;
+		ret.Y = Y + other.Y;
+		return ret;
+	}
+
+	Pos& operator+=(const Pos& other)
+	{
+		Z += other.Z;
+		X += other.X;
+		Y += other.Y;
+		return *this;
+	}
+
+	Pos operator-(const Pos& other)
+	{
+		Pos ret;
+		ret.Z = Z - other.Z;
+		ret.X = X - other.X;
+		ret.Y = Y - other.Y;
+		return ret;
+	}
+
+	Pos& operator-=(const Pos& other)
+	{
+		Z -= other.Z;
+		X -= other.X;
+		Y -= other.Y;
+		return *this;
+	}
+
+	int Z{};
+	int X{};
+	int Y{};
+};
+
+
+enum {
+	DirCount = 8
+};
+
+static Pos gkFront[] = {
+	Pos {+1, +0},
+	Pos {+0, -1},
+	Pos {-1, +0},
+	Pos {+0, +1},
+	Pos {-1, +1},
+	Pos {+1, +1},
+	Pos {+1, -1},
+	Pos {-1, -1},
+};
+
+static Pos gkFront2[] = {
+Pos {+1, +0, 0},
+Pos {+0, -1, 0},
+Pos {-1, +0, 0},
+Pos {+0, +1, 0},
+Pos {+0, +0, +1},
+Pos {+0, +0, -1},
+};
+
+static int gkCost[] = {
+10,
+10,
+10,
+10,
+14,
+14,
+14,
+14,
+};
+
+static Pos gkFront3D[] = {
+	// x = -1
+	{ -1, -1, -1 }, { -1, -1,  0 }, { -1, -1,  1 },
+	{ -1,  0, -1 }, { -1,  0,  0 }, { -1,  0,  1 },
+	{ -1,  1, -1 }, { -1,  1,  0 }, { -1,  1,  1 },
+
+	// x =  0
+	{  0, -1, -1 }, {  0, -1,  0 }, {  0, -1,  1 },
+	{  0,  0, -1 },                /* (0,0,0) 생략 */
+	{  0,  0,  1 },
+	{  0,  1, -1 }, {  0,  1,  0 }, {  0,  1,  1 },
+
+	// x = +1
+	{  1, -1, -1 }, {  1, -1,  0 }, {  1, -1,  1 },
+	{  1,  0, -1 }, {  1,  0,  0 }, {  1,  0,  1 },
+	{  1,  1, -1 }, {  1,  1,  0 }, {  1,  1,  1 }
+};
+
+static int gkCost3D[] = {
+	// x = -1
+	17, 14, 17,
+	14, 10, 14,
+	17, 14, 17,
+
+	// x =  0
+	14, 10, 14,
+	20,      /* (0,0,0) 생략이므로 없음 */
+	20,
+	14, 10, 14,
+
+	// x = +1
+	17, 14, 17,
+	14, 10, 14,
+	17, 14, 17
+};
+
+namespace std {
+	template<>
+	struct hash<Pos>
+	{
+		std::size_t operator()(const Pos& pos) const noexcept
 		{
-			return Z == other.Z && X == other.X && Y == other.Y;
+			std::size_t h1 = std::hash<int>()(pos.Z);
+			std::size_t h2 = std::hash<int>()(pos.X);
+			std::size_t h3 = std::hash<int>()(pos.Y);
+			return h1 ^ (h2 << 1) ^ (h3 << 2);
 		}
-
-		bool operator!=(const Pos& other)
-		{
-			return !(*this == other);
-		}
-
-		bool operator<(const Pos& other) const
-		{
-			if (Z != other.Z)
-				return Z < other.Z;
-			if (X != other.X)
-				return X < other.X;
-			return Y < other.Y;
-		}
-
-		Pos operator+(const Pos& other)
-		{
-			Pos ret;
-			ret.Z = Z + other.Z;
-			ret.X = X + other.X;
-			ret.Y = Y + other.Y;
-			return ret;
-		}
-
-		Pos& operator+=(const Pos& other)
-		{
-			Z += other.Z;
-			X += other.X;
-			Y += other.Y;
-			return *this;
-		}
-
-		Pos operator-(const Pos& other)
-		{
-			Pos ret;
-			ret.Z = Z - other.Z;
-			ret.X = X - other.X;
-			ret.Y = Y - other.Y;
-			return ret;
-		}
-
-		Pos& operator-=(const Pos& other)
-		{
-			Z -= other.Z;
-			X -= other.X;
-			Y -= other.Y;
-			return *this;
-		}
-
-		int Z{};
-		int X{};
-		int Y{};
-	};
-
-
-	enum {
-		DirCount = 8
-	};
-
-	static Pos gkFront[] = {
-		Pos {+1, +0},
-		Pos {+0, -1},
-		Pos {-1, +0},
-		Pos {+0, +1},
-		Pos {-1, +1},
-		Pos {+1, +1},
-		Pos {+1, -1},
-		Pos {-1, -1},
-	};
-
-	static Pos gkFront2[] = {
-	Pos {+1, +0, 0},
-	Pos {+0, -1, 0},
-	Pos {-1, +0, 0},
-	Pos {+0, +1, 0},
-	Pos {+0, +0, +1},
-	Pos {+0, +0, -1},
-	};
-
-	static int gkCost[] = {
-	10,
-	10,
-	10,
-	10,
-	14,
-	14,
-	14,
-	14,
-	};
-
-	static Pos gkFront3D[] = {
-		// x = -1
-		{ -1, -1, -1 }, { -1, -1,  0 }, { -1, -1,  1 },
-		{ -1,  0, -1 }, { -1,  0,  0 }, { -1,  0,  1 },
-		{ -1,  1, -1 }, { -1,  1,  0 }, { -1,  1,  1 },
-
-		// x =  0
-		{  0, -1, -1 }, {  0, -1,  0 }, {  0, -1,  1 },
-		{  0,  0, -1 },                /* (0,0,0) 생략 */
-		{  0,  0,  1 },
-		{  0,  1, -1 }, {  0,  1,  0 }, {  0,  1,  1 },
-
-		// x = +1
-		{  1, -1, -1 }, {  1, -1,  0 }, {  1, -1,  1 },
-		{  1,  0, -1 }, {  1,  0,  0 }, {  1,  0,  1 },
-		{  1,  1, -1 }, {  1,  1,  0 }, {  1,  1,  1 }
-	};
-
-	static int gkCost3D[] = {
-		// x = -1
-		17, 14, 17,
-		14, 10, 14,
-		17, 14, 17,
-
-		// x =  0
-		14, 10, 14,
-		20,      /* (0,0,0) 생략이므로 없음 */
-		20,
-		14, 10, 14,
-
-		// x = +1
-		17, 14, 17,
-		14, 10, 14,
-		17, 14, 17
 	};
 }
 #pragma endregion

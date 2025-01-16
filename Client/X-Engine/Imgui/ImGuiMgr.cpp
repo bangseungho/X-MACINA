@@ -205,7 +205,7 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 	int value = VoxelManager::I->GetRenderVoxelRows();
 	ImGui::Text("VoxelRows :"); // 안내 텍스트
 	ImGui::SameLine(mTextSpacing);
-	ImGui::SliderInt("##int_input", &value, 10, 200);
+	ImGui::SliderInt("##int_input", &value, 10, 150);
 	VoxelManager::I->SetRenderVoxelRows(value);
 }
 
