@@ -26,7 +26,6 @@ void Agent::Update()
 
 void Agent::PathPlanningToAstar(Pos dest)
 {
-	while (!mPath.empty()) mPath.pop();
 	VoxelManager::I->ClearClosedList();
 
 	std::unordered_map<Pos, Pos> parent;
@@ -35,13 +34,12 @@ void Agent::PathPlanningToAstar(Pos dest)
 	std::unordered_map<Pos, bool> visited;
 
 	// f = g + h
-	Pos start = Scene::I->GetVoxelIndex(mObject->GetPosition());
 	std::priority_queue<PQNode, std::vector<PQNode>, std::greater<PQNode>> pq;
 	int g = 0;
-	int h = HeuristicManhattan(start, dest) * mkWeight;
-	pq.push({ g + h, g, start });
-	distance[start] = g + h;
-	parent[start] = start;
+	int h = HeuristicManhattan(mStart, dest) * mkWeight;
+	pq.push({ g + h, g, mStart });
+	distance[mStart] = g + h;
+	parent[mStart] = mStart;
 
 	Pos prevDir;
 	int closedListSize{};
@@ -98,6 +96,13 @@ void Agent::PathPlanningToAstar(Pos dest)
 
 		pos = parent[pos];
 	}
+}
+
+void Agent::ReadyPlanningToPath(Pos start)
+{
+	mStart = start;
+	mObject->SetPosition(Scene::I->GetVoxelPos(start));
+	while (!mPath.empty()) mPath.pop();
 }
 
 void Agent::MoveToPath()

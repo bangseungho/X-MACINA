@@ -153,6 +153,9 @@
     <ClCompile Include="src\CheckDeath.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="include\Script_CameraTraget.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\CheckPatrolRange.h">
@@ -291,6 +294,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="include\CheckDetectionRange.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Script_CameraTraget.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

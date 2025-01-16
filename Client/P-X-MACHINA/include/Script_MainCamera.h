@@ -8,6 +8,7 @@
 
 #pragma region ClassForwardDecl
 class GameObject;
+class Script_CameraTarget;
 #pragma endregion
 
 
@@ -20,7 +21,9 @@ private:
 	static constexpr float mkMaxZoomIn  = 0.25f;
 	static constexpr float mkMaxZoomOut = 2.f;
 
-	sptr<GameObject>	mTarget{};
+	sptr<GameObject>			mTarget{};
+	sptr<Script_CameraTarget>	mTargetScript{};
+
 	Vec3				mMainOffset{};
 	Vec2				mExtraOffset{};
 	Vec2				mMaxOffset{};
@@ -35,11 +38,13 @@ private:
 public:
 	void SetCameraOffset(const Vec3& offset);
 	void SetCameraTarget(sptr<GameObject> target);
+	const Vec3& GetTargetPosition();
 
 public:
 	virtual void Awake() override;
 	virtual void Start() override;
 	virtual void Update() override;
+	void ProcessInput();
 
 	// [weight]      : 각 방향에 얼마나 가중치를 둘 것인가(0~1)
 	// [maxOffset_t] : [mMaxOffset]을 얼마나 반영할 것인가 (0~1)

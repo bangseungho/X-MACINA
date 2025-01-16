@@ -7,6 +7,7 @@
 #include "Scene.h"
 
 #include "GameFramework.h"
+#include "Script_CameraTraget.h"
 
 
 void Script_MainCamera::SetCameraOffset(const Vec3& offset)
@@ -20,6 +21,11 @@ void Script_MainCamera::SetCameraTarget(sptr<GameObject> target)
 	if (target) {
 		mTarget = target;
 	}
+}
+
+const Vec3& Script_MainCamera::GetTargetPosition()
+{
+	return mTarget->GetPosition();
 }
 
 
@@ -42,11 +48,13 @@ void Script_MainCamera::Start()
 	base::Start();
 
 	Init();
+	mTargetScript->Start();
+	mTarget->SetPosition(Vec3{ 100, 0, 260 });
 }
 
 void Script_MainCamera::Update()
 {
-	Shake();
+	mTargetScript->Update();
 
 	Vec3 offset = mMainOffset + Vec3(mExtraOffset.x, 0.f, mExtraOffset.y) + mShakeOffset;
 	offset *= mZoomAmount;
@@ -138,10 +146,11 @@ void Script_MainCamera::ZoomOut()
 
 void Script_MainCamera::Init()
 {
-	mTarget = GameFramework::I->GetPlayer();
+	mTarget = std::make_shared<GameObject>();
+	mTargetScript = mTarget->AddComponent<Script_CameraTarget>();
 
 	constexpr float maxPlaneDistance = 100.f;
-	SetCameraOffset(Vec3(0.f, 20.f, -5.f));
+	SetCameraOffset(Vec3(0.f, 20.f, -4.f));
 	mObject->SetPosition(mTarget->GetPosition() + mMainOffset);
 	LookTarget();
 

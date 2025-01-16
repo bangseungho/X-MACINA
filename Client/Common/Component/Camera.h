@@ -12,6 +12,7 @@
 
 #pragma region ClassForwardDecl
 class GridObject;
+class Script_MainCamera;
 #pragma endregion
 
 #pragma region Class
@@ -25,6 +26,7 @@ private:
 	Matrix mViewTransform{};
 	Matrix mProjTransform{};
 	Matrix mNoLagViewTransform{};
+	sptr<Script_MainCamera> mMainCameraScript{};
 
 	Vec3 mOffset{};
 
@@ -37,6 +39,7 @@ private:
 
 public:
 	Vec3 GetOffset() const { return mOffset; }
+	Vec3 GetTargetPosition() const { return GetPosition() - mOffset; }
 	Vec3 GetPosition() const { return mObject->GetPosition(); }
 	Vec3 GetRight() const { return mObject->GetRight(); }
 	Vec3 GetUp() const { return mObject->GetUp(); }

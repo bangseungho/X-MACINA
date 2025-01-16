@@ -35,7 +35,7 @@ class PathOption : public Singleton<PathOption> {
 private:
 	float mAgentSpeed = 4.2f;
 	int mAllowedHeight = 1;
-	int mMaxClosedListSize = 10000;
+	int mMaxClosedListSize = 50000;
 
 public:
 	float GetAgentSpeed() const { return mAgentSpeed; }
@@ -56,12 +56,14 @@ private:
 	
 private:
 	std::stack<Vec3> mPath{};
+	Pos mStart{};
 
 public:
 	virtual void Update() override;
 
 public:
-	void PathPlanningToAstar(Pos dest);
+	void PathPlanningToAstar( Pos dest);
+	void ReadyPlanningToPath(Pos start);
 
 private:
 	void MoveToPath();

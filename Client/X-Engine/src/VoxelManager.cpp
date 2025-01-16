@@ -43,14 +43,14 @@ void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 
 void VoxelManager::Init(Object* player)
 {
-	mReadyMakePath = true;
 	mPlayer = player;
-	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
 	CalcRenderVoxelCount(50);
-	mClosedList.reserve(1000);
+	mClosedList.reserve(5000);
 	mRenderVoxels.reserve(5000);
+
+	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
 	for (auto& buffer : mInstanceBuffers) {
-		buffer = std::make_unique<UploadBuffer<InstanceData>>(DEVICE.Get(), mkMaxRenderVoxels * mkMaxRenderVoxels * Grid::mTileHeightCount, false);
+		buffer = std::make_unique<UploadBuffer<InstanceData>>(DEVICE.Get(), mkMaxRenderVoxelCount, false);
 	}
 }
 
@@ -58,9 +58,7 @@ void VoxelManager::Update()
 {
 	mRenderVoxels.clear();
 
-	Pos pos = Scene::I->GetVoxelIndex(mPlayer->GetPosition());
-
-	int x = pos.X, y = pos.Z; // 중심 좌표
+	int x = mCenterPos.X, y = mCenterPos.Z; // 중심 좌표
 
 	int halfSizeX = mOption.RenderVoxelRows / 2; // 중심으로부터 확장 크기
 	int halfSizeZ = mOption.RenderVoxelCols / 2;
@@ -176,7 +174,13 @@ void VoxelManager::PickTopVoxel(bool makePath)
 				}
 			}
 			else {
-				mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel);
+				if (!mReadyMakePath) {
+					mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel);
+				}
+				else {
+					mPlayer->GetComponent<Agent>()->ReadyPlanningToPath(mSelectedVoxel);
+				}
+				mReadyMakePath = !mReadyMakePath;
 			}
 		}
 	}
