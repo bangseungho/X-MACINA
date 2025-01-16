@@ -9,11 +9,18 @@ class Collider;
 
 
 #pragma region enum
-enum class Tile : UINT8{
+enum class VoxelState : UINT8 {
 	None = 0,
 	Static,
 	Dynamic,
 	Terrain,
+};
+
+enum class VoxelCondition : UINT8 {
+	None = 0,
+	Picked,
+	Closed,
+	ReadyCreate,
 };
 #pragma endregion
 
@@ -25,9 +32,9 @@ using namespace Path;
 
 #pragma region Class
 struct RenderVoxel {
-	Vec4 VColor{};
-	Matrix MtxWorld{};
-	bool IsPicked{};
+	Matrix			MtxWorld{};
+	VoxelState		State{};
+	VoxelCondition	Condition{};
 };
 
 class Grid {
@@ -35,14 +42,12 @@ private:
 	const int mIndex{};
 	const BoundingBox mBB{};
 
-	std::vector<std::vector<std::vector<Tile>>> mTiles{};
-
 	std::unordered_set<GridObject*> mObjects{};			// all objects (env, static, dynamic, ...)
 	std::unordered_set<GridObject*> mEnvObjects{};
 	std::unordered_set<GridObject*> mStaticObjects{};
 	std::unordered_set<GridObject*> mDynamicObjets{};
 
-	std::unordered_map<int, Tile> mVoxels{};
+	std::unordered_map<int, VoxelState> mVoxels{};
 
 public:
 	static constexpr float mkTileHeight = 0.5f;
@@ -66,11 +71,12 @@ public:
 	// return all objects
 	const auto& GetObjects() const		{ return mObjects; }
 
-	Tile GetTileFromUniqueIndex(const Pos& tPos) const;
-	RenderVoxel GetVoxelFromUniqueIndex(const Pos& uniqueIndex) const;
-	void SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile);
-	void SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color);
-	void SetPickingFlagFromUniqueIndex(const Pos& index, bool isPicked);
+	VoxelState GetVoxelState(const Pos& tPos);
+	RenderVoxel GetVoxelFromUniqueIndex(const Pos& index) const;
+	void SetTileFromUniqueIndex(const Pos& index, VoxelState tile);
+	void SetTileFromUniqueIndex(const Pos& index, VoxelCondition condition);
+	void SetVoxelState(const Pos& index, VoxelState state);
+	void SetVoxelCondition(const Pos& index, VoxelCondition condition);
 
 public:
 	bool Empty() const { return mObjects.empty(); }
@@ -84,14 +90,12 @@ public:
 	bool Intersects(GridObject* object);
 
 	// BFS를 활용하여 타일 업데이트
-	void UpdateTiles(Tile tile, GridObject* object);
-	void UpdateMtx();
+	void UpdateTiles(VoxelState tile, GridObject* object);
 
 	// collision check for objects contained in grid
 	void CheckCollisions();
 	float CheckCollisionsRay(const Ray& ray) const;
 	void CheckCollisions(rsptr<Collider> collider, std::vector<GridObject*>& out, CollisionType type = CollisionType::All) const;
-	Vec3 GetTilePosCollisionsRay(const Ray& ray, const Vec3& target) const;
 
 private:
 	static void CheckCollisionObjects(std::unordered_set<GridObject*> objects);

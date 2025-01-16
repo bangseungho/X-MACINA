@@ -36,7 +36,7 @@ class PathOption : public Singleton<PathOption> {
 private:
 	float mAgentSpeed = 4.2f;
 	int mAllowedHeight = 1;
-	int mMaxClosedListSize = 5000;
+	int mMaxClosedListSize = 10000;
 
 public:
 	float GetAgentSpeed() const { return mAgentSpeed; }

@@ -86,7 +86,7 @@ Pos Script_GroundPlayer::FindNoneTileFromBfs(const Pos& pos)
 		curPos = q.front();
 		q.pop();
 
-		if (Scene::I->GetTileFromUniqueIndex(curPos) == Tile::None)
+		if (Scene::I->GetTileFromUniqueIndex(curPos) == VoxelState::None)
 			return curPos;
 
 		if (visited[curPos])

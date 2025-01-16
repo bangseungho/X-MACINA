@@ -8,6 +8,7 @@ protected:
 	Vec2			mPosition{};
 	Vec2			mSize{};
 	std::string		mName{};
+	int				mTextSpacing = 120;
 
 public:
 	ImGuiFunc(const Vec2& pos, const Vec2& size, std::string label);
@@ -20,29 +21,8 @@ public:
 	void ExecuteBegin();
 	void ExecuteEnd();
 
+public:
 	virtual void Execute(GameObject* selectedObject) abstract;
-};
-
-
-class ImGuiHierarchyFunc : public ImGuiFunc {
-	using base = ImGuiFunc;
-
-public:
-	ImGuiHierarchyFunc(const Vec2& pos, const Vec2& size) : ImGuiFunc(pos, size, "Hierarchy") {}
-
-public:
-	virtual void Execute(GameObject* selectedObject) override;
-};
-
-
-class ImGuiInspectorFunc : public ImGuiFunc {
-	using base = ImGuiFunc;
-
-public:
-	ImGuiInspectorFunc(const Vec2& pos, const Vec2& size) : ImGuiFunc(pos, size, "Inspector") {}
-
-public:
-	virtual void Execute(GameObject* selectedObject) override;
 };
 
 
@@ -51,6 +31,17 @@ class ImGuiVoxelFunc : public ImGuiFunc {
 
 public:
 	ImGuiVoxelFunc(const Vec2& pos, const Vec2& size) : ImGuiFunc(pos, size, "Voxel") {}
+
+public:
+	virtual void Execute(GameObject* selectedObject) override;
+};
+
+
+class ImGuiPathFunc : public ImGuiFunc {
+	using base = ImGuiFunc;
+
+public:
+	ImGuiPathFunc(const Vec2& pos, const Vec2& size) : ImGuiFunc(pos, size, "Path") {}
 
 public:
 	virtual void Execute(GameObject* selectedObject) override;

@@ -14,6 +14,15 @@
 #include "InputMgr.h"
 
 
+void VoxelManager::ClearClosedList()
+{
+	for (auto& voxel : mClosedList) {
+		Scene::I->SetVoxelCondition(voxel, VoxelCondition::None);
+	}
+
+	mClosedList.clear();
+}
+
 void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 {
 	switch (messageID) {
@@ -37,6 +46,8 @@ void VoxelManager::Init(Object* player)
 	mReadyMakePath = true;
 	mPlayer = player;
 	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
+	CalcRenderVoxelCount(50);
+	mClosedList.reserve(1000);
 	for (auto& buffer : mInstanceBuffers) {
 		buffer = std::make_unique<UploadBuffer<InstanceData>>(DEVICE.Get(), mkMaxRenderVoxels * mkMaxRenderVoxels * Grid::mTileHeightCount, false);
 	}
@@ -50,13 +61,15 @@ void VoxelManager::Update()
 
 	int x = pos.X, y = pos.Z; // 중심 좌표
 
-	int halfSize = mkMaxRenderVoxels / 2; // 중심으로부터 확장 크기
+	int halfSizeX = mOption.RenderVoxelRows / 2; // 중심으로부터 확장 크기
+	int halfSizeZ = mOption.RenderVoxelCols / 2;
 
 	// 정사각형 범위 순회
-	for (int i = x - halfSize; i < x + halfSize; ++i) {
-		for (int j = y - halfSize; j < y + halfSize; ++j) {
-			for (int k = 0; k < Grid::mTileHeightCount; ++k) {
-				if (Scene::I->GetTileFromUniqueIndex(Pos{ j, i, k }) != Tile::None) {
+	for (int i = x - halfSizeX; i < x + halfSizeX; ++i) {
+		for (int j = y - halfSizeZ; j < y + halfSizeZ; ++j) {
+			for (int k = 0; k < VoxelManager::mOption.RenderVoxelHeight; ++k) {
+				const RenderVoxel& voxel = Scene::I->GetVoxelFromUniqueIndex(Pos{ j, i, k });
+				if (voxel.State != VoxelState::None || voxel.Condition == VoxelCondition::ReadyCreate) {
 					mRenderVoxels.push_back(Pos{ j, i, k });
 				}
 			}
@@ -66,18 +79,47 @@ void VoxelManager::Update()
 
 void VoxelManager::Render()
 {
+	if (mOption.RenderMode == RenderMode::World) {
+		return;
+	}
+
 	DXGIMgr::I->SetGraphicsRootShaderResourceView(RootParam::Instancing, FrameResourceMgr::GetBufferGpuAddr(0, mInstanceBuffers[CURR_FRAME_INDEX].get()));
 
 	int buffIdx{};
+
+	for (auto& voxel : mClosedList) {
+		Scene::I->SetVoxelCondition(voxel, VoxelCondition::Closed);
+	}
+
 	for (auto& voxel : mRenderVoxels) {
+		RenderVoxel renderVoxel = Scene::I->GetVoxelFromUniqueIndex(voxel);
+
 		InstanceData instData;
-		instData.MtxWorld = Scene::I->GetVoxelFromUniqueIndex(voxel).MtxWorld;
+		instData.MtxWorld = renderVoxel.MtxWorld;
 		
-		if (Scene::I->GetVoxelFromUniqueIndex(voxel).IsPicked) {
-			instData.Color = Vec4{ 1.f, 0.f, 1.f, 1.f };
+		switch (renderVoxel.State) {
+		case VoxelState::Static:
+			instData.Color = Vec4{ 1.f, 0.f, 0.f, 1.f };
+			break;
+		case VoxelState::Terrain:
+			instData.Color = Vec4{ 0.f, 1.f, 0.f, 1.f };
+			break;
+		default:
+			break;
 		}
-		else {
-			instData.Color = Scene::I->GetVoxelFromUniqueIndex(voxel).VColor;
+
+		switch (renderVoxel.Condition) {
+		case VoxelCondition::Picked:
+			instData.Color = Vec4{ 1.f, 0.f, 1.f, 1.f };
+			break;
+		case VoxelCondition::Closed:
+			instData.Color = Vec4{ 0.f, 0.f, 1.f, 1.f };
+			break;
+		case VoxelCondition::ReadyCreate:
+			instData.Color = Vec4{ 1.f, 0.f, 0.f, 1.f };
+			break;
+		default:
+			break;
 		}
 
 		mInstanceBuffers[CURR_FRAME_INDEX]->CopyData(buffIdx++, instData);
@@ -102,9 +144,9 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	float minValue{ FLT_MAX };
 	for (int i = 0; i < mRenderVoxels.size(); ++i) {
 		Vec3 voxelPosW = Scene::I->GetTilePosFromUniqueIndex(mRenderVoxels[i]);
-		Scene::I->SetPickingFlagFromUniqueIndex(mRenderVoxels[i], false);
+		Scene::I->SetVoxelCondition(mRenderVoxels[i], VoxelCondition::None);
+		if (Scene::I->GetTileFromUniqueIndex(mRenderVoxels[i]) == VoxelState::None) continue;
 		BoundingBox bb{ voxelPosW, Grid::mkTileExtent };
-
 		float dist{};
 		if (ray.Intersects(bb, dist)) {
 			if (minValue > dist) {
@@ -114,9 +156,30 @@ void VoxelManager::PickTopVoxel(bool makePath)
 		}
 	}
 	
-	Scene::I->SetPickingFlagFromUniqueIndex(mSelectedVoxel, true);
+	if (mOption.CreateMode == CreateMode::Create) {
+		Pos aboveVoxel = mSelectedVoxel + Pos{ 0, 0, 1 };
+		if (Scene::I->GetVoxelFromUniqueIndex(aboveVoxel).State == VoxelState::None) {
+			Scene::I->SetVoxelCondition(aboveVoxel, VoxelCondition::ReadyCreate);
+		}
 
-	if (makePath) {
-		mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel);
+		if (makePath) {
+			Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::Static);
+			Scene::I->SetVoxelState(aboveVoxel, VoxelState::Static);
+		}
 	}
+	else {
+		Scene::I->SetVoxelCondition(mSelectedVoxel, VoxelCondition::Picked);
+
+		if (makePath) {
+			mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel);
+		}
+	}
+}
+
+void VoxelManager::CalcRenderVoxelCount(int renderVoxelRows)
+{
+	const float ratio = static_cast<float>(DXGIMgr::I->GetWindowHeight()) / DXGIMgr::I->GetWindowWidth();
+	mOption.RenderVoxelRows = renderVoxelRows;
+	mOption.RenderVoxelCols = static_cast<int>(ratio * mOption.RenderVoxelRows);
+	mOption.RenderVoxelHeight = 10;
 }

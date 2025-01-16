@@ -60,12 +60,10 @@ bool ImGuiMgr::Init()
         , mSrvDescHeap.Get(), mSrvDescHeap->GetCPUDescriptorHandleForHeapStart()
         , mSrvDescHeap.Get()->GetGPUDescriptorHandleForHeapStart());
 
-    //uptr<ImGuiFunc> hierachyFunc = std::make_unique<ImGuiHierarchyFunc>(Vec2{ 0, 0 }, Vec2{ 300, 400 });
-    //uptr<ImGuiFunc> inspectorFunc = std::make_unique<ImGuiInspectorFunc>(Vec2{ 0, 400 }, Vec2{ 300, 400 });
     uptr<ImGuiFunc> voxelFunc = std::make_unique<ImGuiVoxelFunc>(Vec2{ 0, 0 }, Vec2{ 400, 300 });
-    //mFuncs.emplace_back(std::move(hierachyFunc));
-    //mFuncs.emplace_back(std::move(inspectorFunc));
+    uptr<ImGuiFunc> pathFunc = std::make_unique<ImGuiPathFunc>(Vec2{ 0, 300 }, Vec2{ 400, 300 });
     mFuncs.emplace_back(std::move(voxelFunc));
+    mFuncs.emplace_back(std::move(pathFunc));
 
     return true;
 }
@@ -153,14 +151,6 @@ void ImGuiFunc::ExecuteEnd()
 	ImGui::End();
 }
 
-void ImGuiHierarchyFunc::Execute(GameObject* selectedObject)
-{
-}
-
-void ImGuiInspectorFunc::Execute(GameObject* selectedObject)
-{
-}
-
 void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 {
     // index
@@ -170,22 +160,72 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
     // position
     const Vec3& selectedVoxelPosW = Scene::I->GetTilePosFromUniqueIndex(selectedVoxelIndex);
 	ImGui::Text("Pos : x = %.1f, y = %.1f, z = %.1f", selectedVoxelPosW.x, selectedVoxelPosW.y, selectedVoxelPosW.z);
-
-    // agent speed
+    
+    // tile
+    const VoxelState selectedVoxelTile = Scene::I->GetTileFromUniqueIndex(selectedVoxelIndex);
+    std::string tileName{};
+    switch (selectedVoxelTile)
     {
+    case VoxelState::None:
+        tileName = "None";
+        break;
+    case VoxelState::Static:
+		tileName = "Static";
+		break;
+    case VoxelState::Dynamic:
+		tileName = "Dynamic";
+        break;
+    case VoxelState::Terrain:
+		tileName = "Terrain";
+		break;
+    default:
+        break;
+    }
+	ImGui::Text("Tile : %s", tileName);
+
+	// render mode
+	ImGui::Text("Render Mode : ");
+	ImGui::SameLine(mTextSpacing);
+	RenderMode renderMode = VoxelManager::I->GetRenderMode();
+	if (ImGui::RadioButton("Voxel", renderMode == RenderMode::Voxel)) renderMode = RenderMode::Voxel; ImGui::SameLine();
+	if (ImGui::RadioButton("World", renderMode == RenderMode::World)) renderMode = RenderMode::World; ImGui::SameLine();
+	if (ImGui::RadioButton("Both", renderMode == RenderMode::Both)) renderMode = RenderMode::Both;
+	VoxelManager::I->SetRenderMode(renderMode);
+
+	// create mode
+	ImGui::Text("Create Mode : ");
+	ImGui::SameLine(mTextSpacing);
+	CreateMode createMode = VoxelManager::I->GetCreateMode();
+	if (ImGui::RadioButton("None", createMode == CreateMode::None)) createMode = CreateMode::None; ImGui::SameLine();
+	if (ImGui::RadioButton("Create", createMode == CreateMode::Create)) createMode = CreateMode::Create; ImGui::SameLine();
+	if (ImGui::RadioButton("Remove", createMode == CreateMode::Remove)) createMode = CreateMode::Remove;
+	VoxelManager::I->SetCreateMode(createMode);
+
+    // render voxel rows
+	int value = VoxelManager::I->GetRenderVoxelRows();
+	ImGui::Text("VoxelRows :"); // 안내 텍스트
+	ImGui::SameLine(mTextSpacing);
+	ImGui::SliderInt("##int_input", &value, 10, 200);
+	VoxelManager::I->SetRenderVoxelRows(value);
+}
+
+void ImGuiPathFunc::Execute(GameObject* selectedObject)
+{
+	// agent speed
+	{
 		float value = PathOption::I->GetAgentSpeed();
 		ImGui::Text("AgentSpeed :"); // 안내 텍스트
-        ImGui::SameLine();
+		ImGui::SameLine(mTextSpacing);
 		ImGui::InputFloat("##float_input", &value, 0.5f, 1.0f, "%.3f"); // float 입력 박스
 		PathOption::I->SetAgentSpeed(value);
-    }
+	}
 
-    // allowed height
-    {
+	// allowed height
+	{
 		int value = PathOption::I->GetAllowedHeight();
 		ImGui::Text("AllowedHeight :"); // 안내 텍스트
-		ImGui::SameLine();
+		ImGui::SameLine(mTextSpacing);
 		ImGui::InputInt("##int_input", &value);
 		PathOption::I->SetAllowedHeight(value);
-    }
+	}
 }

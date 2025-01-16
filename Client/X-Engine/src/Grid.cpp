@@ -26,43 +26,21 @@ Grid::Grid(int index, int width, const BoundingBox& bb)
 	mTileCols = static_cast<int>(width / mkTileWidth);
 	mVoxelCount = static_cast<int>(width / mkTileWidth);
 	mVoxelSize = mkTileWidth / 2.f;
-	mTiles = std::vector<std::vector<std::vector<Tile>>>(mTileHeightCount, std::vector<std::vector<Tile>>(mTileCols, std::vector<Tile>(mTileRows, Tile::None)));
 }
 
-int GetVoxelKey(const Vec3& position)
+VoxelState Grid::GetVoxelState(const Pos& index)
 {
-	//Pos index = floor(position / Grid::mVoxelSize);
-	return 1;
+	if (mRenderVoxels.count(index)) {
+		return mRenderVoxels[index].State;
+	}
+	else {
+		return VoxelState{};
+	}
 }
 
-Tile Grid::GetTileFromUniqueIndex(const Pos& tPos) const
+RenderVoxel Grid::GetVoxelFromUniqueIndex(const Pos& index) const
 {
-	if (tPos.Y >= mTileHeightCount || tPos.Y < 0) {
-		return Tile::None;
-	}
-	if (tPos.Z >= mTileCols || tPos.Z < 0) {
-		return Tile::None;
-	}
-	if (tPos.X >= mTileRows || tPos.X < 0) {
-		return Tile::None;
-	}
-
-	return mTiles[tPos.Y][tPos.Z][tPos.X];
-}
-
-RenderVoxel Grid::GetVoxelFromUniqueIndex(const Pos& uniqueIndex) const
-{
-	if (uniqueIndex.Y >= mTileHeightCount || uniqueIndex.Y < 0) {
-		return RenderVoxel{};
-	}
-	if (uniqueIndex.X < 0 || uniqueIndex.Z < 0) {
-		return RenderVoxel{};
-	}
-	if (uniqueIndex.X >= 3000 || uniqueIndex.Z >= 3000) {
-		return RenderVoxel{};
-	}
-
-	auto findIt = mRenderVoxels.find(uniqueIndex);
+	auto findIt = mRenderVoxels.find(index);
 	if (findIt == mRenderVoxels.end()) {
 		return RenderVoxel{};
 	}
@@ -70,44 +48,50 @@ RenderVoxel Grid::GetVoxelFromUniqueIndex(const Pos& uniqueIndex) const
 	return findIt->second;
 }
 
-void Grid::SetTileFromUniqueIndex(const Pos& tPos, const Pos& index, Tile tile)
+void Grid::SetTileFromUniqueIndex(const Pos& index, VoxelState state)
 {
-	if (tPos.Y >= mTileHeightCount || tPos.Y < 0) {
-		return;
-	}
-	if (tPos.X < 0 || tPos.Z < 0) {
-		return;
-	}
-	if (tPos.X >= 3000 || tPos.Z >= 3000) {
-		return;
-	}
-
 	RenderVoxel renderVoxel;
-	switch (tile)
-	{
-	case Tile::Static:
-		renderVoxel.VColor = Vec4{ 1.f, 0.f, 0.f, 1.f };
-		break;
-	case Tile::Terrain:
-		renderVoxel.VColor = Vec4{ 0.f, 1.f, 0.f, 1.f };
-		break;
-	default:
-		break;
-	}
+	renderVoxel.State = state;
+
+	const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
+	const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetTilePosFromUniqueIndex(index));
+	const Matrix matrix = scaleMtx * translationMtx;
+	renderVoxel.MtxWorld = matrix.Transpose();
 
 	mRenderVoxels.insert({ index, renderVoxel });
-	mTiles[tPos.Y][tPos.Z][tPos.X] = tile;
 }
 
-void Grid::SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color)
+void Grid::SetTileFromUniqueIndex(const Pos& index, VoxelCondition condition)
 {
-	// TODO 예외처리
-	mRenderVoxels[index].VColor = color;
+	RenderVoxel renderVoxel;
+	renderVoxel.Condition = condition;
+
+	const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
+	const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetTilePosFromUniqueIndex(index));
+	const Matrix matrix = scaleMtx * translationMtx;
+	renderVoxel.MtxWorld = matrix.Transpose();
+
+	mRenderVoxels.insert({ index, renderVoxel });
 }
 
-void Grid::SetPickingFlagFromUniqueIndex(const Pos& index, bool isPicked)
+void Grid::SetVoxelState(const Pos& index, VoxelState state)
 {
-	mRenderVoxels[index].IsPicked = isPicked;
+	if (mRenderVoxels.count(index)) {
+		mRenderVoxels[index].State = state;
+	}
+	else {
+		Scene::I->SetTileFromUniqueIndex(index, state);
+	}
+}
+
+void Grid::SetVoxelCondition(const Pos& index, VoxelCondition condition)
+{
+	if (mRenderVoxels.count(index)) {
+		mRenderVoxels[index].Condition = condition;
+	}
+	else {
+		Scene::I->SetTileFromUniqueIndex(index, condition);
+	}
 }
 
 void Grid::AddObject(GridObject* object)
@@ -127,7 +111,7 @@ void Grid::AddObject(GridObject* object)
 		break;
 	default:
 		mStaticObjects.insert(object);
-		UpdateTiles(Tile::Static, object);
+		UpdateTiles(VoxelState::Static, object);
 		break;
 	}
 }
@@ -137,7 +121,7 @@ inline bool IsNotBuilding(ObjectTag tag)
 	return tag != ObjectTag::Building && tag != ObjectTag::DissolveBuilding;
 }
 
-void Grid::UpdateTiles(Tile tile, GridObject* object)
+void Grid::UpdateTiles(VoxelState tile, GridObject* object)
 {
 	// 정적 오브젝트가 Building 태그인 경우에만 벽으로 설정
 	if (IsNotBuilding(object->GetTag()))
@@ -189,18 +173,6 @@ void Grid::UpdateTiles(Tile tile, GridObject* object)
 	}
 }
 
-void Grid::UpdateMtx()
-{
-	for (auto& voxel : mRenderVoxels) {
-		const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
-		const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetTilePosFromUniqueIndex(voxel.first));
-		const Matrix matrix = scaleMtx * translationMtx;
-		voxel.second.MtxWorld = matrix.Transpose();
-
-
-	}
-}
-
 void Grid::RemoveObject(GridObject* object)
 {
 	if (!mObjects.count(object)) {
@@ -218,7 +190,7 @@ void Grid::RemoveObject(GridObject* object)
 		break;
 	default:
 		mStaticObjects.erase(object);
-		UpdateTiles(Tile::Static, object);
+		UpdateTiles(VoxelState::Static, object);
 		break;
 	}
 }
@@ -279,101 +251,6 @@ void Grid::CheckCollisions(rsptr<Collider> collider, std::vector<GridObject*>& o
 	}
 }
 
-Vec3 Grid::GetTilePosCollisionsRay(const Ray& ray, const Vec3& target) const
-{
-	std::map<Pos, bool> visited;
-	std::queue<Pos> q;
-
-	Pos index = Scene::I->GetTileUniqueIndexFromPos(target);
-	q.push(index);
-
-	Pos firstPos{};
-	Vec3 result{};
-	// q가 빌 때까지 BFS를 돌며 현재 타일이 오브젝트와 충돌 했다면 해당 타일을 업데이트
-	while (!q.empty()) {
-		Pos curNode = q.front();
-		q.pop();
-
-		if (visited[curNode])
-			continue;
-
-		visited[curNode] = true;
-
-		bool isEnd{};
-
-		for (int dir = 0; dir < 6; ++dir) {
-			Pos nextPosT = curNode + gkFront2[dir];
-			Vec3 nextPosW = Scene::I->GetTilePosFromUniqueIndex(nextPosT);
-
-			BoundingBox bb{ nextPosW, Vec3{mkTileWidth, mkTileWidth, mkTileHeight} };
-			float temp{};
-			if (ray.Intersects(bb, temp)) {
-				isEnd = true;
-				firstPos = nextPosT;
-				while (!q.empty()) {
-					q.pop();
-					visited.clear();
-				}
-				result = nextPosW;
-				q.push(firstPos);
-				visited[firstPos] = true;
-				break;
-			}
-
-			q.push(nextPosT);
-		}
-
-		if (isEnd) {
-			break;
-		}
-	}
-
-	int cnt{};
-	float minValue{ FLT_MAX };
-	while (!q.empty()) {
-		Pos curNode = q.front();
-		q.pop();
-
-		if (cnt > 100) {
-			break;
-		}
-
-		for (int dir = 0; dir < 6; ++dir) {
-			Pos nextPosT = curNode + gkFront2[dir];
-			Vec3 nextPosW = Scene::I->GetTilePosFromUniqueIndex(nextPosT);
-
-			if (Scene::I->GetTileFromUniqueIndex(nextPosT) != Tile::Terrain) {
-				continue;
-			}
-
-			if (visited[nextPosT]) {
-				continue;
-			}
-
-			BoundingBox bb{ nextPosW, mkTileExtent };
-			float dist{};
-			if (ray.Intersects(bb, dist)) {
-				if (minValue > dist) {
-					minValue = dist;
-					result = nextPosW;
-				}
-			}
-
-			q.push(nextPosT);
-			visited[nextPosT] = true;
-		}
-
-		cnt++;
-	}
-
-	return result;
-}
-
-
-
-
-
-
 // check collision for each object in objects
 void Grid::CheckCollisionObjects(std::unordered_set<GridObject*> objects)
 {
@@ -393,7 +270,6 @@ void Grid::CheckCollisionObjects(std::unordered_set<GridObject*> objects)
 		}
 	}
 }
-
 
 // check collision for (each objectsA) <-> (each objectsB)
 void Grid::CheckCollisionObjects(std::unordered_set<GridObject*> objectsA, std::unordered_set<GridObject*> objectsB)

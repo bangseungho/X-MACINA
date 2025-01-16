@@ -114,12 +114,13 @@ public:
 	Pos GetTileUniqueIndexFromPos(const Vec3& pos) const;
 	Vec3 GetTilePosFromUniqueIndex(const Pos& index) const;
 
-	Tile GetTileFromUniqueIndex(const Pos& index) const;
-	void SetTileFromUniqueIndex(const Pos& index, Tile tile);
-	Tile GetTileFromPos(const Vec3& index) const;
+	VoxelState GetTileFromUniqueIndex(const Pos& index) const;
+	void SetTileFromUniqueIndex(const Pos& index, VoxelState tile);
+	void SetTileFromUniqueIndex(const Pos& index, VoxelCondition tile);
+	VoxelState GetTileFromPos(const Vec3& index) const;
 	RenderVoxel GetVoxelFromUniqueIndex(const Pos& index) const;
-	void SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color) const;
-	void SetPickingFlagFromUniqueIndex(const Pos& index, bool isPicked) const;
+	void SetVoxelState(const Pos& index, VoxelState state) const;
+	void SetVoxelCondition(const Pos& index, VoxelCondition condition) const;
 
 	std::vector<Vec3>& GetOpenList() { return mOpenList; }
 	std::vector<Vec3>& GetClosedList() { return mClosedList; }

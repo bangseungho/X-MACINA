@@ -19,6 +19,7 @@ float4 PSVoxel(VSOutput_Voxel input) : SV_TARGET
 
 	// 거리에 비례하는 강도 계산 (0에서 1로 정규화)
 	float intensity = saturate(distanceFromCenter);
+    float4 color = gInstBuffer[input.ID].Color;
 	
-	return float4(gInstBuffer[input.ID].Color.rgb, intensity); // RGBA 출력
+    return float4(color.rgb, color.a * intensity); // RGBA 출력
 }

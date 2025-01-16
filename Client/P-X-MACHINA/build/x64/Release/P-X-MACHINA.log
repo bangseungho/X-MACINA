@@ -1,6 +1,27 @@
-﻿  코드를 생성하고 있습니다.
-  24 of 16035 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    174 functions had inline decision re-evaluated but remain unchanged
+﻿  CheckDetectionRange.cpp
+  GameFramework.cpp
+  MinimapAbility.cpp
+  Script_AbilityHolder.cpp
+  Script_Bullet.cpp
+  Script_GameManager.cpp
+  Script_GroundObject.cpp
+  Script_GroundPlayer.cpp
+  Script_MainCamera.cpp
+  Script_Missile.cpp
+C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\src\Script_Missile.cpp(41,72): warning C4305: '인수': 'double'에서 'float'(으)로 잘립니다.
+  Script_Player.cpp
+  Script_Weapon.cpp
+  Script_Weapon_MissileLauncher.cpp
+  ShieldAbility.cpp
+  TaskAttack.cpp
+  TaskMoveToTarget.cpp
+  TaskPathPlanningAStar.cpp
+  TaskPathPlanningToSpawn.cpp
+  TaskPathPlanningToTarget.cpp
+  TaskPatrol.cpp
+  코드를 생성하고 있습니다.
+  37 of 15898 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+    3 functions were new in current compilation
+    101 functions had inline decision re-evaluated but remain unchanged
   코드를 생성했습니다.
-  P-X-MACHINA.vcxproj -> C:\Github\X-MACINA\Client\P-X-MACHINA\build\Release\P-X-MACHINA.exe
+  P-X-MACHINA.vcxproj -> C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\build\Release\P-X-MACHINA.exe

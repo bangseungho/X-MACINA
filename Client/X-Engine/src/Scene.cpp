@@ -312,19 +312,14 @@ void Scene::UpdateVoxelsOnTerrain()
 			upIndex.Y += 1;
 
 			// 위 복셀이 스태틱이면 해당 아래 복셀도 스태틱으로 설정
-			if (GetTileFromUniqueIndex(upIndex) == Tile::Static) {
-				SetTileFromUniqueIndex(index, Tile::Static);
+			if (GetTileFromUniqueIndex(upIndex) == VoxelState::Static) {
+				SetTileFromUniqueIndex(index, VoxelState::Static);
 			}
 			else {
-				SetTileFromUniqueIndex(index, Tile::Terrain);
+				SetTileFromUniqueIndex(index, VoxelState::Terrain);
 			}
 		}
 	}
-
-	for (auto& grid : mGrids) {
-		grid->UpdateMtx();
- }
-
 }
 
 void Scene::LoadSceneObjects(const std::string& fileName)
@@ -487,9 +482,7 @@ void Scene::RenderDeferred()
 	RenderSkinMeshObjects(RenderType::Deferred);
 #pragma endregion
 #pragma region Terrain
-	if (!mIsRenderBounds) {
-		RenderTerrain();
-	}
+	if (VoxelManager::I->GetRenderMode() != RenderMode::Voxel) RenderTerrain();
 #pragma endregion
 }
 
@@ -712,17 +705,13 @@ bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 
 	// 오픈 리스트를 초록색으로 출력
 	for (auto& path : mOpenList) {
-		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 0.f, 1.f, 1.f });
+		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 1.f, 1.f, 1.f });
 	}
 
 	//// 클로즈드 리스트를 빨간색으로 출력
 	//for (auto& path : mClosedList) {
 	//	MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 0.f, 0.f, 1.f });
 	//}
-
-	if (!mIsRenderBounds) {
-		return false;
-	}
 
 	//RenderObjectBounds(renderedObjects);
 	//RenderGridBounds();
@@ -896,12 +885,12 @@ Vec3 Scene::GetTilePosFromUniqueIndex(const Pos& index) const
 	return Vec3{ posX, posY, posZ };
 }
 
-Tile Scene::GetTileFromPos(const Vec3& pos) const
+VoxelState Scene::GetTileFromPos(const Vec3& pos) const
 {
 	return GetTileFromUniqueIndex(GetTileUniqueIndexFromPos(pos));
 }
 
-Tile Scene::GetTileFromUniqueIndex(const Pos& index) const
+VoxelState Scene::GetTileFromUniqueIndex(const Pos& index) const
 {
 	// 타일의 고유 인덱스로부터 타일의 값을 반환
 	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
@@ -911,7 +900,7 @@ Tile Scene::GetTileFromUniqueIndex(const Pos& index) const
 	const int tileZ = index.Z % Grid::mTileCols;
 	const int tileY = index.Y;
 
-	return mGrids[gridZ * mGridCols + gridX]->GetTileFromUniqueIndex(Pos{tileZ, tileX, tileY });
+	return mGrids[gridZ * mGridCols + gridX]->GetVoxelState(index);
 }
 
 RenderVoxel Scene::GetVoxelFromUniqueIndex(const Pos& index) const
@@ -922,31 +911,36 @@ RenderVoxel Scene::GetVoxelFromUniqueIndex(const Pos& index) const
 	return mGrids[gridZ * mGridCols + gridX]->GetVoxelFromUniqueIndex(index);
 }
 
-void Scene::SetVoxelColorFromUniqueIndex(const Pos& index, const Vec4& color) const
+void Scene::SetVoxelState(const Pos& index, VoxelState state) const
 {
 	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
 	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
-	mGrids[gridZ * mGridCols + gridX]->SetVoxelColorFromUniqueIndex(index, color);
+	mGrids[gridZ * mGridCols + gridX]->SetVoxelState(index, state);
 }
 
-void Scene::SetPickingFlagFromUniqueIndex(const Pos& index, bool isPicked) const
+void Scene::SetVoxelCondition(const Pos& index, VoxelCondition condition) const
 {
 	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
 	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / mGridWidth);
-	mGrids[gridZ * mGridCols + gridX]->SetPickingFlagFromUniqueIndex(index, isPicked);
+	mGrids[gridZ * mGridCols + gridX]->SetVoxelCondition(index, condition);
 }
 
-void Scene::SetTileFromUniqueIndex(const Pos& index, Tile tile)
+void Scene::SetTileFromUniqueIndex(const Pos& index, VoxelState tile)
 {
 	// 타일의 고유 인덱스로부터 타일의 값을 반환
 	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
 	const int gridZ = static_cast<int>(index.Z * Grid::mkTileWidth / mGridWidth);
 
-	const int tileX = index.X % Grid::mTileRows;
-	const int tileZ = index.Z % Grid::mTileCols;
-	const int tileY = index.Y;
+	mGrids[gridZ * mGridCols + gridX]->SetTileFromUniqueIndex(index, tile);
+}
 
-	mGrids[gridZ * mGridCols + gridX]->SetTileFromUniqueIndex(Pos{ tileZ, tileX, tileY }, index, tile);
+void Scene::SetTileFromUniqueIndex(const Pos& index, VoxelCondition tile)
+{
+	// 타일의 고유 인덱스로부터 타일의 값을 반환
+	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / mGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkTileWidth / mGridWidth);
+
+	mGrids[gridZ * mGridCols + gridX]->SetTileFromUniqueIndex(index, tile);
 }
 
 void Scene::ToggleDrawBoundings()

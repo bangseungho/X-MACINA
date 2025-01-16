@@ -3,6 +3,7 @@
 
 #include "Scene.h"
 #include "Timer.h"
+#include "VoxelManager.h"
 
 namespace {
 	int HeuristicManhattan(const Pos& start, const Pos& dest) {
@@ -26,7 +27,7 @@ void Agent::Update()
 void Agent::PathPlanningToAstar(Pos dest)
 {
 	while (!mPath.empty()) mPath.pop();
-	Scene::I->ClearPathList();
+	VoxelManager::I->ClearClosedList();
 
 	std::map<Pos, Pos>	parent;
 	std::map<Pos, int>	onVoxel;
@@ -62,15 +63,15 @@ void Agent::PathPlanningToAstar(Pos dest)
 		// 26방향으로 탐색
 		for (int dir = 0; dir < 26; ++dir) {
 			Pos nextPos = curNode.Pos + gkFront3D[dir];
-			Tile nextTile = Scene::I->GetTileFromUniqueIndex(nextPos);
+			VoxelState nextTile = Scene::I->GetTileFromUniqueIndex(nextPos);
 
 			// 다음 방향 노드의 상태가 static이라면 continue
 			int onVoxelCount = GetOnVoxelCount(nextPos);
 			int pathSmoothingCost{}; 
 			int onVoxelCountCost = onVoxelCount * 10;
 			if (onVoxelCount > 1 && onVoxelCount <= PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
-			if (nextTile == Tile::Static && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
-			if (nextTile == Tile::None) continue;
+			if (nextTile == VoxelState::Static && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
+			if (nextTile == VoxelState::None) continue;
 			if (visited.contains(nextPos)) continue;
 			if (!distance.contains(nextPos)) distance[nextPos] = INT32_MAX;
 			if (prevDir != gkFront3D[dir]) pathSmoothingCost = gkCost3D[dir] / 2;
@@ -94,7 +95,7 @@ void Agent::PathPlanningToAstar(Pos dest)
 		pos = newPos;
 
 		mPath.push(Scene::I->GetTilePosFromUniqueIndex(pos));
-		Scene::I->GetOpenList().push_back(mPath.top());
+		VoxelManager::I->PushClosedVoxel(pos);
 
 		pos = parent[pos];
 	}
@@ -126,7 +127,7 @@ int Agent::GetOnVoxelCount(const Pos& pos)
 	int cnt{};
 	while (true) {
 		next.Y += 1;
-		if (Scene::I->GetTileFromUniqueIndex(next) == Tile::None) {
+		if (Scene::I->GetTileFromUniqueIndex(next) == VoxelState::None) {
 			break;
 		}
 		cnt++;
