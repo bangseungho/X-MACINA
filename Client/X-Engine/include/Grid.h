@@ -30,10 +30,10 @@ enum class VoxelCondition : UINT8 {
 
 
 #pragma region Class
-struct RenderVoxel {
+struct Voxel {
 	Matrix			MtxWorld{};
-	VoxelState		State{};
-	VoxelCondition	Condition{};
+	VoxelState		State = VoxelState::None;
+	VoxelCondition	Condition = VoxelCondition::None;
 };
 
 class Grid {
@@ -56,7 +56,7 @@ public:
 	static int mVoxelCount;
 	static float mVoxelSize;
 
-	std::unordered_map<Pos, RenderVoxel> mRenderVoxels{};
+	std::unordered_map<Pos, Voxel> mRenderVoxels{};
 
 public:
 	Grid(int index, int width, const BoundingBox& bb);
@@ -68,11 +68,9 @@ public:
 	// return all objects
 	const auto& GetObjects() const		{ return mObjects; }
 
+	Voxel GetVoxel(const Pos& index);
 	VoxelState GetVoxelState(const Pos& tPos);
 	VoxelCondition GetVoxelCondition(const Pos& tPos);
-	RenderVoxel GetVoxelFromUniqueIndex(const Pos& index) const;
-	void SetTileFromUniqueIndex(const Pos& index, VoxelState tile);
-	void SetTileFromUniqueIndex(const Pos& index, VoxelCondition condition);
 	void SetVoxelState(const Pos& index, VoxelState state);
 	void SetVoxelCondition(const Pos& index, VoxelCondition condition);
 

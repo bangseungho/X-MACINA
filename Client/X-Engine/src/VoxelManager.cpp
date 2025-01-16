@@ -58,14 +58,13 @@ void VoxelManager::Update()
 {
 	mRenderVoxels.clear();
 
-	Pos pos = Scene::I->GetTileUniqueIndexFromPos(mPlayer->GetPosition());
+	Pos pos = Scene::I->GetVoxelIndex(mPlayer->GetPosition());
 
 	int x = pos.X, y = pos.Z; // 중심 좌표
 
 	int halfSizeX = mOption.RenderVoxelRows / 2; // 중심으로부터 확장 크기
 	int halfSizeZ = mOption.RenderVoxelCols / 2;
 
-	// 정사각형 범위 순회
 	for (int i = x - halfSizeX; i < x + halfSizeX; ++i) {
 		for (int j = y - halfSizeZ; j < y + halfSizeZ; ++j) {
 			for (int k = 0; k < VoxelManager::mOption.RenderVoxelHeight; ++k) {
@@ -93,7 +92,7 @@ void VoxelManager::Render()
 	}
 
 	for (auto& voxel : mRenderVoxels) {
-		RenderVoxel renderVoxel = Scene::I->GetVoxelFromUniqueIndex(voxel);
+		Voxel renderVoxel = Scene::I->GetVoxel(voxel);
 
 		InstanceData instData;
 		instData.MtxWorld = renderVoxel.MtxWorld;
@@ -139,12 +138,12 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	const Vec2& aimPos = InputMgr::I->GetMousePos();
 	const Ray& ray = MAIN_CAMERA->ScreenToWorldRay(aimPos);
 
-	Pos start = Scene::I->GetTileUniqueIndexFromPos(mPlayer->GetPosition());
+	Pos start = Scene::I->GetVoxelIndex(mPlayer->GetPosition());
 	mSelectedVoxel = Pos{};
 	// 추후 분할정복으로 변경 예정
 	float minValue{ FLT_MAX };
 	for (int i = 0; i < mRenderVoxels.size(); ++i) {
-		Vec3 voxelPosW = Scene::I->GetTilePosFromUniqueIndex(mRenderVoxels[i]);
+		Vec3 voxelPosW = Scene::I->GetVoxelPos(mRenderVoxels[i]);
 		Scene::I->SetVoxelCondition(mRenderVoxels[i], VoxelCondition::None);
 		if (Scene::I->GetVoxelState(mRenderVoxels[i]) == VoxelState::None) continue;
 		BoundingBox bb{ voxelPosW, Grid::mkTileExtent };
@@ -159,7 +158,7 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	
 	if (mOption.CreateMode == CreateMode::Create) {
 		Pos aboveVoxel = mSelectedVoxel + Pos{ 0, 0, 1 };
-		if (Scene::I->GetVoxelFromUniqueIndex(aboveVoxel).State == VoxelState::None) {
+		if (Scene::I->GetVoxel(aboveVoxel).State == VoxelState::None) {
 			Scene::I->SetVoxelCondition(aboveVoxel, VoxelCondition::ReadyCreate);
 		}
 

@@ -9,7 +9,6 @@
   Script_GroundPlayer.cpp
   Script_MainCamera.cpp
   Script_Missile.cpp
-C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\src\Script_Missile.cpp(41,72): warning C4305: '인수': 'double'에서 'float'(으)로 잘립니다.
   Script_Player.cpp
   Script_Weapon.cpp
   Script_Weapon_MissileLauncher.cpp

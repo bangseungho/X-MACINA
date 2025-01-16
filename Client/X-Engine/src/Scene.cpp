@@ -307,17 +307,17 @@ void Scene::UpdateVoxelsOnTerrain()
 {
 	for (int i = 0; i < static_cast<int>(kBorderExtents.z / Grid::mkTileWidth); ++i) {
 		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkTileWidth); ++j) {
-			Vec3 pos = GetTilePosFromUniqueIndex(Pos{i, j, 0});
+			Vec3 pos = GetVoxelPos(Pos{i, j, 0});
 			Pos index = Pos{ i, j, static_cast<int>(std::round(GetTerrainHeight(pos.x, pos.z))) };
 			Pos upIndex = index; 
 			upIndex.Y += 1;
 
 			// 위 복셀이 스태틱이면 해당 아래 복셀도 스태틱으로 설정
 			if (GetVoxelState(upIndex) == VoxelState::Static) {
-				SetTileFromUniqueIndex(index, VoxelState::Static);
+				SetVoxelState(index, VoxelState::Static);
 			}
 			else {
-				SetTileFromUniqueIndex(index, VoxelState::Terrain);
+				SetVoxelState(index, VoxelState::Terrain);
 			}
 		}
 	}
@@ -517,8 +517,8 @@ void Scene::RenderForward()
 {
 	RenderTransparentObjects(); 
 	RenderDissolveObjects();
-	//RenderSkyBox();
-	//RenderAbilities();
+	RenderSkyBox();
+	RenderAbilities();
 }
 
 void Scene::RenderPostProcessing(int offScreenIndex)
@@ -699,28 +699,14 @@ void Scene::RenderEnvironments()
 
 bool Scene::RenderBounds(const std::set<GridObject*>& renderedObjects)
 {
-	CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
-
-	RESOURCE<Shader>("Wire")->Set();
+	//CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+	//RESOURCE<Shader>("Wire")->Set();
 	//MeshRenderer::RenderBox(Vec3(100, 13.5f, 105), Vec3(.2f,.2f,.2f));
-
-	// 오픈 리스트를 초록색으로 출력
-	for (auto& path : mOpenList) {
-		MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 1.f, 1.f, 1.f });
-	}
-
-	//// 클로즈드 리스트를 빨간색으로 출력
-	//for (auto& path : mClosedList) {
-	//	MeshRenderer::RenderBox(path, Grid::mkTileExtent, Vec4{ 1.f, 0.f, 0.f, 1.f });
-	//}
-
 	//RenderObjectBounds(renderedObjects);
 	//RenderGridBounds();
-
 	CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	RESOURCE<Shader>("Voxel")->Set();
 	VoxelManager::I->Render();
-
 	return true;
 }
 
@@ -804,7 +790,7 @@ void Scene::CheckCollisions()
 
 void Scene::CheckCollisionCollider(rsptr<Collider> collider, std::vector<GridObject*>& out, CollisionType type) const
 {
-	int gridIndex = GetGridIndexFromPos(collider->GetCenter());
+	int gridIndex = GetGridIndex(collider->GetCenter());
 	for (const auto& grid : GetNeighborGrids(gridIndex, true)) {
 		if (!collider->Intersects(grid->GetBB())) {
 			continue;
@@ -855,13 +841,13 @@ void Scene::PopObjectBuffer()
 }
 
 //////////////////* Others *//////////////////
-int GetGridIndex(const Pos& index) {
+int Scene::GetGridIndex(const Pos& index) const {
 	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
 	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
 	return gridZ * kGridCols + gridX;
 }
 
-int Scene::GetGridIndexFromPos(Vec3 pos) const
+int Scene::GetGridIndex(Vec3 pos) const
 {
 	pos.x -= mGridStartPoint;
 	pos.z -= mGridStartPoint;
@@ -872,17 +858,17 @@ int Scene::GetGridIndexFromPos(Vec3 pos) const
 	return gridZ * kGridCols + gridX;
 }
 
-Pos Scene::GetTileUniqueIndexFromPos(const Vec3& pos) const
+Pos Scene::GetVoxelIndex(const Vec3& pos) const
 {
 	// 월드 포지션으로부터 타일의 고유 인덱스를 계산
-	const int tileGroupIndexX = static_cast<int>(round(pos.x - mGridStartPoint) / Grid::mkTileWidth);
-	const int tileGroupIndexZ = static_cast<int>(round(pos.z - mGridStartPoint) / Grid::mkTileWidth);
+	const int tileGroupIndexX = static_cast<int>((pos.x - mGridStartPoint) / Grid::mkTileWidth);
+	const int tileGroupIndexZ = static_cast<int>((pos.z - mGridStartPoint) / Grid::mkTileWidth);
 	const int tileGroupIndexY = static_cast<int>(pos.y / Grid::mkTileHeight);
 
 	return Pos{ tileGroupIndexZ, tileGroupIndexX, tileGroupIndexY };
 }
 
-Vec3 Scene::GetTilePosFromUniqueIndex(const Pos& index) const
+Vec3 Scene::GetVoxelPos(const Pos& index) const
 {
 	// 타일의 고유 인덱스로부터 월드 포지션을 계산
 	const float posX = index.X * Grid::mkTileWidth + mGridStartPoint;
@@ -894,58 +880,27 @@ Vec3 Scene::GetTilePosFromUniqueIndex(const Pos& index) const
 
 VoxelState Scene::GetVoxelState(const Pos& index) const
 {
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
-
-	return mGrids[gridZ * kGridCols + gridX]->GetVoxelState(index);
+	return mGrids[GetGridIndex(index)]->GetVoxelState(index);
 }
 
 VoxelCondition Scene::GetVoxelCondition(const Pos& index) const
 {
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
-
-	return mGrids[gridZ * kGridCols + gridX]->GetVoxelCondition(index);
+	return mGrids[GetGridIndex(index)]->GetVoxelCondition(index);
 }
 
-RenderVoxel Scene::GetVoxelFromUniqueIndex(const Pos& index) const
+Voxel Scene::GetVoxel(const Pos& index) const
 {
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
-
-	return mGrids[gridZ * kGridCols + gridX]->GetVoxelFromUniqueIndex(index);
+	return mGrids[GetGridIndex(index)]->GetVoxel(index);
 }
 
 void Scene::SetVoxelState(const Pos& index, VoxelState state) const
 {
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
-	mGrids[gridZ * kGridCols + gridX]->SetVoxelState(index, state);
+	mGrids[GetGridIndex(index)]->SetVoxelState(index, state);
 }
 
 void Scene::SetVoxelCondition(const Pos& index, VoxelCondition condition) const
 {
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
-	mGrids[gridZ * kGridCols + gridX]->SetVoxelCondition(index, condition);
-}
-
-void Scene::SetTileFromUniqueIndex(const Pos& index, VoxelState tile)
-{
-	// 타일의 고유 인덱스로부터 타일의 값을 반환
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileWidth / kGridWidth);
-
-	mGrids[gridZ * kGridCols + gridX]->SetTileFromUniqueIndex(index, tile);
-}
-
-void Scene::SetTileFromUniqueIndex(const Pos& index, VoxelCondition tile)
-{
-	// 타일의 고유 인덱스로부터 타일의 값을 반환
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileWidth / kGridWidth);
-
-	mGrids[gridZ * kGridCols + gridX]->SetTileFromUniqueIndex(index, tile);
+	mGrids[GetGridIndex(index)]->SetVoxelCondition(index, condition);
 }
 
 void Scene::ToggleDrawBoundings()
@@ -975,7 +930,7 @@ void Scene::SetFilterOptions(DWORD option)
 
 void Scene::UpdateObjectGrid(GridObject* object, bool isCheckAdj)
 {
-	const int gridIndex = GetGridIndexFromPos(object->GetPosition());
+	const int gridIndex = GetGridIndex(object->GetPosition());
 
 	if (IsGridOutOfRange(gridIndex)) {
 		RemoveObjectFromGrid(object);
@@ -988,7 +943,6 @@ void Scene::UpdateObjectGrid(GridObject* object, bool isCheckAdj)
 	if (gridIndex != object->GetGridIndex()) {
 		RemoveObjectFromGrid(object);
 	}
-
 
 	// ObjectCollider가 활성화된 경우
 	// 1칸 이내의 "인접 그리드(8개)와 충돌검사"
@@ -1128,12 +1082,6 @@ std::vector<sptr<GridObject>> Scene::FindObjectsByName(const std::string& name)
 
 void Scene::ProcessActiveObjects(std::function<void(sptr<GridObject>)> processFunc)
 {
-	//for (auto& object : mStaticObjects) {
-	//	if (object && object->IsActive()) {
-	//		processFunc(object);
-	//	}
-	//}
-
 	for (auto& object : mDynamicObjects) {
 		if (object && object->IsActive()) {
 			processFunc(object);
@@ -1149,10 +1097,6 @@ void Scene::ProcessActiveObjects(std::function<void(sptr<GridObject>)> processFu
 
 void Scene::ProcessAllObjects(std::function<void(sptr<GridObject>)> processFunc)
 {
-	for (auto& object : mStaticObjects) {
-		processFunc(object);
-	}
-
 	for (auto& object : mDynamicObjects) {
 		if (object) {
 			processFunc(object);

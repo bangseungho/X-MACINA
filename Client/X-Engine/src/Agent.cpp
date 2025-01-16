@@ -35,7 +35,7 @@ void Agent::PathPlanningToAstar(Pos dest)
 	std::unordered_map<Pos, bool> visited;
 
 	// f = g + h
-	Pos start = Scene::I->GetTileUniqueIndexFromPos(mObject->GetPosition());
+	Pos start = Scene::I->GetVoxelIndex(mObject->GetPosition());
 	std::priority_queue<PQNode, std::vector<PQNode>, std::greater<PQNode>> pq;
 	int g = 0;
 	int h = HeuristicManhattan(start, dest) * mkWeight;
@@ -55,7 +55,6 @@ void Agent::PathPlanningToAstar(Pos dest)
 		if (distance[curNode.Pos] < curNode.F) continue;
 
 		visited[curNode.Pos] = true;
-		Scene::I->GetClosedList().push_back(Scene::I->GetTilePosFromUniqueIndex(curNode.Pos));
 
 		// 해당 지점이 목적지인 경우 종료
 		if (curNode.Pos == dest) break;
@@ -94,7 +93,7 @@ void Agent::PathPlanningToAstar(Pos dest)
 		parent[newPos] = parent[pos];
 		pos = newPos;
 
-		mPath.push(Scene::I->GetTilePosFromUniqueIndex(pos));
+		mPath.push(Scene::I->GetVoxelPos(pos));
 		VoxelManager::I->PushClosedVoxel(pos);
 
 		pos = parent[pos];

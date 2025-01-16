@@ -48,40 +48,14 @@ VoxelCondition Grid::GetVoxelCondition(const Pos& index)
 	}
 }
 
-RenderVoxel Grid::GetVoxelFromUniqueIndex(const Pos& index) const
+Voxel Grid::GetVoxel(const Pos& index)
 {
-	auto findIt = mRenderVoxels.find(index);
-	if (findIt == mRenderVoxels.end()) {
-		return RenderVoxel{};
+	if (mRenderVoxels.count(index)) {
+		return mRenderVoxels[index];
 	}
-
-	return findIt->second;
-}
-
-void Grid::SetTileFromUniqueIndex(const Pos& index, VoxelState state)
-{
-	RenderVoxel renderVoxel;
-	renderVoxel.State = state;
-
-	const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
-	const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetTilePosFromUniqueIndex(index));
-	const Matrix matrix = scaleMtx * translationMtx;
-	renderVoxel.MtxWorld = matrix.Transpose();
-
-	mRenderVoxels.insert({ index, renderVoxel });
-}
-
-void Grid::SetTileFromUniqueIndex(const Pos& index, VoxelCondition condition)
-{
-	RenderVoxel renderVoxel;
-	renderVoxel.Condition = condition;
-
-	const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
-	const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetTilePosFromUniqueIndex(index));
-	const Matrix matrix = scaleMtx * translationMtx;
-	renderVoxel.MtxWorld = matrix.Transpose();
-
-	mRenderVoxels.insert({ index, renderVoxel });
+	else {
+		return Voxel{};
+	}
 }
 
 void Grid::SetVoxelState(const Pos& index, VoxelState state)
@@ -90,7 +64,13 @@ void Grid::SetVoxelState(const Pos& index, VoxelState state)
 		mRenderVoxels[index].State = state;
 	}
 	else {
-		Scene::I->SetTileFromUniqueIndex(index, state);
+		Voxel voxel;
+		voxel.State = state;
+		const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
+		const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetVoxelPos(index));
+		const Matrix matrix = scaleMtx * translationMtx;
+		voxel.MtxWorld = matrix.Transpose();
+		mRenderVoxels.insert({ index, voxel });
 	}
 }
 
@@ -100,7 +80,13 @@ void Grid::SetVoxelCondition(const Pos& index, VoxelCondition condition)
 		mRenderVoxels[index].Condition = condition;
 	}
 	else {
-		Scene::I->SetTileFromUniqueIndex(index, condition);
+		Voxel voxel;
+		voxel.Condition = condition;
+		const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
+		const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetVoxelPos(index));
+		const Matrix matrix = scaleMtx * translationMtx;
+		voxel.MtxWorld = matrix.Transpose();
+		mRenderVoxels.insert({ index, voxel });
 	}
 }
 
@@ -149,8 +135,8 @@ void Grid::UpdateTiles(VoxelState tile, GridObject* object)
 
 		// 오브젝트의 타일 기준 인덱스 계산
 		Vec3 pos = collider->GetCenter();
-		Pos index = Scene::I->GetTileUniqueIndexFromPos(pos);
-		Scene::I->SetTileFromUniqueIndex(index, tile);
+		Pos index = Scene::I->GetVoxelIndex(pos);
+		Scene::I->SetVoxelState(index, tile);
 		q.push(index);
 
 		// q가 빌 때까지 BFS를 돌며 현재 타일이 오브젝트와 충돌 했다면 해당 타일을 업데이트
@@ -169,13 +155,13 @@ void Grid::UpdateTiles(VoxelState tile, GridObject* object)
 					continue;
 				}
 
-				Vec3 nextPosW = Scene::I->GetTilePosFromUniqueIndex(nextPosT);
+				Vec3 nextPosW = Scene::I->GetVoxelPos(nextPosT);
 				BoundingBox bb{ nextPosW, mkTileExtent };
 
 				visited[nextPosT] = true;
 
 				if (collider->Intersects(bb)) {
-					Scene::I->SetTileFromUniqueIndex(nextPosT, tile);
+					Scene::I->SetVoxelState(nextPosT, tile);
 					q.push(nextPosT);
 				}
 			}

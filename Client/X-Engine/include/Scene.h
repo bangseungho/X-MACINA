@@ -84,10 +84,6 @@ private:
 
 	/* Others */
 	bool mIsRenderBounds = false;
-
-	std::vector<Vec3>	mOpenList{};
-	std::vector<Vec3>	mClosedList{};
-
 	Object* mPlayer{};
 
 private:
@@ -105,26 +101,17 @@ public:
 #pragma region Getter
 	float GetTerrainHeight(float x, float z) const;
 	std::vector<sptr<GameObject>> GetAllObjects() const;
-	rsptr<Object> GetGameManager() const { return mGameManager; }
+	rsptr<Object>GetGameManager() const { return mGameManager; }
 
-	int GetGridIndexFromPos(Vec3 pos) const;
-
-	Pos GetTileUniqueIndexFromPos(const Vec3& pos) const;
-	Vec3 GetTilePosFromUniqueIndex(const Pos& index) const;
-
-	void SetTileFromUniqueIndex(const Pos& index, VoxelState tile);
-	void SetTileFromUniqueIndex(const Pos& index, VoxelCondition tile);
-	RenderVoxel GetVoxelFromUniqueIndex(const Pos& index) const;
-
-	VoxelState GetVoxelState(const Pos& index) const;
-	VoxelCondition GetVoxelCondition(const Pos& index) const;
-	void SetVoxelState(const Pos& index, VoxelState state) const;
-	void SetVoxelCondition(const Pos& index, VoxelCondition condition) const;
-
-	std::vector<Vec3>& GetOpenList() { return mOpenList; }
-	std::vector<Vec3>& GetClosedList() { return mClosedList; }
-	void ClearPathList() { mOpenList.clear(); mClosedList.clear(); }
-
+	int				GetGridIndex(const Pos& index) const;
+	int				GetGridIndex(Vec3 pos) const;
+	Pos				GetVoxelIndex(const Vec3& pos) const;
+	Vec3			GetVoxelPos(const Pos& index) const;
+	Voxel			GetVoxel(const Pos& index) const;
+	VoxelState		GetVoxelState(const Pos& index) const;
+	VoxelCondition	GetVoxelCondition(const Pos& index) const;
+	void			SetVoxelState(const Pos& index, VoxelState state) const;
+	void			SetVoxelCondition(const Pos& index, VoxelCondition condition) const;
 #pragma endregion
 
 #pragma region DirectX
@@ -151,7 +138,6 @@ public:
 private:
 	/* Object */
 	void BuildTerrain();
-	void BuildTest();
 
 	/* Grid */
 	// generate grids

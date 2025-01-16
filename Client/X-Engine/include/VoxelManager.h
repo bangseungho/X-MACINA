@@ -31,8 +31,8 @@ struct VoxelOption {
 	int	RenderVoxelCols{};
 	int	RenderVoxelHeight{};
 
-	RenderMode RenderMode{};
-	CreateMode CreateMode{};
+	RenderMode RenderMode = RenderMode::Voxel;
+	CreateMode CreateMode = CreateMode::None;
 };
 #pragma endregion
 

@@ -158,7 +158,7 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
     ImGui::Text("Idx : x = %d, y = %d, z = %d", selectedVoxelIndex.X, selectedVoxelIndex.Y, selectedVoxelIndex.Z);
 
     // position
-    const Vec3& selectedVoxelPosW = Scene::I->GetTilePosFromUniqueIndex(selectedVoxelIndex);
+    const Vec3& selectedVoxelPosW = Scene::I->GetVoxelPos(selectedVoxelIndex);
 	ImGui::Text("Pos : x = %.1f, y = %.1f, z = %.1f", selectedVoxelPosW.x, selectedVoxelPosW.y, selectedVoxelPosW.z);
     
     // tile
@@ -186,7 +186,7 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 	// render mode
 	ImGui::Text("Render Mode : ");
 	ImGui::SameLine(mTextSpacing);
-	RenderMode renderMode = VoxelManager::I->GetRenderMode();
+    static RenderMode renderMode = RenderMode::Voxel;
 	if (ImGui::RadioButton("Voxel", renderMode == RenderMode::Voxel)) renderMode = RenderMode::Voxel; ImGui::SameLine();
 	if (ImGui::RadioButton("World", renderMode == RenderMode::World)) renderMode = RenderMode::World; ImGui::SameLine();
 	if (ImGui::RadioButton("Both", renderMode == RenderMode::Both)) renderMode = RenderMode::Both;
@@ -195,7 +195,7 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 	// create mode
 	ImGui::Text("Create Mode : ");
 	ImGui::SameLine(mTextSpacing);
-	CreateMode createMode = VoxelManager::I->GetCreateMode();
+	static CreateMode createMode = CreateMode::None;
 	if (ImGui::RadioButton("None", createMode == CreateMode::None)) createMode = CreateMode::None; ImGui::SameLine();
 	if (ImGui::RadioButton("Create", createMode == CreateMode::Create)) createMode = CreateMode::Create; ImGui::SameLine();
 	if (ImGui::RadioButton("Remove", createMode == CreateMode::Remove)) createMode = CreateMode::Remove;

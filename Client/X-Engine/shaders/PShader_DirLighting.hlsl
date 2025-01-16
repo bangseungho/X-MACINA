@@ -40,7 +40,7 @@ PSOutput_Lighting PSDirLighting(VSOutput_Lighting pin)
     
     // 조명 계산
     float4 shadowPosH = mul(float4(posW, 1.f), gPassCB.MtxShadow);
-    float shadowFactor = clamp(ComputeShadowFactor(shadowPosH), gPassCB.ShadowIntensity, 1.f);
+    float shadowFactor = 1.f;
     LightColor lightColor = ComputeDirectionalLight(gPassCB.Lights[gObjectCB.LightIndex], mat, posW, normalW, toCameraW, shadowFactor);
     
     // specular reflection
