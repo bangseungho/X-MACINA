@@ -309,16 +309,39 @@ void Scene::UpdateVoxelsOnTerrain()
 		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkTileWidth); ++j) {
 			Vec3 pos = GetVoxelPos(Pos{i, j, 0});
 			Pos index = Pos{ i, j, static_cast<int>(std::round(GetTerrainHeight(pos.x, pos.z))) };
-			Pos upIndex = index; 
-			upIndex.Y += 1;
+			Pos upIndex = index.Up();
 
 			// 위 복셀이 스태틱이면 해당 아래 복셀도 스태틱으로 설정
 			if (GetVoxelState(upIndex) == VoxelState::Static) {
 				SetVoxelState(index, VoxelState::TerrainStatic);
+				UpdateVoxelsNearbyStatic(index);
 			}
 			else {
 				SetVoxelState(index, VoxelState::Terrain);
 			}
+		}
+	}
+}
+
+void Scene::UpdateVoxelsNearbyStatic(const Pos& index)
+{
+	constexpr int radius = 3;
+	constexpr int maxCost = radius * 2;
+	int totalVoxelRows = static_cast<int>(kBorderExtents.x / Grid::mkTileWidth);
+	int totalVoxelCols = static_cast<int>(kBorderExtents.z / Grid::mkTileWidth);
+
+	for (int dz = -radius; dz <= radius; ++dz) {
+		for (int dx = -radius; dx <= radius; ++dx) {
+			int nx = index.X + dx;
+			int nz = index.Z + dz;
+			double distance = std::sqrt((nx - index.X) * (nx - index.X) + (nz - index.Z) * (nz - index.Z));
+			int cost = static_cast<int>(maxCost - distance);
+			SetNearbyStaticCost(Pos{ nz, nx, index.Y }, cost);
+			//if (dx * dx + dz * dz <= radius * radius) {
+			//	if (nx >= 0 && nx < totalVoxelRows && nz >= 0 && nz < totalVoxelCols) {
+			//		SetNearbyStaticCost(Pos{ nz, nx, index.Y }, cost);
+			//	}
+			//}
 		}
 	}
 }
@@ -888,6 +911,11 @@ VoxelCondition Scene::GetVoxelCondition(const Pos& index) const
 	return mGrids[GetGridIndex(index)]->GetVoxelCondition(index);
 }
 
+int Scene::GetNearbyStaticCost(const Pos& index) const
+{
+	return mGrids[GetGridIndex(index)]->GetNearbyStaticCost(index);
+}
+
 Voxel Scene::GetVoxel(const Pos& index) const
 {
 	return mGrids[GetGridIndex(index)]->GetVoxel(index);
@@ -901,6 +929,11 @@ void Scene::SetVoxelState(const Pos& index, VoxelState state) const
 void Scene::SetVoxelCondition(const Pos& index, VoxelCondition condition) const
 {
 	mGrids[GetGridIndex(index)]->SetVoxelCondition(index, condition);
+}
+
+void Scene::SetNearbyStaticCost(const Pos& index, int cost) const
+{
+	mGrids[GetGridIndex(index)]->SetNearbyStaticCost(index, cost);
 }
 
 void Scene::ToggleDrawBoundings()

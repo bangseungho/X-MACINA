@@ -14,8 +14,8 @@ class Camera;
 #pragma region Enum
 enum class RenderMode : UINT8 {
 	Voxel = 0,
-	World = 1,
-	Both = 2,
+	World,
+	Both,
 };
 
 enum class CreateMode : UINT8 {
@@ -57,7 +57,8 @@ private:
 
 private:
 	std::vector<uptr<UploadBuffer<InstanceData>>> mInstanceBuffers{};
-	std::vector<Pos> mClosedList{};
+	std::vector<Pos> mCloseList{};
+	std::vector<Pos> mOpenList{};
 
 public:
 	static constexpr UINT mkMaxRenderVoxelCount = 60000;
@@ -79,8 +80,9 @@ public:
 	void SetCenterPos(const Pos& pos) { mCenterPos = pos; }
 
 public:
-	void PushClosedVoxel(const Pos& pos) { mClosedList.push_back(pos); }
-	void ClearClosedList();
+	void PushClosedVoxel(const Pos& pos) { mCloseList.push_back(pos); }
+	void PushOpenedVoxel(const Pos& pos) { mOpenList.push_back(pos); }
+	void ClearPathList();
 
 public:
 	void ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam);

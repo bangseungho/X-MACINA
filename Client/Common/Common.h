@@ -650,18 +650,15 @@ public:
 
 struct Pos
 {
-	bool operator==(const Pos& other) const
-	{
+	bool operator==(const Pos& other) const {
 		return Z == other.Z && X == other.X && Y == other.Y;
 	}
 
-	bool operator!=(const Pos& other) const
-	{
+	bool operator!=(const Pos& other) const {
 		return !(*this == other);
 	}
 
-	bool operator<(const Pos& other) const
-	{
+	bool operator<(const Pos& other) const {
 		if (Z != other.Z)
 			return Z < other.Z;
 		if (X != other.X)
@@ -669,8 +666,7 @@ struct Pos
 		return Y < other.Y;
 	}
 
-	bool operator>(const Pos& other) const
-	{
+	bool operator>(const Pos& other) const {
 		if (Z != other.Z)
 			return Z > other.Z;
 		if (X != other.X)
@@ -678,8 +674,7 @@ struct Pos
 		return Y > other.Y;
 	}
 
-	Pos operator+(const Pos& other)
-	{
+	Pos operator+(const Pos& other) const {
 		Pos ret;
 		ret.Z = Z + other.Z;
 		ret.X = X + other.X;
@@ -687,16 +682,14 @@ struct Pos
 		return ret;
 	}
 
-	Pos& operator+=(const Pos& other)
-	{
+	Pos& operator+=(const Pos& other) {
 		Z += other.Z;
 		X += other.X;
 		Y += other.Y;
 		return *this;
 	}
 
-	Pos operator-(const Pos& other)
-	{
+	Pos operator-(const Pos& other) const {
 		Pos ret;
 		ret.Z = Z - other.Z;
 		ret.X = X - other.X;
@@ -704,13 +697,19 @@ struct Pos
 		return ret;
 	}
 
-	Pos& operator-=(const Pos& other)
-	{
+	Pos& operator-=(const Pos& other) {
 		Z -= other.Z;
 		X -= other.X;
 		Y -= other.Y;
 		return *this;
 	}
+
+	Pos Up() const { return *this + Pos{ 0, 0, +1 }; }
+	Pos Down() const { return *this + Pos{ 0, 0, -1 }; }
+	Pos Left() const { return *this + Pos{ 0, +1, 0 }; }
+	Pos Right() const { return *this + Pos{ 0, -1, 0 }; }
+	Pos Forward() const { return *this + Pos{ +1, 0, 0 }; }
+	Pos Backward() const { return *this + Pos{ -1, 0, 0 }; }
 
 	int Z{};
 	int X{};
@@ -734,6 +733,7 @@ enum class VoxelCondition : UINT8 {
 	None = 0,
 	Picked,
 	Closed,
+	Opened,
 	ReadyCreate,
 };
 

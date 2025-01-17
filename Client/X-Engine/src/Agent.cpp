@@ -11,7 +11,6 @@ namespace {
 			std::abs(dest.Y - start.Y) +
 			std::abs(dest.Z - start.Z);
 	}
-	// 유클리드 거리 기반 휴리스틱 함수
 	int HeuristicEuclidean(const Pos& start, const Pos& dest) {
 		return static_cast<int>(std::sqrt(std::pow(dest.X - start.X, 2) +
 			std::pow(dest.Y - start.Y, 2) +
@@ -26,17 +25,30 @@ void Agent::Update()
 
 void Agent::PathPlanningToAstar(const Pos& dest)
 {
-	VoxelManager::I->ClearClosedList();
+	VoxelManager::I->ClearPathList();
 
 	std::unordered_map<Pos, Pos> parent;
 	std::unordered_map<Pos, int> onVoxel;
 	std::unordered_map<Pos, int> distance;
 	std::unordered_map<Pos, bool> visited;
 
+	std::function<int(const Pos&, const Pos&)> heuristic{};
+	switch (PathOption::I->GetHeuristic())
+	{
+	case Heuristic::Manhattan:
+		heuristic = HeuristicManhattan;
+		break;
+	case Heuristic::Euclidean:
+		heuristic = HeuristicEuclidean;
+		break;
+	default:
+		break;
+	}
+
 	// f = g + h
 	std::priority_queue<PQNode, std::vector<PQNode>, std::greater<PQNode>> pq;
 	int g = 0;
-	int h = HeuristicManhattan(mStart, dest) * mkWeight;
+	int h = heuristic(mStart, dest) * PathOption::I->GetHeuristicWeight();
 	pq.push({ g + h, g, mStart });
 	distance[mStart] = g + h;
 	parent[mStart] = mStart;
@@ -49,7 +61,7 @@ void Agent::PathPlanningToAstar(const Pos& dest)
 		prevDir = curNode.Pos - parent[curNode.Pos];
 		pq.pop();
 
-		if (closedListSize >= PathOption::I->GetMaxClosedListSize()) return;
+		if (closedListSize >= PathOption::I->GetMaxClosedListSize()) break;
 		if (visited.contains(curNode.Pos)) continue;
 		if (distance[curNode.Pos] < curNode.F) continue;
 
@@ -67,7 +79,8 @@ void Agent::PathPlanningToAstar(const Pos& dest)
 			// 다음 방향 노드의 상태가 static이라면 continue
 			int onVoxelCount = GetOnVoxelCount(nextPos);
 			int pathSmoothingCost{}; 
-			int onVoxelCountCost = onVoxelCount * 10;
+			int onVoxelCountCost = onVoxelCount * PathOption::I->GetOnVoxelCost();
+			int nearbyStaticCost = Scene::I->GetNearbyStaticCost(nextPos);
 			if (onVoxelCount > 1 && onVoxelCount <= PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
 			if ((nextTile == VoxelState::Static || nextTile == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
 			if (nextTile == VoxelState::None) continue;
@@ -75,19 +88,21 @@ void Agent::PathPlanningToAstar(const Pos& dest)
 			if (!distance.contains(nextPos)) distance[nextPos] = INT32_MAX;
 			if (prevDir != gkFront3D[dir]) pathSmoothingCost = gkCost3D[dir] / 2;
 
-			int g = curNode.G + gkCost3D[dir] + pathSmoothingCost + onVoxelCountCost;
-			int h = HeuristicManhattan(nextPos, dest) * mkWeight;
+			int g = curNode.G + gkCost3D[dir] + pathSmoothingCost + onVoxelCountCost + nearbyStaticCost;
+			int h = heuristic(nextPos, dest) * PathOption::I->GetHeuristicWeight();
 			if (g + h < distance[nextPos]) {
 				distance[nextPos] = g + h;
 				pq.push({ g + h, g, nextPos });
 				parent[nextPos] = curNode.Pos;
 				closedListSize++;
+				VoxelManager::I->PushOpenedVoxel(nextPos);
 			}
 		}
 	}
 	
 	// 경로를 못 찾은 경우
 	if (curNode.Pos != dest) {
+		VoxelManager::I->ClearPathList();
 		ClearPath();
 		return;
 	}

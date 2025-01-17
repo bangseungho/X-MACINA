@@ -60,6 +60,16 @@ Voxel Grid::GetVoxel(const Pos& index)
 	}
 }
 
+int Grid::GetNearbyStaticCost(const Pos& index)
+{
+	if (mNearbyStaticCosts.count(index)) {
+		return mNearbyStaticCosts[index];
+	}
+	else {
+		return 0;
+	}
+}
+
 void Grid::SetVoxelState(const Pos& index, VoxelState state)
 {
 	if (mVoxels.count(index)) {
@@ -94,6 +104,14 @@ void Grid::SetVoxelCondition(const Pos& index, VoxelCondition condition)
 		const Matrix matrix = scaleMtx * translationMtx;
 		voxel.MtxWorld = matrix.Transpose();
 		mVoxels.insert({ index, voxel });
+	}
+}
+
+void Grid::SetNearbyStaticCost(const Pos& index, int cost)
+{
+	if (mVoxels.count(index)) {
+		cost = max(0, cost);
+		mNearbyStaticCosts[index] = max(cost, mNearbyStaticCosts[index]);
 	}
 }
 

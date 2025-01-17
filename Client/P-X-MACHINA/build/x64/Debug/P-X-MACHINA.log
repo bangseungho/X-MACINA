@@ -1,2 +1,54 @@
-﻿  Script_GroundPlayer.cpp
+﻿  stdafx.cpp
+  P-X-MACHINA.cpp
+  Script_CameraTraget.cpp
+  CheckAttackRange.cpp
+  CheckDeath.cpp
+  CheckDetectionRange.cpp
+  CheckPatrolRange.cpp
+  GameFramework.cpp
+  IRDetectorAbility.cpp
+  MinimapAbility.cpp
+  Script_AbilityHolder.cpp
+  Script_AdvancedCombatDroid_5.cpp
+  Script_AimController.cpp
+  Script_BehaviorTree.cpp
+  Script_Billboard.cpp
+  Script_Bullet.cpp
+  Script_Enemy.cpp
+  Script_EnemyManager.cpp
+  Script_GameManager.cpp
+  Script_GroundObject.cpp
+  Script_GroundPlayer.cpp
+  코드를 생성하고 있습니다...
+  컴파일하고 있습니다...
+  Script_LiveObject.cpp
+  Script_MainCamera.cpp
+  Script_MeleeBT.cpp
+  Script_Missile.cpp
+  Script_Onyscidus.cpp
+  Script_Player.cpp
+  Script_ShootingPlayer.cpp
+  Script_Sprite.cpp
+  Script_Ursacetus.cpp
+  Script_Weapon.cpp
+  Script_Weapon_MissileLauncher.cpp
+  Script_Weapon_Pistol.cpp
+  Script_Weapon_Rifle.cpp
+  Script_Weapon_Shotgun.cpp
+  Script_Weapon_Sniper.cpp
+  ShieldAbility.cpp
+  TaskAttack.cpp
+  TaskGetHit.cpp
+  TaskMoveToPath.cpp
+  TaskMoveToTarget.cpp
+  코드를 생성하고 있습니다...
+C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\src\Script_MainCamera.cpp(28): warning C4172: 지역 변수 또는 임시의 주소를 반환하고 있습니다.
+  컴파일하고 있습니다...
+  TaskPathPlanningAStar.cpp
+  TaskPathPlanningToSpawn.cpp
+  TaskPathPlanningToTarget.cpp
+  TaskPatrol.cpp
+  Wait.cpp
+  X-MACHINA.cpp
+  코드를 생성하고 있습니다...
   P-X-MACHINA.vcxproj -> C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\build\Debug\P-X-MACHINA.exe

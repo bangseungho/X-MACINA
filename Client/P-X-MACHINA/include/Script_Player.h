@@ -135,8 +135,6 @@ private:
 	static const float mkSprintSpeed;
 
 	static const float mkStartRotAngle;
-	static constexpr int mkWeight = 10;
-	static constexpr int mkMaxVisited = 2000;
 
 	// animator //
 	float mParamV{}, mParamH{};

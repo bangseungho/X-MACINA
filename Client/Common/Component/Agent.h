@@ -5,15 +5,11 @@
 #pragma endregion
 
 
-#pragma region Define
-#pragma endregion
-
-
-#pragma region Using
-#pragma endregion
-
-
-#pragma region ClassForwardDecl
+#pragma region Enum
+enum class Heuristic {
+	Manhattan = 0,
+	Euclidean,
+};
 #pragma endregion
 
 
@@ -33,18 +29,27 @@ class PathOption : public Singleton<PathOption> {
 	friend Singleton;
 	
 private:
-	float mAgentSpeed = 4.2f;
-	int mAllowedHeight = 1;
-	int mMaxClosedListSize = 50000;
+	float		mAgentSpeed = 5.2f;
+	int			mAllowedHeight = 1;
+	int			mMaxClosedListSize = 50000;
+	int			mOnVoxelCost = 30;
+	int			mHeuristicWeight = 10;
+	Heuristic	mHeuristic = Heuristic::Manhattan;
 
 public:
-	float GetAgentSpeed() const { return mAgentSpeed; }
-	int GetAllowedHeight() const { return mAllowedHeight; }
-	int GetMaxClosedListSize() const { return mMaxClosedListSize; }
+	float		GetAgentSpeed() const { return mAgentSpeed; }
+	int			GetAllowedHeight() const { return mAllowedHeight; }
+	int			GetMaxClosedListSize() const { return mMaxClosedListSize; }
+	int			GetOnVoxelCost() const { return mOnVoxelCost; }
+	int			GetHeuristicWeight() const { return mHeuristicWeight; }
+	Heuristic	GetHeuristic() const { return mHeuristic; }
 	
-	void SetAgentSpeed(float speed) { mAgentSpeed = speed; }
-	void SetAllowedHeight(int height) { mAllowedHeight = height; }
-	void SetMaxClosedListSize(int size) { mMaxClosedListSize = size; }
+	void		SetAgentSpeed(float speed) { mAgentSpeed = speed; }
+	void		SetAllowedHeight(int height) { mAllowedHeight = height; }
+	void		SetMaxClosedListSize(int size) { mMaxClosedListSize = size; }
+	void		SetOnVoxelCost(int cost) { mOnVoxelCost = cost; }
+	void		SetHeuristicWeight(int weight) { mHeuristicWeight = weight; }
+	void		SetHeuristic(Heuristic heuristic) { mHeuristic = heuristic; }
 };
 
 
@@ -52,7 +57,6 @@ class Agent : public Component {
 	COMPONENT(Agent, Component)
 
 private:
-	static constexpr int mkWeight = 10;
 	
 private:
 	std::stack<Vec3> mPath{};
@@ -62,12 +66,12 @@ public:
 	virtual void Update() override;
 
 public:
-	void PathPlanningToAstar(const Pos& dest);
-	void ReadyPlanningToPath(const Pos& start);
+	void	PathPlanningToAstar(const Pos& dest);
+	void	ReadyPlanningToPath(const Pos& start);
 
 private:
-	void MoveToPath();
-	int GetOnVoxelCount(const Pos& pos);
-	void ClearPath() { while (!mPath.empty()) mPath.pop(); }
+	void	MoveToPath();
+	int		GetOnVoxelCount(const Pos& pos);
+	void	ClearPath() { while (!mPath.empty()) mPath.pop(); }
 };
 #pragma endregion

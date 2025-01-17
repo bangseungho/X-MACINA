@@ -32,11 +32,15 @@ public:
 	static int mTileRows;
 	static int mTileCols;
 
+	// 추후에 UINT8로 변경
+	std::unordered_map<Pos, int> mNearbyStaticCosts{};
+
 private:
 	std::unordered_map<Pos, Voxel> mVoxels{};
 	// xz축에 대응하는 어떤 y 값이 있는지 미리 저장?
-	// 
-	
+
+	// Static 주변 복셀들에 대하여 코스트맵 추가
+
 public:
 	Grid(int index, int width, const BoundingBox& bb);
 	virtual ~Grid() = default;
@@ -48,10 +52,12 @@ public:
 	const auto& GetObjects() const		{ return mObjects; }
 
 	Voxel GetVoxel(const Pos& index);
+	int GetNearbyStaticCost(const Pos& index);
 	VoxelState GetVoxelState(const Pos& tPos);
 	VoxelCondition GetVoxelCondition(const Pos& tPos);
 	void SetVoxelState(const Pos& index, VoxelState state);
 	void SetVoxelCondition(const Pos& index, VoxelCondition condition);
+	void SetNearbyStaticCost(const Pos& index, int cost);
 
 public:
 	bool Empty() const { return mObjects.empty(); }

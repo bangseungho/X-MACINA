@@ -236,7 +236,34 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		int value = PathOption::I->GetAllowedHeight();
 		ImGui::Text("AllowedHeight :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
-		ImGui::InputInt("##int_AllowedHeight", &value);
+		ImGui::InputInt("##int_AllowedHeight", &value, 1, 10);
 		PathOption::I->SetAllowedHeight(value);
+	}
+
+	// on voxel cost
+	{
+		int value = PathOption::I->GetOnVoxelCost();
+		ImGui::Text("OnVoxelCost :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+		ImGui::InputInt("##int_OnVoxelCostt", &value, 10, 30);
+		PathOption::I->SetOnVoxelCost(value);
+	}
+
+	// heuristic weight
+	{
+		int value = PathOption::I->GetHeuristicWeight();
+		ImGui::Text("HeuristicWeight :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+		ImGui::InputInt("##int_HeuristicWeight", &value, 5, 10);
+		PathOption::I->SetHeuristicWeight(value);
+	}
+
+	{
+		ImGui::Text("Heuristic : ");
+		ImGui::SameLine(mTextSpacing);
+		static Heuristic heuri = Heuristic::Manhattan;
+		if (ImGui::RadioButton("Manhattan", heuri == Heuristic::Manhattan)) heuri = Heuristic::Manhattan; ImGui::SameLine();
+		if (ImGui::RadioButton("Euclidean", heuri == Heuristic::Euclidean)) heuri = Heuristic::Euclidean; ImGui::SameLine();
+		PathOption::I->SetHeuristic(heuri);
 	}
 }

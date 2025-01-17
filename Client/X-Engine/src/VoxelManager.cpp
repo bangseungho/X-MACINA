@@ -14,13 +14,18 @@
 #include "InputMgr.h"
 
 
-void VoxelManager::ClearClosedList()
+void VoxelManager::ClearPathList()
 {
-	for (auto& voxel : mClosedList) {
+	for (auto& voxel : mCloseList) {
 		Scene::I->SetVoxelCondition(voxel, VoxelCondition::None);
 	}
 
-	mClosedList.clear();
+	for (auto& voxel : mOpenList) {
+		Scene::I->SetVoxelCondition(voxel, VoxelCondition::None);
+	}
+
+	mCloseList.clear();
+	mOpenList.clear();
 }
 
 void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
@@ -46,7 +51,8 @@ void VoxelManager::Init(Object* player)
 {
 	mPlayer = player;
 	CalcRenderVoxelCount(50);
-	mClosedList.reserve(10000);
+	mCloseList.reserve(10000);
+	mOpenList.reserve(10000);
 	mRenderVoxels.reserve(10000);
 	mOption.RenderVoxelHeight = 10;
 
@@ -87,7 +93,10 @@ void VoxelManager::Render()
 
 	int buffIdx{};
 
-	for (auto& voxel : mClosedList) {
+	for (auto& voxel : mOpenList) {
+		Scene::I->SetVoxelCondition(voxel, VoxelCondition::Opened);
+	}
+	for (auto& voxel : mCloseList) {
 		Scene::I->SetVoxelCondition(voxel, VoxelCondition::Closed);
 	}
 
@@ -99,10 +108,10 @@ void VoxelManager::Render()
 		
 		switch (renderVoxel.State) {
 		case VoxelState::Static:
+		case VoxelState::TerrainStatic:
 			instData.Color = Vec4{ 1.f, 0.f, 0.f, 1.f };
 			break;
 		case VoxelState::Terrain:
-		case VoxelState::TerrainStatic:
 			instData.Color = Vec4{ 0.f, 1.f, 0.f, 1.f };
 			break;
 		default:
@@ -115,6 +124,9 @@ void VoxelManager::Render()
 			break;
 		case VoxelCondition::Closed:
 			instData.Color = Vec4{ 0.f, 0.f, 1.f, 1.f };
+			break;
+		case VoxelCondition::Opened:
+			instData.Color = Vec4{ 0.f, 1.f, 1.f, 1.f };
 			break;
 		case VoxelCondition::ReadyCreate:
 			instData.Color = Vec4{ 1.f, 0.f, 0.f, 1.f };
@@ -154,6 +166,7 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	
 	Scene::I->SetVoxelCondition(mSelectedVoxel, VoxelCondition::Picked);
 	VoxelState selectedVoxelState = Scene::I->GetVoxelState(mSelectedVoxel);
+	std::cout << (int)Scene::I->GetNearbyStaticCost(mSelectedVoxel) << std::endl;
 
 	switch (mOption.CreateMode)
 	{
@@ -173,7 +186,7 @@ void VoxelManager::PickTopVoxel(bool makePath)
 
 void VoxelManager::UpdateCreateMode(VoxelState selectedVoxelState)
 {
-	Pos aboveVoxel = mSelectedVoxel + Pos{ 0, 0, 1 };
+	Pos aboveVoxel = mSelectedVoxel.Up();
 	if (Scene::I->GetVoxel(aboveVoxel).State == VoxelState::None) {
 		Scene::I->SetVoxelCondition(aboveVoxel, VoxelCondition::ReadyCreate);
 	}

@@ -8,7 +8,7 @@ protected:
 	Vec2			mPosition{};
 	Vec2			mSize{};
 	std::string		mName{};
-	float			mTextSpacing = 120;
+	float			mTextSpacing = 130;
 
 public:
 	ImGuiFunc(const Vec2& pos, const Vec2& size, std::string label);
