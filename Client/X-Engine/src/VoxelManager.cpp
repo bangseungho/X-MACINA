@@ -37,6 +37,7 @@ void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_RBUTTONUP:
 		mHoldingClick = false;
+		mUsedCreateModeVoxels.clear();
 		break;
 	case WM_MOUSEMOVE:
 		PickTopVoxel(false);
@@ -94,10 +95,14 @@ void VoxelManager::Render()
 	int buffIdx{};
 
 	for (auto& voxel : mOpenList) {
-		Scene::I->SetVoxelCondition(voxel, VoxelCondition::Opened);
+		if (Scene::I->GetVoxelCondition(voxel) != VoxelCondition::Picked) {
+			Scene::I->SetVoxelCondition(voxel, VoxelCondition::Opened);
+		}
 	}
 	for (auto& voxel : mCloseList) {
-		Scene::I->SetVoxelCondition(voxel, VoxelCondition::Closed);
+		if (Scene::I->GetVoxelCondition(voxel) != VoxelCondition::Picked) {
+			Scene::I->SetVoxelCondition(voxel, VoxelCondition::Closed);
+		}
 	}
 
 	for (auto& voxel : mRenderVoxels) {
@@ -164,14 +169,12 @@ void VoxelManager::PickTopVoxel(bool makePath)
 		}
 	}
 	
-	Scene::I->SetVoxelCondition(mSelectedVoxel, VoxelCondition::Picked);
 	VoxelState selectedVoxelState = Scene::I->GetVoxelState(mSelectedVoxel);
-	std::cout << (int)Scene::I->GetNearbyStaticCost(mSelectedVoxel) << std::endl;
 
 	switch (mOption.CreateMode)
 	{
 	case CreateMode::None:
-		UpdateDefaultMode(makePath, selectedVoxelState);
+		UpdatePlanningPathMode(makePath, selectedVoxelState);
 		break;
 	case CreateMode::Create:
 		UpdateCreateMode(selectedVoxelState);
@@ -182,6 +185,8 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	default:
 		break;
 	}
+
+	Scene::I->SetVoxelCondition(mSelectedVoxel, VoxelCondition::Picked);
 }
 
 void VoxelManager::UpdateCreateMode(VoxelState selectedVoxelState)
@@ -191,7 +196,7 @@ void VoxelManager::UpdateCreateMode(VoxelState selectedVoxelState)
 		Scene::I->SetVoxelCondition(aboveVoxel, VoxelCondition::ReadyCreate);
 	}
 
-	if (!mHoldingClick) {
+	if (!mHoldingClick || mUsedCreateModeVoxels.count(mSelectedVoxel.XZ())) {
 		return;
 	}
 
@@ -202,11 +207,13 @@ void VoxelManager::UpdateCreateMode(VoxelState selectedVoxelState)
 		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::Static);
 	}
 	Scene::I->SetVoxelState(aboveVoxel, VoxelState::Static);
+
+	mUsedCreateModeVoxels.insert(mSelectedVoxel.XZ());
 }
 
 void VoxelManager::UpdateRemoveMode(VoxelState selectedVoxelState)
 {
-	if (!mHoldingClick) {
+	if (!mHoldingClick || mUsedCreateModeVoxels.count(mSelectedVoxel.XZ())) {
 		return;
 	}
 
@@ -216,16 +223,20 @@ void VoxelManager::UpdateRemoveMode(VoxelState selectedVoxelState)
 	else if (selectedVoxelState == VoxelState::Static) {
 		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::None);
 	}
+
+	mUsedCreateModeVoxels.insert(mSelectedVoxel.XZ());
 }
 
-void VoxelManager::UpdateDefaultMode(bool makePath, VoxelState selectedVoxelState)
+void VoxelManager::UpdatePlanningPathMode(bool makePath, VoxelState selectedVoxelState)
 {
 	if (!makePath) {
 		return;
 	}
 
 	if (!mReadyMakePath) {
-		mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel);
+		if (!mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel)) {
+			return;
+		}
 	}
 	else {
 		mPlayer->GetComponent<Agent>()->ReadyPlanningToPath(mSelectedVoxel);

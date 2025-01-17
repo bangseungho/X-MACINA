@@ -23,7 +23,7 @@ void Agent::Update()
 	MoveToPath();
 }
 
-void Agent::PathPlanningToAstar(const Pos& dest)
+bool Agent::PathPlanningToAstar(const Pos& dest)
 {
 	VoxelManager::I->ClearPathList();
 
@@ -80,7 +80,7 @@ void Agent::PathPlanningToAstar(const Pos& dest)
 			int onVoxelCount = GetOnVoxelCount(nextPos);
 			int pathSmoothingCost{}; 
 			int onVoxelCountCost = onVoxelCount * PathOption::I->GetOnVoxelCost();
-			int nearbyStaticCost = Scene::I->GetNearbyStaticCost(nextPos);
+			int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
 			if (onVoxelCount > 1 && onVoxelCount <= PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
 			if ((nextTile == VoxelState::Static || nextTile == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
 			if (nextTile == VoxelState::None) continue;
@@ -88,7 +88,7 @@ void Agent::PathPlanningToAstar(const Pos& dest)
 			if (!distance.contains(nextPos)) distance[nextPos] = INT32_MAX;
 			if (prevDir != gkFront3D[dir]) pathSmoothingCost = gkCost3D[dir] / 2;
 
-			int g = curNode.G + gkCost3D[dir] + pathSmoothingCost + onVoxelCountCost + nearbyStaticCost;
+			int g = curNode.G + gkCost3D[dir] + pathSmoothingCost + onVoxelCountCost + proximityCost;
 			int h = heuristic(nextPos, dest) * PathOption::I->GetHeuristicWeight();
 			if (g + h < distance[nextPos]) {
 				distance[nextPos] = g + h;
@@ -104,7 +104,8 @@ void Agent::PathPlanningToAstar(const Pos& dest)
 	if (curNode.Pos != dest) {
 		VoxelManager::I->ClearPathList();
 		ClearPath();
-		return;
+		VoxelManager::I->PushClosedVoxel(mStart);
+		return false;
 	}
 
 	Pos pos = dest;
@@ -119,11 +120,14 @@ void Agent::PathPlanningToAstar(const Pos& dest)
 
 		pos = parent[pos];
 	}
+
+	return true;
 }
 
 void Agent::ReadyPlanningToPath(const Pos& start)
 {
 	mStart = start;
+	VoxelManager::I->PushClosedVoxel(start);
 	mObject->SetPosition(Scene::I->GetVoxelPos(start));
 	ClearPath();
 }

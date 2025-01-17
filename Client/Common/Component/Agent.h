@@ -34,6 +34,7 @@ private:
 	int			mMaxClosedListSize = 50000;
 	int			mOnVoxelCost = 30;
 	int			mHeuristicWeight = 10;
+	int			mProximityWeight = 10;
 	Heuristic	mHeuristic = Heuristic::Manhattan;
 
 public:
@@ -42,6 +43,7 @@ public:
 	int			GetMaxClosedListSize() const { return mMaxClosedListSize; }
 	int			GetOnVoxelCost() const { return mOnVoxelCost; }
 	int			GetHeuristicWeight() const { return mHeuristicWeight; }
+	int			GetProximityWeight() const { return mProximityWeight; }
 	Heuristic	GetHeuristic() const { return mHeuristic; }
 	
 	void		SetAgentSpeed(float speed) { mAgentSpeed = speed; }
@@ -49,6 +51,7 @@ public:
 	void		SetMaxClosedListSize(int size) { mMaxClosedListSize = size; }
 	void		SetOnVoxelCost(int cost) { mOnVoxelCost = cost; }
 	void		SetHeuristicWeight(int weight) { mHeuristicWeight = weight; }
+	void		SetProximityWeight(int weight) { mProximityWeight = weight; }
 	void		SetHeuristic(Heuristic heuristic) { mHeuristic = heuristic; }
 };
 
@@ -66,7 +69,7 @@ public:
 	virtual void Update() override;
 
 public:
-	void	PathPlanningToAstar(const Pos& dest);
+	bool	PathPlanningToAstar(const Pos& dest);
 	void	ReadyPlanningToPath(const Pos& start);
 
 private:

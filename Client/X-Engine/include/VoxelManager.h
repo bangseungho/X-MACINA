@@ -59,6 +59,7 @@ private:
 	std::vector<uptr<UploadBuffer<InstanceData>>> mInstanceBuffers{};
 	std::vector<Pos> mCloseList{};
 	std::vector<Pos> mOpenList{};
+	std::unordered_set<Pos> mUsedCreateModeVoxels{};
 
 public:
 	static constexpr UINT mkMaxRenderVoxelCount = 60000;
@@ -94,7 +95,7 @@ private:
 	void PickTopVoxel(bool makePath);
 	void UpdateCreateMode(VoxelState selectedVoxelState);
 	void UpdateRemoveMode(VoxelState selectedVoxelState);
-	void UpdateDefaultMode(bool makePath, VoxelState selectedVoxelState);
+	void UpdatePlanningPathMode(bool makePath, VoxelState selectedVoxelState);
 	
 	void CalcRenderVoxelCount(int renderVoxelRows);
 };

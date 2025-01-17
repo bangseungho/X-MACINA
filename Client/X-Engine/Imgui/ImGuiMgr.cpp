@@ -184,6 +184,7 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 	ImGui::Text("Tile : %s", tileName);
 
 	// render mode
+	// TODO : 라디오 버튼에서 체크 박스로 변경 예정 -> 해당 옵션 뿐만 아니라 오픈 클로즈 리스트 그리는 것도 결정
 	ImGui::Text("Render Mode : ");
 	ImGui::SameLine(mTextSpacing);
     static RenderMode renderMode = RenderMode::Voxel;
@@ -228,7 +229,7 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		ImGui::Text("AgentSpeed :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
 		ImGui::InputFloat("##float_AgentSpeed", &value, 0.5f, 1.0f, "%.3f"); // float 입력 박스
-		PathOption::I->SetAgentSpeed(value);
+		PathOption::I->SetAgentSpeed(max(0.f, value));
 	}
 
 	// allowed height
@@ -237,7 +238,7 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		ImGui::Text("AllowedHeight :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
 		ImGui::InputInt("##int_AllowedHeight", &value, 1, 10);
-		PathOption::I->SetAllowedHeight(value);
+		PathOption::I->SetAllowedHeight(max(0, value));
 	}
 
 	// on voxel cost
@@ -246,7 +247,7 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		ImGui::Text("OnVoxelCost :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
 		ImGui::InputInt("##int_OnVoxelCostt", &value, 10, 30);
-		PathOption::I->SetOnVoxelCost(value);
+		PathOption::I->SetOnVoxelCost(max(0, value));
 	}
 
 	// heuristic weight
@@ -255,7 +256,16 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		ImGui::Text("HeuristicWeight :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
 		ImGui::InputInt("##int_HeuristicWeight", &value, 5, 10);
-		PathOption::I->SetHeuristicWeight(value);
+		PathOption::I->SetHeuristicWeight(max(0, value));
+	}
+
+	// heuristic weight
+	{
+		int value = PathOption::I->GetProximityWeight();
+		ImGui::Text("ProximityWeight :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+		ImGui::InputInt("##int_ProximityWeight", &value, 5, 10);
+		PathOption::I->SetProximityWeight(max(0, value));
 	}
 
 	{

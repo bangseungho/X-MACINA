@@ -110,10 +110,10 @@ public:
 	Voxel			GetVoxel(const Pos& index) const;
 	VoxelState		GetVoxelState(const Pos& index) const;
 	VoxelCondition	GetVoxelCondition(const Pos& index) const;
-	int				GetNearbyStaticCost(const Pos& index) const;
+	int				GetProximityCost(const Pos& index) const;
 	void			SetVoxelState(const Pos& index, VoxelState state) const;
 	void			SetVoxelCondition(const Pos& index, VoxelCondition condition) const;
-	void			SetNearbyStaticCost(const Pos& index, int cost) const;
+	void			SetProximityCost(const Pos& index, int cost) const;
 #pragma endregion
 
 #pragma region DirectX
@@ -136,7 +136,7 @@ public:
 	void BuildObjects();
 	void ReleaseObjects();
 	void UpdateVoxelsOnTerrain();
-	void UpdateVoxelsNearbyStatic(const Pos& index);
+	void UpdateVoxelsProximityCost(const Pos& index);
 
 private:
 	/* Object */

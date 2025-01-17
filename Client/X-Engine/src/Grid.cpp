@@ -60,10 +60,10 @@ Voxel Grid::GetVoxel(const Pos& index)
 	}
 }
 
-int Grid::GetNearbyStaticCost(const Pos& index)
+int Grid::GetProximityCost(const Pos& index)
 {
-	if (mNearbyStaticCosts.count(index)) {
-		return mNearbyStaticCosts[index];
+	if (mProximityCosts.count(index)) {
+		return mProximityCosts[index];
 	}
 	else {
 		return 0;
@@ -107,12 +107,9 @@ void Grid::SetVoxelCondition(const Pos& index, VoxelCondition condition)
 	}
 }
 
-void Grid::SetNearbyStaticCost(const Pos& index, int cost)
+void Grid::SetProximityCost(const Pos& index, int cost)
 {
-	if (mVoxels.count(index)) {
-		cost = max(0, cost);
-		mNearbyStaticCosts[index] = max(cost, mNearbyStaticCosts[index]);
-	}
+	mProximityCosts[index] = max(cost, mProximityCosts[index]);
 }
 
 void Grid::AddObject(GridObject* object)
