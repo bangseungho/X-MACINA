@@ -14,8 +14,6 @@
 
 int Grid::mTileRows = 0;
 int Grid::mTileCols = 0;
-int Grid::mVoxelCount = 0;
-float Grid::mVoxelSize = 0;
 
 Grid::Grid(int index, int width, const BoundingBox& bb)
 	:
@@ -24,14 +22,12 @@ Grid::Grid(int index, int width, const BoundingBox& bb)
 {
 	mTileRows = static_cast<int>(width / mkTileWidth);
 	mTileCols = static_cast<int>(width / mkTileWidth);
-	mVoxelCount = static_cast<int>(width / mkTileWidth);
-	mVoxelSize = mkTileWidth / 2.f;
 }
 
 VoxelState Grid::GetVoxelState(const Pos& index)
 {
-	if (mRenderVoxels.count(index)) {
-		return mRenderVoxels[index].State;
+	if (mVoxels.count(index)) {
+		return mVoxels[index].State;
 	}
 	else {
 		return VoxelState{};
@@ -40,8 +36,8 @@ VoxelState Grid::GetVoxelState(const Pos& index)
 
 VoxelCondition Grid::GetVoxelCondition(const Pos& index)
 {
-	if (mRenderVoxels.count(index)) {
-		return mRenderVoxels[index].Condition;
+	if (mVoxels.count(index)) {
+		return mVoxels[index].Condition;
 	}
 	else {
 		return VoxelCondition{};
@@ -50,8 +46,8 @@ VoxelCondition Grid::GetVoxelCondition(const Pos& index)
 
 Voxel Grid::GetVoxel(const Pos& index)
 {
-	if (mRenderVoxels.count(index)) {
-		return mRenderVoxels[index];
+	if (mVoxels.count(index)) {
+		return mVoxels[index];
 	}
 	else {
 		return Voxel{};
@@ -60,8 +56,8 @@ Voxel Grid::GetVoxel(const Pos& index)
 
 void Grid::SetVoxelState(const Pos& index, VoxelState state)
 {
-	if (mRenderVoxels.count(index)) {
-		mRenderVoxels[index].State = state;
+	if (mVoxels.count(index)) {
+		mVoxels[index].State = state;
 	}
 	else {
 		Voxel voxel;
@@ -70,14 +66,14 @@ void Grid::SetVoxelState(const Pos& index, VoxelState state)
 		const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetVoxelPos(index));
 		const Matrix matrix = scaleMtx * translationMtx;
 		voxel.MtxWorld = matrix.Transpose();
-		mRenderVoxels.insert({ index, voxel });
+		mVoxels.insert({ index, voxel });
 	}
 }
 
 void Grid::SetVoxelCondition(const Pos& index, VoxelCondition condition)
 {
-	if (mRenderVoxels.count(index)) {
-		mRenderVoxels[index].Condition = condition;
+	if (mVoxels.count(index)) {
+		mVoxels[index].Condition = condition;
 	}
 	else {
 		Voxel voxel;
@@ -86,7 +82,7 @@ void Grid::SetVoxelCondition(const Pos& index, VoxelCondition condition)
 		const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetVoxelPos(index));
 		const Matrix matrix = scaleMtx * translationMtx;
 		voxel.MtxWorld = matrix.Transpose();
-		mRenderVoxels.insert({ index, voxel });
+		mVoxels.insert({ index, voxel });
 	}
 }
 
@@ -146,10 +142,6 @@ void Grid::UpdateTiles(VoxelState tile, GridObject* object)
 
 			for (int dir = 0; dir < 6; ++dir) {
 				Pos nextPosT = curNode + gkFront2[dir];
-
-				if (nextPosT.Y < 0 || nextPosT.Y >= mTileHeightCount) {
-					continue;
-				}
 
 				if (visited[nextPosT]) {
 					continue;

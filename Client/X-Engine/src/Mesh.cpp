@@ -198,30 +198,7 @@ void ModelObjectMesh::CreateCubeMesh(float width, float height, float depth, boo
 			normals[2] = Vec3(0.f, 0.f, -1.f);
 			normals[3] = Vec3(0.f, 0.f, -1.f);
 
-			normals[4] = Vec3(0.f, 0.f, 1.f);
-			normals[5] = Vec3(0.f, 0.f, 1.f);
-			normals[6] = Vec3(0.f, 0.f, 1.f);
-			normals[7] = Vec3(0.f, 0.f, 1.f);
 
-			normals[8] = Vec3(0.f, 1.f, 0.f);
-			normals[9] = Vec3(0.f, 1.f, 0.f);
-			normals[10] = Vec3(0.f, 1.f, 0.f);
-			normals[11] = Vec3(0.f, 1.f, 0.f);
-
-			normals[12] = Vec3(0.f, -1.f, 0.f);
-			normals[13] = Vec3(0.f, -1.f, 0.f);
-			normals[14] = Vec3(0.f, -1.f, 0.f);
-			normals[15] = Vec3(0.f, -1.f, 0.f);
-
-			normals[16] = Vec3(-1.f, 0.f, 0.f);
-			normals[17] = Vec3(-1.f, 0.f, 0.f);
-			normals[18] = Vec3(-1.f, 0.f, 0.f);
-			normals[19] = Vec3(-1.f, 0.f, 0.f);
-
-			normals[20] = Vec3(1.f, 0.f, 0.f);
-			normals[21] = Vec3(1.f, 0.f, 0.f);
-			normals[22] = Vec3(1.f, 0.f, 0.f);
-			normals[23] = Vec3(1.f, 0.f, 0.f);
 			D3DUtil::CreateVertexBufferResource(normals, mNormalUploadBuffer, mNormalBuffer);
 
 			std::vector<Vec2> UVs(mVertexCnt);

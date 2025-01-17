@@ -314,7 +314,7 @@ void Scene::UpdateVoxelsOnTerrain()
 
 			// 위 복셀이 스태틱이면 해당 아래 복셀도 스태틱으로 설정
 			if (GetVoxelState(upIndex) == VoxelState::Static) {
-				SetVoxelState(index, VoxelState::Static);
+				SetVoxelState(index, VoxelState::TerrainStatic);
 			}
 			else {
 				SetVoxelState(index, VoxelState::Terrain);

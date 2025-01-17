@@ -8,27 +8,6 @@ class Collider;
 #pragma endregion
 
 
-#pragma region enum
-enum class VoxelState : UINT8 {
-	None = 0,
-	Static,
-	Dynamic,
-	Terrain,
-};
-
-enum class VoxelCondition : UINT8 {
-	None = 0,
-	Picked,
-	Closed,
-	ReadyCreate,
-};
-#pragma endregion
-
-
-#pragma region Using
-#pragma endregion
-
-
 #pragma region Class
 struct Voxel {
 	Matrix			MtxWorld{};
@@ -50,13 +29,11 @@ public:
 	static constexpr float mkTileHeight = 0.5f;
 	static constexpr float mkTileWidth = 0.5f;
 	static constexpr Vec3 mkTileExtent = Vec3{ mkTileWidth / 2.f, mkTileWidth / 2.f, mkTileHeight / 2.f };
-	static constexpr int mTileHeightCount = 10;
 	static int mTileRows;
 	static int mTileCols;
-	static int mVoxelCount;
-	static float mVoxelSize;
 
-	std::unordered_map<Pos, Voxel> mRenderVoxels{};
+private:
+	std::unordered_map<Pos, Voxel> mVoxels{};
 
 public:
 	Grid(int index, int width, const BoundingBox& bb);

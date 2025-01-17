@@ -722,6 +722,21 @@ enum {
 	DirCount = 8
 };
 
+enum class VoxelState : UINT8 {
+	None = 0,
+	Static,
+	Dynamic,
+	Terrain,
+	TerrainStatic,
+};
+
+enum class VoxelCondition : UINT8 {
+	None = 0,
+	Picked,
+	Closed,
+	ReadyCreate,
+};
+
 static Pos gkFront[] = {
 	Pos {+1, +0},
 	Pos {+0, -1},

@@ -60,7 +60,7 @@ private:
 	std::vector<Pos> mClosedList{};
 
 public:
-	static constexpr UINT mkMaxRenderVoxelCount = 50000;
+	static constexpr UINT mkMaxRenderVoxelCount = 100000;
 
 public:
 	const Pos& GetSelectedVoxelPos() const { return mSelectedVoxel; }
@@ -85,12 +85,13 @@ public:
 	void Init(Object* player);
 	void Update();
 	void Render();
-	void PickTopVoxel(bool makePath);
-
-public:
-	
 
 private:
+	void PickTopVoxel(bool makePath);
+	void UpdateCreateMode(VoxelState selectedVoxelState);
+	void UpdateRemoveMode(VoxelState selectedVoxelState);
+	void UpdateDefaultMode(bool makePath, VoxelState selectedVoxelState);
+	
 	void CalcRenderVoxelCount(int renderVoxelRows);
 };
 #pragma endregion

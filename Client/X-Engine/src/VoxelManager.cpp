@@ -27,6 +27,7 @@ void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 {
 	switch (messageID) {
 	case WM_RBUTTONDOWN:
+		mHoldingClick = true;
 		PickTopVoxel(true);
 		break;
 	case WM_RBUTTONUP:
@@ -100,6 +101,7 @@ void VoxelManager::Render()
 			instData.Color = Vec4{ 1.f, 0.f, 0.f, 1.f };
 			break;
 		case VoxelState::Terrain:
+		case VoxelState::TerrainStatic:
 			instData.Color = Vec4{ 0.f, 1.f, 0.f, 1.f };
 			break;
 		default:
@@ -128,11 +130,6 @@ void VoxelManager::Render()
 
 void VoxelManager::PickTopVoxel(bool makePath)
 {
-	// 추후에 쿼드 트리 탐색으로 변경 예정
-	if (mHoldingClick) {
-		return;
-	}
-
 	const Vec2& aimPos = InputMgr::I->GetMousePos();
 	const Ray& ray = MAIN_CAMERA->ScreenToWorldRay(aimPos);
 
@@ -154,36 +151,72 @@ void VoxelManager::PickTopVoxel(bool makePath)
 		}
 	}
 	
-	if (mOption.CreateMode == CreateMode::Create) {
-		Pos aboveVoxel = mSelectedVoxel + Pos{ 0, 0, 1 };
-		if (Scene::I->GetVoxel(aboveVoxel).State == VoxelState::None) {
-			Scene::I->SetVoxelCondition(aboveVoxel, VoxelCondition::ReadyCreate);
-		}
+	Scene::I->SetVoxelCondition(mSelectedVoxel, VoxelCondition::Picked);
+	VoxelState selectedVoxelState = Scene::I->GetVoxelState(mSelectedVoxel);
 
-		if (makePath) {
-			Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::Static);
-			Scene::I->SetVoxelState(aboveVoxel, VoxelState::Static);
-		}
+	switch (mOption.CreateMode)
+	{
+	case CreateMode::None:
+		UpdateDefaultMode(makePath, selectedVoxelState);
+		break;
+	case CreateMode::Create:
+		UpdateCreateMode(selectedVoxelState);
+		break;
+	case CreateMode::Remove:
+		UpdateRemoveMode(selectedVoxelState);
+		break;
+	default:
+		break;
+	}
+}
+
+void VoxelManager::UpdateCreateMode(VoxelState selectedVoxelState)
+{
+	Pos aboveVoxel = mSelectedVoxel + Pos{ 0, 0, 1 };
+	if (Scene::I->GetVoxel(aboveVoxel).State == VoxelState::None) {
+		Scene::I->SetVoxelCondition(aboveVoxel, VoxelCondition::ReadyCreate);
+	}
+
+	if (!mHoldingClick) {
+		return;
+	}
+
+	if (selectedVoxelState == VoxelState::Terrain || selectedVoxelState == VoxelState::TerrainStatic) {
+		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::TerrainStatic);
 	}
 	else {
-		Scene::I->SetVoxelCondition(mSelectedVoxel, VoxelCondition::Picked);
-		if (makePath) {
-			if (mOption.CreateMode == CreateMode::Remove) {
-				if (Scene::I->GetVoxelState(mSelectedVoxel) == VoxelState::Static) {
-					Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::None);
-				}
-			}
-			else {
-				if (!mReadyMakePath) {
-					mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel);
-				}
-				else {
-					mPlayer->GetComponent<Agent>()->ReadyPlanningToPath(mSelectedVoxel);
-				}
-				mReadyMakePath = !mReadyMakePath;
-			}
-		}
+		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::Static);
 	}
+	Scene::I->SetVoxelState(aboveVoxel, VoxelState::Static);
+}
+
+void VoxelManager::UpdateRemoveMode(VoxelState selectedVoxelState)
+{
+	if (!mHoldingClick) {
+		return;
+	}
+
+	if (selectedVoxelState == VoxelState::TerrainStatic) {
+		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::Terrain);
+	}
+	else if (selectedVoxelState == VoxelState::Static) {
+		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::None);
+	}
+}
+
+void VoxelManager::UpdateDefaultMode(bool makePath, VoxelState selectedVoxelState)
+{
+	if (!makePath) {
+		return;
+	}
+
+	if (!mReadyMakePath) {
+		mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel);
+	}
+	else {
+		mPlayer->GetComponent<Agent>()->ReadyPlanningToPath(mSelectedVoxel);
+	}
+	mReadyMakePath = !mReadyMakePath;
 }
 
 void VoxelManager::CalcRenderVoxelCount(int renderVoxelRows)

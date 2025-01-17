@@ -67,7 +67,7 @@ void Agent::PathPlanningToAstar(Pos dest)
 			int pathSmoothingCost{}; 
 			int onVoxelCountCost = onVoxelCount * 10;
 			if (onVoxelCount > 1 && onVoxelCount <= PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
-			if (nextTile == VoxelState::Static && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
+			if ((nextTile == VoxelState::Static || nextTile == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
 			if (nextTile == VoxelState::None) continue;
 			if (visited.contains(nextPos)) continue;
 			if (!distance.contains(nextPos)) distance[nextPos] = INT32_MAX;
@@ -75,7 +75,7 @@ void Agent::PathPlanningToAstar(Pos dest)
 
 			int g = curNode.G + gkCost3D[dir] + pathSmoothingCost + onVoxelCountCost;
 			int h = HeuristicManhattan(nextPos, dest) * mkWeight;
-			if (g + h <= distance[nextPos]) {
+			if (g + h < distance[nextPos]) {
 				distance[nextPos] = g + h;
 				pq.push({ g + h, g, nextPos });
 				parent[nextPos] = curNode.Pos;
