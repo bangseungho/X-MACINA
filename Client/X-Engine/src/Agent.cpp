@@ -24,7 +24,7 @@ void Agent::Update()
 	MoveToPath();
 }
 
-void Agent::PathPlanningToAstar(Pos dest)
+void Agent::PathPlanningToAstar(const Pos& dest)
 {
 	VoxelManager::I->ClearClosedList();
 
@@ -43,8 +43,9 @@ void Agent::PathPlanningToAstar(Pos dest)
 
 	Pos prevDir;
 	int closedListSize{};
+	PQNode curNode{};
 	while (!pq.empty()) {
-		PQNode curNode = pq.top();
+		curNode = pq.top();
 		prevDir = curNode.Pos - parent[curNode.Pos];
 		pq.pop();
 
@@ -55,7 +56,8 @@ void Agent::PathPlanningToAstar(Pos dest)
 		visited[curNode.Pos] = true;
 
 		// 해당 지점이 목적지인 경우 종료
-		if (curNode.Pos == dest) break;
+		if (curNode.Pos == dest) 
+			break;
 
 		// 26방향으로 탐색
 		for (int dir = 0; dir < 26; ++dir) {
@@ -83,6 +85,12 @@ void Agent::PathPlanningToAstar(Pos dest)
 			}
 		}
 	}
+	
+	// 경로를 못 찾은 경우
+	if (curNode.Pos != dest) {
+		ClearPath();
+		return;
+	}
 
 	Pos pos = dest;
 	// 부모 경로를 따라가 스택에 넣어준다. top이 first path이다.
@@ -98,11 +106,11 @@ void Agent::PathPlanningToAstar(Pos dest)
 	}
 }
 
-void Agent::ReadyPlanningToPath(Pos start)
+void Agent::ReadyPlanningToPath(const Pos& start)
 {
 	mStart = start;
 	mObject->SetPosition(Scene::I->GetVoxelPos(start));
-	while (!mPath.empty()) mPath.pop();
+	ClearPath();
 }
 
 void Agent::MoveToPath()

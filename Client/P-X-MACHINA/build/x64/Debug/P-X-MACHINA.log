@@ -1,25 +1,2 @@
-﻿  CheckDetectionRange.cpp
-  GameFramework.cpp
-  IRDetectorAbility.cpp
-  MinimapAbility.cpp
-  Script_AbilityHolder.cpp
-  Script_Bullet.cpp
-  Script_GameManager.cpp
-  Script_GroundObject.cpp
-  Script_GroundPlayer.cpp
-  Script_MainCamera.cpp
-  Script_Missile.cpp
-  Script_Player.cpp
-  Script_Weapon.cpp
-  Script_Weapon_MissileLauncher.cpp
-  ShieldAbility.cpp
-  TaskAttack.cpp
-  TaskMoveToTarget.cpp
-  TaskPathPlanningAStar.cpp
-  TaskPathPlanningToSpawn.cpp
-  TaskPathPlanningToTarget.cpp
-  코드를 생성하고 있습니다...
-  컴파일하고 있습니다...
-  TaskPatrol.cpp
-  코드를 생성하고 있습니다...
+﻿  Script_GroundPlayer.cpp
   P-X-MACHINA.vcxproj -> C:\Users\bangseungho\Documents\GitHub\X-MACINA\Client\P-X-MACHINA\build\Debug\P-X-MACHINA.exe

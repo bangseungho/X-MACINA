@@ -34,7 +34,9 @@ public:
 
 private:
 	std::unordered_map<Pos, Voxel> mVoxels{};
-
+	// xz축에 대응하는 어떤 y 값이 있는지 미리 저장?
+	// 
+	
 public:
 	Grid(int index, int width, const BoundingBox& bb);
 	virtual ~Grid() = default;

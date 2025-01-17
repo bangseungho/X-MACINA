@@ -62,11 +62,12 @@ public:
 	virtual void Update() override;
 
 public:
-	void PathPlanningToAstar( Pos dest);
-	void ReadyPlanningToPath(Pos start);
+	void PathPlanningToAstar(const Pos& dest);
+	void ReadyPlanningToPath(const Pos& start);
 
 private:
 	void MoveToPath();
 	int GetOnVoxelCount(const Pos& pos);
+	void ClearPath() { while (!mPath.empty()) mPath.pop(); }
 };
 #pragma endregion

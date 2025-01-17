@@ -26,22 +26,28 @@ Grid::Grid(int index, int width, const BoundingBox& bb)
 
 VoxelState Grid::GetVoxelState(const Pos& index)
 {
-	if (mVoxels.count(index)) {
-		return mVoxels[index].State;
-	}
-	else {
+	auto findIt = mVoxels.find(index);
+	if (findIt == mVoxels.end()) {
 		return VoxelState{};
 	}
+	else if (findIt->second.State == VoxelState::None) {
+		return VoxelState{};
+	}
+
+	return mVoxels[index].State;
 }
 
 VoxelCondition Grid::GetVoxelCondition(const Pos& index)
 {
-	if (mVoxels.count(index)) {
-		return mVoxels[index].Condition;
-	}
-	else {
+	auto findIt = mVoxels.find(index);
+	if (findIt == mVoxels.end()) {
 		return VoxelCondition{};
 	}
+	else if (findIt->second.Condition == VoxelCondition::None) {
+		return VoxelCondition{};
+	}
+
+	return mVoxels[index].Condition;
 }
 
 Voxel Grid::GetVoxel(const Pos& index)
