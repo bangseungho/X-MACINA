@@ -202,11 +202,22 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 	VoxelManager::I->SetCreateMode(createMode);
 
     // render voxel rows
-	int value = VoxelManager::I->GetRenderVoxelRows();
-	ImGui::Text("VoxelRows :"); // 안내 텍스트
-	ImGui::SameLine(mTextSpacing);
-	ImGui::SliderInt("##int_input", &value, 10, 200);
-	VoxelManager::I->SetRenderVoxelRows(value);
+    {
+		int value = VoxelManager::I->GetRenderVoxelRows();
+		ImGui::Text("VoxelRows :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+		ImGui::SliderInt("##int_VoxelRows", &value, 10, 200);
+		VoxelManager::I->SetRenderVoxelRows(value);
+    }
+
+	// render voxel height
+	{
+		int value = VoxelManager::I->GetRenderVoxelHeight();
+		ImGui::Text("VoxelHeight :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+		ImGui::SliderInt("##int_VoxelHeight", &value, 1, 100);
+		VoxelManager::I->SetRenderVoxelHeight(value);
+    }
 }
 
 void ImGuiPathFunc::Execute(GameObject* selectedObject)
@@ -216,7 +227,7 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		float value = PathOption::I->GetAgentSpeed();
 		ImGui::Text("AgentSpeed :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
-		ImGui::InputFloat("##float_input", &value, 0.5f, 1.0f, "%.3f"); // float 입력 박스
+		ImGui::InputFloat("##float_AgentSpeed", &value, 0.5f, 1.0f, "%.3f"); // float 입력 박스
 		PathOption::I->SetAgentSpeed(value);
 	}
 
@@ -225,7 +236,7 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		int value = PathOption::I->GetAllowedHeight();
 		ImGui::Text("AllowedHeight :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
-		ImGui::InputInt("##int_input", &value);
+		ImGui::InputInt("##int_AllowedHeight", &value);
 		PathOption::I->SetAllowedHeight(value);
 	}
 }

@@ -63,7 +63,12 @@ Voxel Grid::GetVoxel(const Pos& index)
 void Grid::SetVoxelState(const Pos& index, VoxelState state)
 {
 	if (mVoxels.count(index)) {
-		mVoxels[index].State = state;
+		if (state == VoxelState::None) {
+			mVoxels.erase(index);
+		}
+		else {
+			mVoxels[index].State = state;
+		}
 	}
 	else {
 		Voxel voxel;

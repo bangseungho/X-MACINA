@@ -46,8 +46,9 @@ void VoxelManager::Init(Object* player)
 {
 	mPlayer = player;
 	CalcRenderVoxelCount(50);
-	mClosedList.reserve(5000);
-	mRenderVoxels.reserve(5000);
+	mClosedList.reserve(10000);
+	mRenderVoxels.reserve(10000);
+	mOption.RenderVoxelHeight = 10;
 
 	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
 	for (auto& buffer : mInstanceBuffers) {
@@ -224,5 +225,4 @@ void VoxelManager::CalcRenderVoxelCount(int renderVoxelRows)
 	const float ratio = static_cast<float>(DXGIMgr::I->GetWindowHeight()) / DXGIMgr::I->GetWindowWidth();
 	mOption.RenderVoxelRows = renderVoxelRows;
 	mOption.RenderVoxelCols = static_cast<int>(ratio * mOption.RenderVoxelRows);
-	mOption.RenderVoxelHeight = 10;
 }

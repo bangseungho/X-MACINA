@@ -60,18 +60,20 @@ private:
 	std::vector<Pos> mClosedList{};
 
 public:
-	static constexpr UINT mkMaxRenderVoxelCount = 100000;
+	static constexpr UINT mkMaxRenderVoxelCount = 60000;
 
 public:
 	const Pos& GetSelectedVoxelPos() const { return mSelectedVoxel; }
 
 public:
 	int GetRenderVoxelRows() const { return mOption.RenderVoxelRows; }
+	int GetRenderVoxelHeight() const { return mOption.RenderVoxelHeight; }
 	CreateMode GetCreateMode() const { return mOption.CreateMode; }
 	RenderMode GetRenderMode() const { return mOption.RenderMode; }
 
 public:
 	void SetRenderVoxelRows(int rows) { CalcRenderVoxelCount(rows); }
+	void SetRenderVoxelHeight(int height) { mOption.RenderVoxelHeight = height; }
 	void SetCreateMode(CreateMode mode) { mOption.CreateMode = mode; }
 	void SetRenderMode(RenderMode mode) { mOption.RenderMode = mode; }
 	void SetCenterPos(const Pos& pos) { mCenterPos = pos; }
