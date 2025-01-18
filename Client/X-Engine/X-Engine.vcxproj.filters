@@ -606,7 +606,6 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="..\Common\SimpleMath.inl">
       <Filter>Common</Filter>
     </None>

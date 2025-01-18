@@ -117,8 +117,6 @@ public:
 #include <d3dx12.h>
 
 
-#include <boost/serialization/nvp.hpp>
-
 /* Custom */
 #include "Common.h"
 #include <thread>
@@ -551,31 +549,5 @@ private:
 	UnCopyable(const UnCopyable&);
 	UnCopyable& operator=(const UnCopyable&);
 };
-
-
-namespace boost {
-	namespace serialization {
-		template<class Archive>
-		void serialize(Archive& ar, Vec2& s, const unsigned int version) {
-			ar& BOOST_SERIALIZATION_NVP(s.x);
-			ar& BOOST_SERIALIZATION_NVP(s.y);
-		}
-
-		template<class Archive>
-		void serialize(Archive& ar, Vec3& s, const unsigned int version) {
-			ar& BOOST_SERIALIZATION_NVP(s.x);
-			ar& BOOST_SERIALIZATION_NVP(s.y);
-			ar& BOOST_SERIALIZATION_NVP(s.z);
-		}
-
-		template<class Archive>
-		void serialize(Archive& ar, Vec4& s, const unsigned int version) {
-			ar& BOOST_SERIALIZATION_NVP(s.x);
-			ar& BOOST_SERIALIZATION_NVP(s.y);
-			ar& BOOST_SERIALIZATION_NVP(s.z);
-			ar& BOOST_SERIALIZATION_NVP(s.w);
-		}
-	}
-}
 
 #pragma endregion
