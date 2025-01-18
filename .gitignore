@@ -32,9 +32,9 @@
 
 
 Client/.vs/
-Client/X-MACHINA/build/
-Client/X-MACHINA/lib/
+Client/P-X-MACHINA/build/
+Client/P-X-MACHINA/lib/
 Client/X-Engine/x64/
 
-Client/X-MACHINA/shaders/cso/
+Client/P-X-MACHINA/shaders/cso/
 *.pdb

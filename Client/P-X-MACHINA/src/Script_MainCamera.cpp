@@ -7,7 +7,7 @@
 #include "Scene.h"
 
 #include "GameFramework.h"
-#include "Script_CameraTraget.h"
+#include "Script_CameraTarget.h"
 
 
 void Script_MainCamera::SetCameraOffset(const Vec3& offset)
