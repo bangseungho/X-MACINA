@@ -208,7 +208,11 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 		ImGui::Text("VoxelRows :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
 		ImGui::SliderInt("##int_VoxelRows", &value, 10, 200);
-		VoxelManager::I->SetRenderVoxelRows(value);
+
+		if (mVoxelRowsValue != value) {
+			mVoxelRowsValue = value;
+			VoxelManager::I->SetRenderVoxelRows(value);
+		}
     }
 
 	// render voxel height
@@ -217,8 +221,12 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 		ImGui::Text("VoxelHeight :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
 		ImGui::SliderInt("##int_VoxelHeight", &value, 1, 100);
-		VoxelManager::I->SetRenderVoxelHeight(value);
-    }
+
+		if (mVoxelHeightValue != value) {
+			mVoxelHeightValue = value;
+			VoxelManager::I->SetRenderVoxelHeight(value);
+		}
+	}
 }
 
 void ImGuiPathFunc::Execute(GameObject* selectedObject)

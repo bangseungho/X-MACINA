@@ -74,11 +74,11 @@ public:
 	RenderMode GetRenderMode() const { return mOption.RenderMode; }
 
 public:
-	void SetRenderVoxelRows(int rows) { CalcRenderVoxelCount(rows); }
-	void SetRenderVoxelHeight(int height) { mOption.RenderVoxelHeight = height; }
+	void SetRenderVoxelRows(int rows) { CalcRenderVoxelCount(rows); SetCenterPos(mCenterPos, false); }
+	void SetRenderVoxelHeight(int height) { mOption.RenderVoxelHeight = height; SetCenterPos(mCenterPos, false); }
 	void SetCreateMode(CreateMode mode) { mOption.CreateMode = mode; }
 	void SetRenderMode(RenderMode mode) { mOption.RenderMode = mode; }
-	void SetCenterPos(const Pos& pos) { mCenterPos = pos; }
+	void SetCenterPos(const Pos& pos, bool checkCenterPos = true);
 
 public:
 	void PushClosedVoxel(const Pos& pos) { mCloseList.push_back(pos); }
@@ -88,7 +88,6 @@ public:
 public:
 	void ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam);
 	void Init(Object* player);
-	void Update();
 	void Render();
 
 private:

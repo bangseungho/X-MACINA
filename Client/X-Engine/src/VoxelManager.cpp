@@ -63,12 +63,15 @@ void VoxelManager::Init(Object* player)
 	}
 }
 
-void VoxelManager::Update()
+void VoxelManager::SetCenterPos(const Pos& pos, bool checkCenterPos)
 {
+	if (pos == mCenterPos && checkCenterPos) {
+		return;
+	}
+
 	mRenderVoxels.clear();
 
-	int x = mCenterPos.X, y = mCenterPos.Z; // 중심 좌표
-
+	int x = pos.X, y = pos.Z; // 중심 좌표
 	int halfSizeX = mOption.RenderVoxelRows / 2; // 중심으로부터 확장 크기
 	int halfSizeZ = mOption.RenderVoxelCols / 2;
 
@@ -82,6 +85,8 @@ void VoxelManager::Update()
 			}
 		}
 	}
+
+	mCenterPos = pos;
 }
 
 void VoxelManager::Render()

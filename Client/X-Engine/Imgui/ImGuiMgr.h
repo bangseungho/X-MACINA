@@ -29,6 +29,10 @@ public:
 class ImGuiVoxelFunc : public ImGuiFunc {
 	using base = ImGuiFunc;
 
+private:
+	int mVoxelRowsValue{};
+	int mVoxelHeightValue{};
+
 public:
 	ImGuiVoxelFunc(const Vec2& pos, const Vec2& size) : ImGuiFunc(pos, size, "Voxel") {}
 

@@ -109,17 +109,40 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 	}
 
 	Pos pos = dest;
+	prevDir = Pos{};
 	// 부모 경로를 따라가 스택에 넣어준다. top이 first path이다.
 	while (pos != parent[pos]) {
 		Pos newPos = pos + Pos{ 0, 0, onVoxel[pos]};
 		parent[newPos] = parent[pos];
 		pos = newPos;
-
-		mPath.push(Scene::I->GetVoxelPos(pos));
-		VoxelManager::I->PushClosedVoxel(pos);
-
+		Pos dir = parent[pos] - newPos;
+		if (prevDir != dir) {
+			mPath.push_back(Scene::I->GetVoxelPos(pos));
+			VoxelManager::I->PushClosedVoxel(pos);
+		}
 		pos = parent[pos];
+		prevDir = dir;
 	}
+	VoxelManager::I->PushClosedVoxel(mStart);
+
+	PathOptimize();
+
+	//for (int i = 1; i < mPath.size() - 2; ++i) {
+	//	Vec3 p0 = mPath[i - 1];
+	//	Vec3 p1 = mPath[i];
+	//	Vec3 p2 = mPath[i + 1];
+	//	Vec3 p3 = mPath[i + 2];
+
+	//	for (int j = 0; j < 20; ++j) {
+	//		float t = j / static_cast<float>(20);
+	//		const Vec3 catmullRom = Vec3::CatmullRom(p0, p1, p2, p3, t);
+	//		mSplinePath.push_back(catmullRom);
+	//	}
+	//}
+
+	//mSplinePath.push_back(mPath[mPath.size() - 2]);
+	//mSplinePath.push_back(mPath[mPath.size() - 1]);
+	//std::reverse(mSplinePath.begin(), mSplinePath.end());
 
 	return true;
 }
@@ -132,23 +155,32 @@ void Agent::ReadyPlanningToPath(const Pos& start)
 	ClearPath();
 }
 
+void Agent::PathOptimize()
+{
+	
+
+}
+
 void Agent::MoveToPath()
 {
-	if (mPath.empty()) {
+	std::vector<Vec3>* path = &mPath;
+	if (PathOption::I->GetPathSmoothing()) {
+		path = &mSplinePath;
+	}
+
+	if (path->empty()) {
 		return;
 	}
 
-	Vec3 nextPos = (mPath.top() - mObject->GetPosition());
+	Vec3 nextPos = (path->back() - mObject->GetPosition());
 	nextPos.y += Grid::mkTileHeight;
 
-	mObject->RotateTargetAxisY(mPath.top(), 1000.f);
+	mObject->RotateTargetAxisY(path->back(), 1000.f);
 	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
 
 	const float kMinDistance = 0.1f;
 	if (nextPos.Length() < kMinDistance) {
-		mPath.pop();
-		if (mPath.empty()) {
-		}
+		path->pop_back();
 	}
 }
 
@@ -163,5 +195,6 @@ int Agent::GetOnVoxelCount(const Pos& pos)
 		}
 		cnt++;
 	}
+
 	return cnt;
 }

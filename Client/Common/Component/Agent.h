@@ -35,6 +35,7 @@ private:
 	int			mOnVoxelCost = 30;
 	int			mHeuristicWeight = 10;
 	int			mProximityWeight = 10;
+	bool		mPathSmoothing = false;
 	Heuristic	mHeuristic = Heuristic::Manhattan;
 
 public:
@@ -44,6 +45,7 @@ public:
 	int			GetOnVoxelCost() const { return mOnVoxelCost; }
 	int			GetHeuristicWeight() const { return mHeuristicWeight; }
 	int			GetProximityWeight() const { return mProximityWeight; }
+	bool		GetPathSmoothing() const { return mPathSmoothing; }
 	Heuristic	GetHeuristic() const { return mHeuristic; }
 	
 	void		SetAgentSpeed(float speed) { mAgentSpeed = speed; }
@@ -52,6 +54,7 @@ public:
 	void		SetOnVoxelCost(int cost) { mOnVoxelCost = cost; }
 	void		SetHeuristicWeight(int weight) { mHeuristicWeight = weight; }
 	void		SetProximityWeight(int weight) { mProximityWeight = weight; }
+	void		SetPathSmoothing(bool smoothing) { mPathSmoothing = smoothing; }
 	void		SetHeuristic(Heuristic heuristic) { mHeuristic = heuristic; }
 };
 
@@ -62,7 +65,8 @@ class Agent : public Component {
 private:
 	
 private:
-	std::stack<Vec3> mPath{};
+	std::vector<Vec3> mPath{};
+	std::vector<Vec3> mSplinePath{};
 	Pos mStart{};
 
 public:
@@ -73,8 +77,9 @@ public:
 	void	ReadyPlanningToPath(const Pos& start);
 
 private:
+	void	PathOptimize();
 	void	MoveToPath();
 	int		GetOnVoxelCount(const Pos& pos);
-	void	ClearPath() { while (!mPath.empty()) mPath.pop(); }
+	void	ClearPath() { mPath.clear(); mSplinePath.clear(); /*while (!mPath.empty()) mPath.pop();*/ }
 };
 #pragma endregion

@@ -793,7 +793,6 @@ void Scene::Update()
 	MAIN_CAMERA->UpdateViewMtx();
 	mLight->Update();
 	Canvas::I->Update();
-	VoxelManager::I->Update();
 
 	UpdateShaderVars();
 
