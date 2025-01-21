@@ -25,6 +25,8 @@ void Agent::Update()
 
 bool Agent::PathPlanningToAstar(const Pos& dest)
 {
+	std::stack<Pos>	path{};
+
 	VoxelManager::I->ClearPathList();
 
 	std::unordered_map<Pos, Pos> parent;
@@ -78,7 +80,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 
 			// 다음 방향 노드의 상태가 static이라면 continue
 			int onVoxelCount = GetOnVoxelCount(nextPos);
-			int pathSmoothingCost{}; 
+			int dirPathCost{}; 
 			int onVoxelCountCost = onVoxelCount * PathOption::I->GetOnVoxelCost();
 			int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
 			if (onVoxelCount > 1 && onVoxelCount <= PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
@@ -86,9 +88,9 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 			if (nextTile == VoxelState::None) continue;
 			if (visited.contains(nextPos)) continue;
 			if (!distance.contains(nextPos)) distance[nextPos] = INT32_MAX;
-			if (prevDir != gkFront3D[dir]) pathSmoothingCost = gkCost3D[dir] / 2;
+			if (prevDir != gkFront3D[dir]) dirPathCost = gkCost3D[dir] / 2;
 
-			int g = curNode.G + gkCost3D[dir] + pathSmoothingCost + onVoxelCountCost + proximityCost;
+			int g = curNode.G + gkCost3D[dir] + dirPathCost + onVoxelCountCost + proximityCost;
 			int h = heuristic(nextPos, dest) * PathOption::I->GetHeuristicWeight();
 			if (g + h < distance[nextPos]) {
 				distance[nextPos] = g + h;
@@ -116,16 +118,27 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 		parent[newPos] = parent[pos];
 		pos = newPos;
 		Pos dir = parent[pos] - newPos;
-		if (prevDir != dir) {
-			mPath.push_back(Scene::I->GetVoxelPos(pos));
-			VoxelManager::I->PushClosedVoxel(pos);
+		if (!PathOption::I->GetDirPathOptimize() || prevDir != dir) {
+			path.push(pos);
 		}
 		pos = parent[pos];
 		prevDir = dir;
 	}
-	VoxelManager::I->PushClosedVoxel(mStart);
 
-	PathOptimize();
+	// 경로 직선화에 의해 시작점이 들어가지 않을 수 있다.
+	if (path.top() != mStart) {
+		path.push(mStart);
+	}
+
+	if (PathOption::I->GetRayPathOptimize()) {
+		RayPathOptimize(path);
+	}
+
+	while (!path.empty()) {
+		VoxelManager::I->PushClosedVoxel(path.top());
+		mFinalPath.push_back(Scene::I->GetVoxelPos(path.top()));
+		path.pop();
+	}
 
 	//for (int i = 1; i < mPath.size() - 2; ++i) {
 	//	Vec3 p0 = mPath[i - 1];
@@ -155,33 +168,87 @@ void Agent::ReadyPlanningToPath(const Pos& start)
 	ClearPath();
 }
 
-void Agent::PathOptimize()
+void Agent::RayPathOptimize(std::stack<Pos>& path)
 {
-	
+	std::queue<Pos> optimizePath{};
 
+	// 현재 시작 지점 설정
+	Pos now{};
+	if (!path.empty()) {
+		now = path.top();
+		path.pop();
+		optimizePath.push(now);
+	}
+
+	Pos prev = now;
+	while (true) {
+		if (path.size() == 1) {
+			optimizePath.push(path.top());
+			path.pop();
+			break;
+		}
+
+		Pos next = path.top();
+		Ray ray{};
+		ray.Position = Scene::I->GetVoxelPos(now);
+		ray.Direction = Scene::I->GetVoxelPos(next) - Scene::I->GetVoxelPos(now);
+		ray.Direction.Normalize();
+
+		Pos startPoint = Pos::Min(now, next);
+		Pos endPoint = Pos::Max(now, next);
+		for (int z = startPoint.Z; z <= endPoint.Z; ++z) {
+			for (int x = startPoint.X; x <= endPoint.X; ++x) {
+				for (int y = startPoint.Y; y <= endPoint.Y; ++y) {
+					const Pos voxel = Pos{ z, x, y };
+					int onVoxelCount = GetOnVoxelCount(voxel);
+					Vec3 nextPosW = Scene::I->GetVoxelPos(voxel);
+					BoundingBox bb{ nextPosW, Grid::mkTileExtent };
+					float dist;
+					// 위로 올라갈때의 처리가 안되어 있음
+					VoxelState state = Scene::I->GetVoxelState(voxel);
+					if (ray.Intersects(bb, dist)) {
+						if ((state == VoxelState::Static || state == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) {
+							optimizePath.push(prev);
+							now = prev;
+							goto NoOptimizePath;
+						}
+					}
+				}
+			}
+		}
+		path.pop();
+
+	NoOptimizePath:
+		prev = next;
+	}
+
+	while (!optimizePath.empty()) {
+		path.push(optimizePath.front());
+		optimizePath.pop();
+	}
 }
 
 void Agent::MoveToPath()
 {
-	std::vector<Vec3>* path = &mPath;
-	if (PathOption::I->GetPathSmoothing()) {
-		path = &mSplinePath;
-	}
+	//std::vector<Vec3>* path = &mPath;
+	//if (PathOption::I->GetPathSmoothing()) {
+	//	path = &mSplinePath;
+	//}
 
-	if (path->empty()) {
-		return;
-	}
+	//if (path->empty()) {
+	//	return;
+	//}
 
-	Vec3 nextPos = (path->back() - mObject->GetPosition());
-	nextPos.y += Grid::mkTileHeight;
+	//Vec3 nextPos = (path->back() - mObject->GetPosition());
+	//nextPos.y += Grid::mkTileHeight;
 
-	mObject->RotateTargetAxisY(path->back(), 1000.f);
-	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
+	//mObject->RotateTargetAxisY(path->back(), 1000.f);
+	//mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
 
-	const float kMinDistance = 0.1f;
-	if (nextPos.Length() < kMinDistance) {
-		path->pop_back();
-	}
+	//const float kMinDistance = 0.1f;
+	//if (nextPos.Length() < kMinDistance) {
+	//	path->pop_back();
+	//}
 }
 
 int Agent::GetOnVoxelCount(const Pos& pos)
@@ -197,4 +264,9 @@ int Agent::GetOnVoxelCount(const Pos& pos)
 	}
 
 	return cnt;
+}
+
+void Agent::ClearPath()
+{
+	mFinalPath.clear();
 }

@@ -712,6 +712,18 @@ struct Pos
 	Pos Backward() const { return *this + Pos{ -1, 0, 0 }; }
 	Pos XZ() const { return Pos{ this->Z, this->X, 0 }; }
 
+	Vec3 ToVec3() const {
+		return Vec3{ static_cast<float>(Z), static_cast<float>(X), static_cast<float>(Y) };
+	}
+
+	static Pos Max(const Pos& a, const Pos& b) {
+		return Pos{ max(a.Z, b.Z), max(a.X, b.X), max(a.Y, b.Y) };
+	}
+
+	static Pos Min(const Pos& a, const Pos& b) {
+		return Pos{ min(a.Z, b.Z), min(a.X, b.X), min(a.Y, b.Y) };
+	}
+
 	int Z{};
 	int X{};
 	int Y{};

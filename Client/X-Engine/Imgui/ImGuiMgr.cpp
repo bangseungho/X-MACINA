@@ -281,7 +281,22 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		ImGui::SameLine(mTextSpacing);
 		static Heuristic heuri = Heuristic::Manhattan;
 		if (ImGui::RadioButton("Manhattan", heuri == Heuristic::Manhattan)) heuri = Heuristic::Manhattan; ImGui::SameLine();
-		if (ImGui::RadioButton("Euclidean", heuri == Heuristic::Euclidean)) heuri = Heuristic::Euclidean; ImGui::SameLine();
+		if (ImGui::RadioButton("Euclidean", heuri == Heuristic::Euclidean)) heuri = Heuristic::Euclidean;
 		PathOption::I->SetHeuristic(heuri);
+	}
+
+	{
+		ImGui::Text("PathOptimize : ");
+		ImGui::SameLine(mTextSpacing);
+		bool value = PathOption::I->GetDirPathOptimize(); 
+		ImGui::Checkbox("DirOptimize", &value);
+		PathOption::I->SetDirPathOptimize(value);
+		ImGui::SameLine();
+	}
+
+	{
+		bool value = PathOption::I->GetRayPathOptimize();
+		ImGui::Checkbox("RayOptimize", &value);
+		PathOption::I->SetRayPathOptimize(value);
 	}
 }
