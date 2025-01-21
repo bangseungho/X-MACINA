@@ -125,6 +125,10 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 		prevDir = dir;
 	}
 
+	if (path.top() != mStart) {
+		path.push(mStart);
+	}
+
 	// 광선을 이용한 경로 최소화
 	if (PathOption::I->GetRayPathOptimize()) {
 		RayPathOptimize(path, dest);
@@ -138,22 +142,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 		path.pop();
 	}
 
-	//for (int i = 1; i < mPath.size() - 2; ++i) {
-	//	Vec3 p0 = mPath[i - 1];
-	//	Vec3 p1 = mPath[i];
-	//	Vec3 p2 = mPath[i + 1];
-	//	Vec3 p3 = mPath[i + 2];
-
-	//	for (int j = 0; j < 20; ++j) {
-	//		float t = j / static_cast<float>(20);
-	//		const Vec3 catmullRom = Vec3::CatmullRom(p0, p1, p2, p3, t);
-	//		mSplinePath.push_back(catmullRom);
-	//	}
-	//}
-
-	//mSplinePath.push_back(mPath[mPath.size() - 2]);
-	//mSplinePath.push_back(mPath[mPath.size() - 1]);
-	//std::reverse(mSplinePath.begin(), mSplinePath.end());
+	//MakeSplinePath();
 
 	std::reverse(mFinalPath.begin(), mFinalPath.end());
 
@@ -224,22 +213,98 @@ void Agent::RayPathOptimize(std::stack<Pos>& path, const Pos& dest)
 	}
 }
 
+static Vec3 QuadraticBezier(const Vec3& p0, const Vec3& p1, const Vec3& p2, float t) {
+	float u = 1.0f - t;
+	return (p0 * (u * u)) + (p1 * (2 * u * t)) + (p2 * (t * t));
+}
+
+static Vec3 CubicBezier(const Vec3& p0, const Vec3& p1, const Vec3& p2, const Vec3& p3, float t) {
+	float u = 1.0f - t;
+	float uu = u * u;
+	float uuu = uu * u;
+	float tt = t * t;
+	float ttt = tt * t;
+	return (p0 * uuu) + (p1 * (3 * uu * t)) + (p2 * (3 * u * tt)) + (p3 * ttt);
+}
+
+void Agent::MakeSplinePath()
+{
+	if (mFinalPath.size() <= 2) {
+		return;
+	}
+
+	std::vector<Vec3> splinePath{};
+
+	Vec3 P0 = mFinalPath[0];
+	Vec3 P1 = mFinalPath[1];
+
+	for (size_t i = 2; i < mFinalPath.size(); i++) {
+		Vec3 P2 = mFinalPath[i];
+
+		// 곡선을 구성하는 점 추가
+		for (int j = 0; j <= 10; ++j) {
+			float t = static_cast<float>(j) / 10;
+			splinePath.push_back(QuadraticBezier(P0, P1, P2, t));
+		}
+
+		// 다음 곡선의 시작점은 현재 곡선의 끝점
+		P0 = P2;
+
+		// 다음 제어점(P1) 조정 (C1 연속성 유지)
+		if (i + 1 < mFinalPath.size()) {
+			P1 = (P2 * 2.0f) - P1;
+		}
+	}
+
+	//bool isQuadratic = mFinalPath.size() % 2 == 1 ? true : false;
+	//if (isQuadratic) {
+	//	for (size_t i = 0; i + 2 < mFinalPath.size(); i += 2) {
+	//		Vec3 p0 = mFinalPath[i];
+	//		Vec3 p1 = mFinalPath[i + 1];
+	//		Vec3 p2 = mFinalPath[i + 2];
+
+	//		for (int j = 0; j <= 10; ++j) {
+	//			float t = static_cast<float>(j) / 10;
+	//			splinePath.push_back(QuadraticBezier(p0, p1, p2, t));
+	//		}
+	//	}
+	//}
+	//else {
+	//	for (size_t i = 0; i + 3 < mFinalPath.size(); i += 3) {
+	//		Vec3 P0 = mFinalPath[i];
+	//		Vec3 P1 = mFinalPath[i + 1];
+	//		Vec3 P2 = mFinalPath[i + 2];
+	//		Vec3 P3 = mFinalPath[i + 3];
+
+	//		// C1 연속성 유지 (선택 사항)
+	//		if (i + 4 < mFinalPath.size()) {
+	//			mFinalPath[i + 4] = (P3 * 2.0f) - P2;
+	//		}
+
+	//		for (int j = 0; j <= 10; ++j) {
+	//			float t = static_cast<float>(j) / 10;
+	//			splinePath.push_back(CubicBezier(P0, P1, P2, P3, t));
+	//		}
+	//	}
+	//}
+	mFinalPath = splinePath;
+}
+
 void Agent::MoveToPath()
 {
 	if (mFinalPath.empty()) {
 		return;
 	}
-
+	
 	Vec3 nextPos = (mFinalPath.back() - mObject->GetPosition());
-	nextPos.y += Grid::mkTileHeight;
-
-	mObject->RotateTargetAxisY(mFinalPath.back(), 1000.f);
-	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
 
 	const float kMinDistance = 0.1f;
 	if (nextPos.Length() < kMinDistance) {
 		mFinalPath.pop_back();
 	}
+
+	mObject->RotateTargetAxisY(mFinalPath.back(), 1000.f);
+	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
 }
 
 int Agent::GetOnVoxelCount(const Pos& pos)

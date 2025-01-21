@@ -29,7 +29,7 @@ class PathOption : public Singleton<PathOption> {
 	friend Singleton;
 	
 private:
-	float		mAgentSpeed = 5.2f;
+	float		mAgentSpeed = 3.2f;
 	int			mAllowedHeight = 1;
 	int			mMaxClosedListSize = 50000;
 	int			mOnVoxelCost = 30;
@@ -78,6 +78,9 @@ public:
 
 private:
 	void	RayPathOptimize(std::stack<Pos>& path, const Pos& dest);
+	void	MakeSplinePath();
+
+private:
 	void	MoveToPath();
 	int		GetOnVoxelCount(const Pos& pos);
 	void	ClearPath();
