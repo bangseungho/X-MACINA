@@ -112,7 +112,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 
 	Pos pos = dest;
 	prevDir = Pos{};
-	// 부모 경로를 따라가 스택에 넣어준다. top이 first path이다.
+	// 부모를 통해 경로 설정
 	while (pos != parent[pos]) {
 		Pos newPos = pos + Pos{ 0, 0, onVoxel[pos]};
 		parent[newPos] = parent[pos];
@@ -125,18 +125,16 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 		prevDir = dir;
 	}
 
-	// 경로 직선화에 의해 시작점이 들어가지 않을 수 있다.
-	if (path.top() != mStart) {
-		path.push(mStart);
-	}
-
+	// 광선을 이용한 경로 최소화
 	if (PathOption::I->GetRayPathOptimize()) {
-		RayPathOptimize(path);
+		RayPathOptimize(path, dest);
 	}
 
+	// 최종 경로 설정
 	while (!path.empty()) {
-		VoxelManager::I->PushClosedVoxel(path.top());
-		mFinalPath.push_back(Scene::I->GetVoxelPos(path.top()));
+		const Pos& now = path.top();
+		VoxelManager::I->PushClosedVoxel(now);
+		mFinalPath.push_back(Scene::I->GetVoxelPos(now));
 		path.pop();
 	}
 
@@ -157,6 +155,8 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 	//mSplinePath.push_back(mPath[mPath.size() - 1]);
 	//std::reverse(mSplinePath.begin(), mSplinePath.end());
 
+	std::reverse(mFinalPath.begin(), mFinalPath.end());
+
 	return true;
 }
 
@@ -168,9 +168,9 @@ void Agent::ReadyPlanningToPath(const Pos& start)
 	ClearPath();
 }
 
-void Agent::RayPathOptimize(std::stack<Pos>& path)
+void Agent::RayPathOptimize(std::stack<Pos>& path, const Pos& dest)
 {
-	std::queue<Pos> optimizePath{};
+	std::stack<Pos> optimizePath{};
 
 	// 현재 시작 지점 설정
 	Pos now{};
@@ -181,13 +181,7 @@ void Agent::RayPathOptimize(std::stack<Pos>& path)
 	}
 
 	Pos prev = now;
-	while (true) {
-		if (path.size() == 1) {
-			optimizePath.push(path.top());
-			path.pop();
-			break;
-		}
-
+	while (!path.empty()) {
 		Pos next = path.top();
 		Ray ray{};
 		ray.Position = Scene::I->GetVoxelPos(now);
@@ -204,10 +198,10 @@ void Agent::RayPathOptimize(std::stack<Pos>& path)
 					Vec3 nextPosW = Scene::I->GetVoxelPos(voxel);
 					BoundingBox bb{ nextPosW, Grid::mkTileExtent };
 					float dist;
-					// 위로 올라갈때의 처리가 안되어 있음
+					// y축이 달라지면 무조건 넣기?
 					VoxelState state = Scene::I->GetVoxelState(voxel);
 					if (ray.Intersects(bb, dist)) {
-						if ((state == VoxelState::Static || state == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) {
+						if ((state == VoxelState::Static || state == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight() || y != prev.Y) {
 							optimizePath.push(prev);
 							now = prev;
 							goto NoOptimizePath;
@@ -222,33 +216,30 @@ void Agent::RayPathOptimize(std::stack<Pos>& path)
 		prev = next;
 	}
 
+	optimizePath.push(dest);
+
 	while (!optimizePath.empty()) {
-		path.push(optimizePath.front());
+		path.push(optimizePath.top());
 		optimizePath.pop();
 	}
 }
 
 void Agent::MoveToPath()
 {
-	//std::vector<Vec3>* path = &mPath;
-	//if (PathOption::I->GetPathSmoothing()) {
-	//	path = &mSplinePath;
-	//}
+	if (mFinalPath.empty()) {
+		return;
+	}
 
-	//if (path->empty()) {
-	//	return;
-	//}
+	Vec3 nextPos = (mFinalPath.back() - mObject->GetPosition());
+	nextPos.y += Grid::mkTileHeight;
 
-	//Vec3 nextPos = (path->back() - mObject->GetPosition());
-	//nextPos.y += Grid::mkTileHeight;
+	mObject->RotateTargetAxisY(mFinalPath.back(), 1000.f);
+	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
 
-	//mObject->RotateTargetAxisY(path->back(), 1000.f);
-	//mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
-
-	//const float kMinDistance = 0.1f;
-	//if (nextPos.Length() < kMinDistance) {
-	//	path->pop_back();
-	//}
+	const float kMinDistance = 0.1f;
+	if (nextPos.Length() < kMinDistance) {
+		mFinalPath.pop_back();
+	}
 }
 
 int Agent::GetOnVoxelCount(const Pos& pos)

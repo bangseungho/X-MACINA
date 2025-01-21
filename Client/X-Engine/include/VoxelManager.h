@@ -95,7 +95,6 @@ private:
 	void UpdateCreateMode(VoxelState selectedVoxelState);
 	void UpdateRemoveMode(VoxelState selectedVoxelState);
 	void UpdatePlanningPathMode(bool makePath, VoxelState selectedVoxelState);
-	
 	void CalcRenderVoxelCount(int renderVoxelRows);
 };
 #pragma endregion

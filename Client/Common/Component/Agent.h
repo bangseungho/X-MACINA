@@ -77,7 +77,7 @@ public:
 	void	ReadyPlanningToPath(const Pos& start);
 
 private:
-	void	RayPathOptimize(std::stack<Pos>& path);
+	void	RayPathOptimize(std::stack<Pos>& path, const Pos& dest);
 	void	MoveToPath();
 	int		GetOnVoxelCount(const Pos& pos);
 	void	ClearPath();
