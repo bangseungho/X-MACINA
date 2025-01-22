@@ -659,19 +659,19 @@ struct Pos
 	}
 
 	bool operator<(const Pos& other) const {
+		if (Y != other.Y)
+			return Y < other.Y;
 		if (Z != other.Z)
 			return Z < other.Z;
-		if (X != other.X)
-			return X < other.X;
-		return Y < other.Y;
+		return X < other.X;
 	}
 
 	bool operator>(const Pos& other) const {
+		if (Y != other.Y)
+			return Y > other.Y;
 		if (Z != other.Z)
 			return Z > other.Z;
-		if (X != other.X)
-			return X > other.X;
-		return Y > other.Y;
+		return X > other.X;
 	}
 
 	Pos operator+(const Pos& other) const {
@@ -728,7 +728,6 @@ struct Pos
 	int X{};
 	int Y{};
 };
-
 
 enum {
 	DirCount = 8

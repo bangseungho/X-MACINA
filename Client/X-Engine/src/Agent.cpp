@@ -70,7 +70,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 		visited[curNode.Pos] = true;
 
 		// 해당 지점이 목적지인 경우 종료
-		if (curNode.Pos == dest) 
+		if (curNode.Pos == dest)
 			break;
 
 		// 26방향으로 탐색
@@ -80,10 +80,10 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 
 			// 다음 방향 노드의 상태가 static이라면 continue
 			int onVoxelCount = GetOnVoxelCount(nextPos);
-			int dirPathCost{}; 
+			int dirPathCost{};
 			int onVoxelCountCost = onVoxelCount * PathOption::I->GetOnVoxelCost();
 			int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
-			if (onVoxelCount > 1 && onVoxelCount <= PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
+			if (onVoxelCount < PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
 			if ((nextTile == VoxelState::Static || nextTile == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
 			if (nextTile == VoxelState::None) continue;
 			if (visited.contains(nextPos)) continue;
@@ -101,7 +101,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 			}
 		}
 	}
-	
+
 	// 경로를 못 찾은 경우
 	if (curNode.Pos != dest) {
 		VoxelManager::I->ClearPathList();
@@ -114,7 +114,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 	prevDir = Pos{};
 	// 부모를 통해 경로 설정
 	while (pos != parent[pos]) {
-		Pos newPos = pos + Pos{ 0, 0, onVoxel[pos]};
+		Pos newPos = pos + Pos{ 0, 0, onVoxel[pos] };
 		parent[newPos] = parent[pos];
 		pos = newPos;
 		Pos dir = parent[pos] - newPos;
@@ -142,7 +142,9 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 		path.pop();
 	}
 
-	MakeSplinePath();
+	if (PathOption::I->GetSplinePath()) {
+		MakeSplinePath();
+	}
 
 	std::reverse(mFinalPath.begin(), mFinalPath.end());
 
@@ -192,7 +194,7 @@ void Agent::RayPathOptimize(std::stack<Pos>& path, const Pos& dest)
 							goto NoOptimizePath;
 						}
 						else if (state == VoxelState::Static || state == VoxelState::TerrainStatic) {
-							if (GetOnVoxelCount(voxel) > PathOption::I->GetAllowedHeight()) {
+							if (GetOnVoxelCount(voxel) >= PathOption::I->GetAllowedHeight() || prev.Y != y) {
 								optimizePath.push(prev);
 								now = prev;
 								goto NoOptimizePath;
@@ -238,7 +240,7 @@ void Agent::MakeSplinePath()
 
 	std::vector<Vec3> splinePath{};
 	const int pathSize = static_cast<int>(mFinalPath.size());
-	const int sampleCount = 20;
+	const int sampleCount = 10;
 
 	Vec3 p4 = mFinalPath.back() + mFinalPath[pathSize - 1].xz() - mFinalPath[pathSize - 2].xz();
 	mFinalPath.push_back(p4);
@@ -270,13 +272,13 @@ void Agent::MoveToPath()
 	
 	Vec3 nextPos = (mFinalPath.back() - mObject->GetPosition());
 
+	mObject->RotateTargetAxisY(mFinalPath.back(), 1000.f);
+	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
+
 	const float kMinDistance = 0.1f;
 	if (nextPos.Length() < kMinDistance) {
 		mFinalPath.pop_back();
 	}
-
-	mObject->RotateTargetAxisY(mFinalPath.back(), 1000.f);
-	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
 }
 
 int Agent::GetOnVoxelCount(const Pos& pos)

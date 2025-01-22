@@ -15,7 +15,7 @@ void Script_CameraTarget::Start()
 
 void Script_CameraTarget::Update()
 {
-	VoxelManager::I->SetCenterPos(Scene::I->GetVoxelIndex(mObject->GetPosition()));
+	VoxelManager::I->UpdateRenderVoxels(Scene::I->GetVoxelIndex(mObject->GetPosition()));
 	ProcessInput();
 }
 

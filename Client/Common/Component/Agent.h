@@ -37,6 +37,7 @@ private:
 	int			mProximityWeight = 10;
 	bool		mDirPathOptimize = false;
 	bool		mRayPathOptimize = false;
+	bool		mSplinePath = false;
 	Heuristic	mHeuristic = Heuristic::Manhattan;
 
 public:
@@ -48,6 +49,7 @@ public:
 	int			GetProximityWeight() const { return mProximityWeight; }
 	bool		GetDirPathOptimize() const { return mDirPathOptimize; }
 	bool		GetRayPathOptimize() const { return mRayPathOptimize; }
+	bool		GetSplinePath() const { return mSplinePath; }
 	Heuristic	GetHeuristic() const { return mHeuristic; }
 	
 	void		SetAgentSpeed(float speed) { mAgentSpeed = speed; }
@@ -57,7 +59,8 @@ public:
 	void		SetHeuristicWeight(int weight) { mHeuristicWeight = weight; }
 	void		SetProximityWeight(int weight) { mProximityWeight = weight; }
 	void		SetDirPathOptimize(bool optimize) { mDirPathOptimize = optimize; }
-	void		SetRayPathOptimize(bool optimize) { mRayPathOptimize = optimize; }
+	void		SetRayPathOptimize(bool optimize) { mRayPathOptimize = optimize; if (optimize) SetDirPathOptimize(optimize); }
+	void		SetSplinePath(bool spline) { mSplinePath = spline; }
 	void		SetHeuristic(Heuristic heuristic) { mHeuristic = heuristic; }
 };
 

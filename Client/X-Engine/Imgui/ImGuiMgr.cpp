@@ -60,8 +60,8 @@ bool ImGuiMgr::Init()
         , mSrvDescHeap.Get(), mSrvDescHeap->GetCPUDescriptorHandleForHeapStart()
         , mSrvDescHeap.Get()->GetGPUDescriptorHandleForHeapStart());
 
-    uptr<ImGuiFunc> voxelFunc = std::make_unique<ImGuiVoxelFunc>(Vec2{ 0, 0 }, Vec2{ 400, 300 });
-    uptr<ImGuiFunc> pathFunc = std::make_unique<ImGuiPathFunc>(Vec2{ 0, 300 }, Vec2{ 400, 300 });
+    uptr<ImGuiFunc> voxelFunc = std::make_unique<ImGuiVoxelFunc>(Vec2{ 0, 0 }, Vec2{ 450, 300 });
+    uptr<ImGuiFunc> pathFunc = std::make_unique<ImGuiPathFunc>(Vec2{ 0, 300 }, Vec2{ 450, 300 });
     mFuncs.emplace_back(std::move(voxelFunc));
     mFuncs.emplace_back(std::move(pathFunc));
 
@@ -178,6 +178,9 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
     case VoxelState::Terrain:
 		tileName = "Terrain";
 		break;
+	case VoxelState::TerrainStatic:
+		tileName = "TerrainStatic";
+		break;
     default:
         break;
     }
@@ -285,8 +288,8 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		PathOption::I->SetHeuristic(heuri);
 	}
 
+	ImGui::Text("PostProcess : ");
 	{
-		ImGui::Text("PathOptimize : ");
 		ImGui::SameLine(mTextSpacing);
 		bool value = PathOption::I->GetDirPathOptimize(); 
 		ImGui::Checkbox("DirOptimize", &value);
@@ -298,5 +301,12 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		bool value = PathOption::I->GetRayPathOptimize();
 		ImGui::Checkbox("RayOptimize", &value);
 		PathOption::I->SetRayPathOptimize(value);
+		ImGui::SameLine();
+	}
+
+	{
+		bool value = PathOption::I->GetSplinePath();
+		ImGui::Checkbox("SplinePath", &value);
+		PathOption::I->SetSplinePath(value);
 	}
 }

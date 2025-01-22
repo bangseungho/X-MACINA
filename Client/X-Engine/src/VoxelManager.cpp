@@ -54,7 +54,6 @@ void VoxelManager::Init(Object* player)
 	CalcRenderVoxelCount(50);
 	mCloseList.reserve(10000);
 	mOpenList.reserve(10000);
-	mRenderVoxels.reserve(10000);
 	mOption.RenderVoxelHeight = 10;
 
 	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
@@ -63,7 +62,7 @@ void VoxelManager::Init(Object* player)
 	}
 }
 
-void VoxelManager::SetCenterPos(const Pos& pos, bool checkCenterPos)
+void VoxelManager::UpdateRenderVoxels(const Pos& pos, bool checkCenterPos)
 {
 	if (pos == mCenterPos && checkCenterPos) {
 		return;
@@ -78,9 +77,9 @@ void VoxelManager::SetCenterPos(const Pos& pos, bool checkCenterPos)
 	for (int i = x - halfSizeX; i < x + halfSizeX; ++i) {
 		for (int j = y - halfSizeZ; j < y + halfSizeZ; ++j) {
 			for (int k = 0; k < VoxelManager::mOption.RenderVoxelHeight; ++k) {
-				const Pos index = Pos{ j, i, k };
-				if (Scene::I->GetVoxelState(index) != VoxelState::None || Scene::I->GetVoxelCondition(index) == VoxelCondition::ReadyCreate) {
-					mRenderVoxels.push_back(index);
+				const Pos& voxel = Pos{ j, i, k };
+				if (Scene::I->GetVoxelState(voxel) != VoxelState::None || Scene::I->GetVoxelCondition(voxel) == VoxelCondition::ReadyCreate) {
+					mRenderVoxels.insert(voxel);
 				}
 			}
 		}
@@ -110,25 +109,25 @@ void VoxelManager::Render()
 		}
 	}
 
-	for (auto& voxel : mRenderVoxels) {
-		Voxel renderVoxel = Scene::I->GetVoxel(voxel);
+	for (auto& renderVoxel : mRenderVoxels) {
+		Voxel voxel = Scene::I->GetVoxel(renderVoxel);
 
 		InstanceData instData;
-		instData.MtxWorld = renderVoxel.MtxWorld;
+		instData.MtxWorld = voxel.MtxWorld;
 		
-		switch (renderVoxel.State) {
+		switch (voxel.State) {
 		case VoxelState::Static:
-		case VoxelState::TerrainStatic:
 			instData.Color = Vec4{ 1.f, 0.f, 0.f, 1.f };
 			break;
 		case VoxelState::Terrain:
+		case VoxelState::TerrainStatic:
 			instData.Color = Vec4{ 0.f, 1.f, 0.f, 1.f };
 			break;
 		default:
 			break;
 		}
 
-		switch (renderVoxel.Condition) {
+		switch (voxel.Condition) {
 		case VoxelCondition::Picked:
 			instData.Color = Vec4{ 1.f, 0.f, 1.f, 1.f };
 			break;
@@ -143,6 +142,10 @@ void VoxelManager::Render()
 			break;
 		default:
 			break;
+		}
+
+		if (voxel.State == VoxelState::None && voxel.Condition == VoxelCondition::None) {
+			continue;
 		}
 
 		mInstanceBuffers[CURR_FRAME_INDEX]->CopyData(buffIdx++, instData);
@@ -160,20 +163,20 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	mSelectedVoxel = Pos{};
 	// 추후 분할정복으로 변경 예정
 	float minValue{ FLT_MAX };
-	for (int i = 0; i < mRenderVoxels.size(); ++i) {
-		Vec3 voxelPosW = Scene::I->GetVoxelPos(mRenderVoxels[i]);
-		Scene::I->SetVoxelCondition(mRenderVoxels[i], VoxelCondition::None);
-		if (Scene::I->GetVoxelState(mRenderVoxels[i]) == VoxelState::None) continue;
+	for (const auto& voxel : mRenderVoxels) {
+		Vec3 voxelPosW = Scene::I->GetVoxelPos(voxel);
+		Scene::I->SetVoxelCondition(voxel, VoxelCondition::None);
+		if (Scene::I->GetVoxelState(voxel) == VoxelState::None) continue;
 		BoundingBox bb{ voxelPosW, Grid::mkTileExtent };
 		float dist{};
 		if (ray.Intersects(bb, dist)) {
 			if (minValue > dist) {
 				minValue = dist;
-				mSelectedVoxel = mRenderVoxels[i];
+				mSelectedVoxel = voxel;
 			}
 		}
 	}
-	
+
 	VoxelState selectedVoxelState = Scene::I->GetVoxelState(mSelectedVoxel);
 
 	switch (mOption.CreateMode)
@@ -196,10 +199,16 @@ void VoxelManager::PickTopVoxel(bool makePath)
 
 void VoxelManager::UpdateCreateMode(VoxelState selectedVoxelState)
 {
-	Pos aboveVoxel = mSelectedVoxel.Up();
-	if (Scene::I->GetVoxel(aboveVoxel).State == VoxelState::None) {
-		Scene::I->SetVoxelCondition(aboveVoxel, VoxelCondition::ReadyCreate);
+	if (Scene::I->GetVoxelState(mAboveVoxel) == VoxelState::None) {
+		mRenderVoxels.erase(mAboveVoxel);
 	}
+
+	if (Scene::I->GetVoxel(mSelectedVoxel.Up()).State == VoxelState::None) {
+		Scene::I->SetVoxelCondition(mSelectedVoxel.Up(), VoxelCondition::ReadyCreate);
+	}
+	
+	mAboveVoxel = mSelectedVoxel.Up();
+	mRenderVoxels.insert(mAboveVoxel);
 
 	if (!mHoldingClick || mUsedCreateModeVoxels.count(mSelectedVoxel.XZ())) {
 		return;
@@ -211,9 +220,10 @@ void VoxelManager::UpdateCreateMode(VoxelState selectedVoxelState)
 	else {
 		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::Static);
 	}
-	Scene::I->SetVoxelState(aboveVoxel, VoxelState::Static);
+	Scene::I->SetVoxelState(mSelectedVoxel.Up(), VoxelState::Static);
 
 	mUsedCreateModeVoxels.insert(mSelectedVoxel.XZ());
+	Scene::I->UpdateVoxelsProximityCost(mSelectedVoxel);
 }
 
 void VoxelManager::UpdateRemoveMode(VoxelState selectedVoxelState)
@@ -227,6 +237,7 @@ void VoxelManager::UpdateRemoveMode(VoxelState selectedVoxelState)
 	}
 	else if (selectedVoxelState == VoxelState::Static) {
 		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::None);
+		mRenderVoxels.erase(mAboveVoxel);
 	}
 
 	mUsedCreateModeVoxels.insert(mSelectedVoxel.XZ());

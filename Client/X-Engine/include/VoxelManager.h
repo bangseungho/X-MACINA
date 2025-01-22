@@ -43,14 +43,27 @@ class VoxelManager : public Singleton<VoxelManager> {
 	friend Singleton;
 
 private:
+	struct VoxelSort {
+		bool operator()(const Pos& lhs, const Pos& rhs)const {
+			if (lhs.Y != rhs.Y) return lhs.Y > rhs.Y;
+			else if (lhs.Z != rhs.Z) return lhs.Z < rhs.Z;
+			return lhs.X < rhs.X;
+		}
+	};
+
+private:
+	std::set<Pos, VoxelSort> mRenderVoxels{};
+
 	Object*				mPlayer{};
-	std::vector<Pos>	mRenderVoxels{};
 	bool				mReadyMakePath{ true };
 	bool				mHoldingClick{};
 
 private:
 	Pos					mSelectedVoxel{};
 	Pos					mCenterPos{};
+
+private:
+	Pos					mAboveVoxel{};
 
 private:
 	VoxelOption			mOption{};
@@ -74,13 +87,13 @@ public:
 	RenderMode GetRenderMode() const { return mOption.RenderMode; }
 
 public:
-	void SetRenderVoxelRows(int rows) { CalcRenderVoxelCount(rows); SetCenterPos(mCenterPos, false); }
-	void SetRenderVoxelHeight(int height) { mOption.RenderVoxelHeight = height; SetCenterPos(mCenterPos, false); }
+	void SetRenderVoxelRows(int rows) { CalcRenderVoxelCount(rows); UpdateRenderVoxels(mCenterPos, false); }
+	void SetRenderVoxelHeight(int height) { mOption.RenderVoxelHeight = height; UpdateRenderVoxels(mCenterPos, false); }
 	void SetCreateMode(CreateMode mode) { mOption.CreateMode = mode; }
 	void SetRenderMode(RenderMode mode) { mOption.RenderMode = mode; }
-	void SetCenterPos(const Pos& pos, bool checkCenterPos = true);
 
 public:
+	void UpdateRenderVoxels(const Pos& pos, bool checkCenterPos = true);
 	void PushClosedVoxel(const Pos& pos) { mCloseList.push_back(pos); }
 	void PushOpenedVoxel(const Pos& pos) { mOpenList.push_back(pos); }
 	void ClearPathList();
