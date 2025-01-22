@@ -70,6 +70,16 @@ int Grid::GetProximityCost(const Pos& index)
 	}
 }
 
+int Grid::GetEdgeCost(const Pos& index)
+{
+	if (mEdgeCosts.count(index)) {
+		return mEdgeCosts[index];
+	}
+	else {
+		return 0;
+	}
+}
+
 void Grid::SetVoxelState(const Pos& index, VoxelState state)
 {
 	if (mVoxels.count(index)) {
@@ -129,7 +139,7 @@ void Grid::AddObject(GridObject* object)
 		break;
 	default:
 		mStaticObjects.insert(object);
-		UpdateTiles(VoxelState::Static, object);
+		UpdateVoxels(VoxelState::Static, object);
 		break;
 	}
 }
@@ -139,13 +149,14 @@ inline bool IsNotBuilding(ObjectTag tag)
 	return tag != ObjectTag::Building && tag != ObjectTag::DissolveBuilding;
 }
 
-void Grid::UpdateTiles(VoxelState tile, GridObject* object)
+void Grid::UpdateVoxels(VoxelState tile, GridObject* object)
 {
 	// 정적 오브젝트가 Building 태그인 경우에만 벽으로 설정
 	if (IsNotBuilding(object->GetTag()))
 		return;
 
 	// 오브젝트의 충돌 박스
+	std::unordered_set<Pos> boundingVoxels;
 	for (const auto& collider : object->GetComponent<ObjectCollider>()->GetColliders()) {
 		// BFS를 통해 주변 타일도 업데이트
 		std::queue<Pos> q;
@@ -179,12 +190,63 @@ void Grid::UpdateTiles(VoxelState tile, GridObject* object)
 				visited[nextPosT] = true;
 
 				if (collider->Intersects(bb)) {
+					boundingVoxels.insert(nextPosT);
 					Scene::I->SetVoxelState(nextPosT, tile);
 					q.push(nextPosT);
 				}
 			}
 		}
 	}
+
+	UpdateVoxelsEdgeCost(boundingVoxels);
+}
+
+void Grid::UpdateVoxelsEdgeCost(const std::unordered_set<Pos>& boundingVoxels)
+{
+	for (const Pos& voxel : boundingVoxels) {
+		CalcRowEdgeCost(voxel, boundingVoxels);
+		CalcColEdgeCost(voxel, boundingVoxels);
+		mEdgeCosts[voxel] /= 2;
+		mEdgeCosts[voxel] = std::pow(mEdgeCosts[voxel], 2);
+	}
+}
+
+void Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
+{
+	int leftMoveCnt{};
+	Pos nextLeft = voxel.Left();
+	while (boundingVoxels.count(nextLeft)) {
+		nextLeft = nextLeft.Left();
+		leftMoveCnt++;
+	}
+
+	int rightMoveCnt{};
+	Pos nextRight = voxel.Right();
+	while (boundingVoxels.count(nextRight)) {
+		nextRight = nextRight.Right();
+		rightMoveCnt++;
+	}
+
+	mEdgeCosts[voxel] += abs(leftMoveCnt - rightMoveCnt);
+}
+
+void Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
+{
+	int forwardMoveCnt{};
+	Pos nextForward = voxel.Forward();
+	while (boundingVoxels.count(nextForward)) {
+		nextForward = nextForward.Forward();
+		forwardMoveCnt++;
+	}
+
+	int backwardMoveCnt{};
+	Pos nextBackward = voxel.Backward();
+	while (boundingVoxels.count(nextBackward)) {
+		nextBackward = nextBackward.Backward();
+		backwardMoveCnt++;
+	}
+
+	mEdgeCosts[voxel] += abs(forwardMoveCnt - backwardMoveCnt);
 }
 
 void Grid::RemoveObject(GridObject* object)
@@ -204,7 +266,7 @@ void Grid::RemoveObject(GridObject* object)
 		break;
 	default:
 		mStaticObjects.erase(object);
-		UpdateTiles(VoxelState::Static, object);
+		UpdateVoxels(VoxelState::Static, object);
 		break;
 	}
 }

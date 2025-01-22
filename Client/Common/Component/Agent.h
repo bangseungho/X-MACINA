@@ -6,7 +6,7 @@
 
 
 #pragma region Enum
-enum class Heuristic {
+enum class Heuristic : UINT8 {
 	Manhattan = 0,
 	Euclidean,
 };

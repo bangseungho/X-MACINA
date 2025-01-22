@@ -178,6 +178,7 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	}
 
 	VoxelState selectedVoxelState = Scene::I->GetVoxelState(mSelectedVoxel);
+	std::cout << Scene::I->GetEdgeCost(mSelectedVoxel) << std::endl;
 
 	switch (mOption.CreateMode)
 	{

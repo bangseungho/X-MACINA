@@ -83,6 +83,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 			int dirPathCost{};
 			int onVoxelCountCost = onVoxelCount * PathOption::I->GetOnVoxelCost();
 			int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
+			int edgeCost = Scene::I->GetEdgeCost(nextPos);
 			if (onVoxelCount < PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
 			if ((nextTile == VoxelState::Static || nextTile == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
 			if (nextTile == VoxelState::None) continue;
@@ -90,8 +91,8 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 			if (!distance.contains(nextPos)) distance[nextPos] = INT32_MAX;
 			if (prevDir != gkFront3D[dir]) dirPathCost = gkCost3D[dir] / 2;
 
-			int g = curNode.G + gkCost3D[dir] + dirPathCost + onVoxelCountCost + proximityCost;
-			int h = heuristic(nextPos, dest) * PathOption::I->GetHeuristicWeight();
+			int g = curNode.G + gkCost3D[dir] + dirPathCost + onVoxelCountCost + proximityCost ;
+			int h = heuristic(nextPos, dest) * PathOption::I->GetHeuristicWeight() + edgeCost;
 			if (g + h < distance[nextPos]) {
 				distance[nextPos] = g + h;
 				pq.push({ g + h, g, nextPos });
