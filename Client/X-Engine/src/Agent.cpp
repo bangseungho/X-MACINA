@@ -56,14 +56,14 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 	parent[mStart] = mStart;
 
 	Pos prevDir;
-	int closedListSize{};
+	int openNodeCount{};
 	PQNode curNode{};
 	while (!pq.empty()) {
 		curNode = pq.top();
 		prevDir = curNode.Pos - parent[curNode.Pos];
 		pq.pop();
 
-		if (closedListSize >= PathOption::I->GetMaxClosedListSize()) break;
+		if (openNodeCount >= PathOption::I->GetMaxOpenNodeCount()) break;
 		if (visited.contains(curNode.Pos)) continue;
 		if (distance[curNode.Pos] < curNode.F) continue;
 
@@ -96,7 +96,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 				distance[nextPos] = g + h;
 				pq.push({ g + h, g, nextPos });
 				parent[nextPos] = curNode.Pos;
-				closedListSize++;
+				openNodeCount++;
 				VoxelManager::I->PushOpenedVoxel(nextPos);
 			}
 		}
@@ -142,7 +142,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 		path.pop();
 	}
 
-	//MakeSplinePath();
+	MakeSplinePath();
 
 	std::reverse(mFinalPath.begin(), mFinalPath.end());
 
@@ -183,17 +183,20 @@ void Agent::RayPathOptimize(std::stack<Pos>& path, const Pos& dest)
 			for (int x = startPoint.X; x <= endPoint.X; ++x) {
 				for (int y = startPoint.Y; y <= endPoint.Y; ++y) {
 					const Pos voxel = Pos{ z, x, y };
-					int onVoxelCount = GetOnVoxelCount(voxel);
-					Vec3 nextPosW = Scene::I->GetVoxelPos(voxel);
-					BoundingBox bb{ nextPosW, Grid::mkTileExtent };
-					float dist;
-					// y축이 달라지면 무조건 넣기?
-					VoxelState state = Scene::I->GetVoxelState(voxel);
-					if (ray.Intersects(bb, dist)) {
-						if ((state == VoxelState::Static || state == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight() || y != prev.Y) {
+					VoxelState state = Scene::I->GetVoxelState(voxel); float dist;
+					if (ray.Intersects(BoundingBox{ Scene::I->GetVoxelPos(voxel), Grid::mkTileExtent }, dist)) {
+						if (state == VoxelState::None) {
 							optimizePath.push(prev);
 							now = prev;
+							path.pop();
 							goto NoOptimizePath;
+						}
+						else if (state == VoxelState::Static || state == VoxelState::TerrainStatic) {
+							if (GetOnVoxelCount(voxel) > PathOption::I->GetAllowedHeight()) {
+								optimizePath.push(prev);
+								now = prev;
+								goto NoOptimizePath;
+							}
 						}
 					}
 				}
@@ -234,65 +237,34 @@ void Agent::MakeSplinePath()
 	}
 
 	std::vector<Vec3> splinePath{};
+	const int pathSize = static_cast<int>(mFinalPath.size());
+	const int sampleCount = 20;
 
-	Vec3 P0 = mFinalPath[0];
-	Vec3 P1 = mFinalPath[1];
+	Vec3 p4 = mFinalPath.back() + mFinalPath[pathSize - 1].xz() - mFinalPath[pathSize - 2].xz();
+	mFinalPath.push_back(p4);
 
-	for (size_t i = 2; i < mFinalPath.size(); i++) {
-		Vec3 P2 = mFinalPath[i];
+	for (int i = 0; i < pathSize - 2; ++i) {
+		Vec3 p0 = mFinalPath[i];
+		Vec3 p1 = mFinalPath[i + 1];
+		Vec3 p2 = mFinalPath[i + 2];
+		Vec3 p3 = mFinalPath[i + 3];
 
-		// 곡선을 구성하는 점 추가
-		for (int j = 0; j <= 10; ++j) {
-			float t = static_cast<float>(j) / 10;
-			splinePath.push_back(QuadraticBezier(P0, P1, P2, t));
-		}
-
-		// 다음 곡선의 시작점은 현재 곡선의 끝점
-		P0 = P2;
-
-		// 다음 제어점(P1) 조정 (C1 연속성 유지)
-		if (i + 1 < mFinalPath.size()) {
-			P1 = (P2 * 2.0f) - P1;
+		for (int j = 0; j <= sampleCount; ++j) {
+			float t = static_cast<float>(j) / sampleCount;
+			splinePath.push_back(Vec3::CatmullRom(p0, p1, p2, p3, t));
 		}
 	}
-
-	//bool isQuadratic = mFinalPath.size() % 2 == 1 ? true : false;
-	//if (isQuadratic) {
-	//	for (size_t i = 0; i + 2 < mFinalPath.size(); i += 2) {
-	//		Vec3 p0 = mFinalPath[i];
-	//		Vec3 p1 = mFinalPath[i + 1];
-	//		Vec3 p2 = mFinalPath[i + 2];
-
-	//		for (int j = 0; j <= 10; ++j) {
-	//			float t = static_cast<float>(j) / 10;
-	//			splinePath.push_back(QuadraticBezier(p0, p1, p2, t));
-	//		}
-	//	}
-	//}
-	//else {
-	//	for (size_t i = 0; i + 3 < mFinalPath.size(); i += 3) {
-	//		Vec3 P0 = mFinalPath[i];
-	//		Vec3 P1 = mFinalPath[i + 1];
-	//		Vec3 P2 = mFinalPath[i + 2];
-	//		Vec3 P3 = mFinalPath[i + 3];
-
-	//		// C1 연속성 유지 (선택 사항)
-	//		if (i + 4 < mFinalPath.size()) {
-	//			mFinalPath[i + 4] = (P3 * 2.0f) - P2;
-	//		}
-
-	//		for (int j = 0; j <= 10; ++j) {
-	//			float t = static_cast<float>(j) / 10;
-	//			splinePath.push_back(CubicBezier(P0, P1, P2, P3, t));
-	//		}
-	//	}
-	//}
 	mFinalPath = splinePath;
 }
 
 void Agent::MoveToPath()
 {
 	if (mFinalPath.empty()) {
+		return;
+	}
+
+	if (mFinalPath.back() == mObject->GetPosition()) {
+		mFinalPath.pop_back();
 		return;
 	}
 	

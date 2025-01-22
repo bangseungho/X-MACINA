@@ -31,7 +31,7 @@ class PathOption : public Singleton<PathOption> {
 private:
 	float		mAgentSpeed = 3.2f;
 	int			mAllowedHeight = 1;
-	int			mMaxClosedListSize = 50000;
+	int			mMaxOpenNodeCount = 50000;
 	int			mOnVoxelCost = 30;
 	int			mHeuristicWeight = 10;
 	int			mProximityWeight = 10;
@@ -42,7 +42,7 @@ private:
 public:
 	float		GetAgentSpeed() const { return mAgentSpeed; }
 	int			GetAllowedHeight() const { return mAllowedHeight; }
-	int			GetMaxClosedListSize() const { return mMaxClosedListSize; }
+	int			GetMaxOpenNodeCount() const { return mMaxOpenNodeCount; }
 	int			GetOnVoxelCost() const { return mOnVoxelCost; }
 	int			GetHeuristicWeight() const { return mHeuristicWeight; }
 	int			GetProximityWeight() const { return mProximityWeight; }
@@ -52,7 +52,7 @@ public:
 	
 	void		SetAgentSpeed(float speed) { mAgentSpeed = speed; }
 	void		SetAllowedHeight(int height) { mAllowedHeight = height; }
-	void		SetMaxClosedListSize(int size) { mMaxClosedListSize = size; }
+	void		SetMaxOpenNodeCount(int count) { mMaxOpenNodeCount = count; }
 	void		SetOnVoxelCost(int cost) { mOnVoxelCost = cost; }
 	void		SetHeuristicWeight(int weight) { mHeuristicWeight = weight; }
 	void		SetProximityWeight(int weight) { mProximityWeight = weight; }
