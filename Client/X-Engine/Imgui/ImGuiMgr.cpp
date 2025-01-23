@@ -161,6 +161,10 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
     const Vec3& selectedVoxelPosW = Scene::I->GetVoxelPos(selectedVoxelIndex);
 	ImGui::Text("Pos : x = %.1f, y = %.1f, z = %.1f", selectedVoxelPosW.x, selectedVoxelPosW.y, selectedVoxelPosW.z);
     
+	// costs
+	ImGui::Text("Proximity Cost : %d", VoxelManager::I->GetSelectedVoxelProximityCost());
+	ImGui::Text("Edge Cost : %d", VoxelManager::I->GetSelectedVoxelEdgeCost());
+
     // tile
     const VoxelState selectedVoxelTile = Scene::I->GetVoxelState(selectedVoxelIndex);
     std::string tileName{};

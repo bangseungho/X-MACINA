@@ -144,10 +144,6 @@ void VoxelManager::Render()
 			break;
 		}
 
-		if (voxel.State == VoxelState::None && voxel.Condition == VoxelCondition::None) {
-			continue;
-		}
-
 		mInstanceBuffers[CURR_FRAME_INDEX]->CopyData(buffIdx++, instData);
 	}
 
@@ -178,7 +174,8 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	}
 
 	VoxelState selectedVoxelState = Scene::I->GetVoxelState(mSelectedVoxel);
-	std::cout << Scene::I->GetEdgeCost(mSelectedVoxel) << std::endl;
+	mSelectedVoxelEdgeCost = Scene::I->GetEdgeCost(mSelectedVoxel);
+	mSelectedVoxelProximityCost = Scene::I->GetProximityCost(mSelectedVoxel);
 
 	switch (mOption.CreateMode)
 	{
@@ -238,7 +235,7 @@ void VoxelManager::UpdateRemoveMode(VoxelState selectedVoxelState)
 	}
 	else if (selectedVoxelState == VoxelState::Static) {
 		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::None);
-		mRenderVoxels.erase(mAboveVoxel);
+		mRenderVoxels.erase(mSelectedVoxel);
 	}
 
 	mUsedCreateModeVoxels.insert(mSelectedVoxel.XZ());

@@ -156,9 +156,9 @@ void Grid::UpdateVoxels(VoxelState tile, GridObject* object)
 		return;
 
 	// 오브젝트의 충돌 박스
-	std::unordered_set<Pos> boundingVoxels;
 	for (const auto& collider : object->GetComponent<ObjectCollider>()->GetColliders()) {
-		// BFS를 통해 주변 타일도 업데이트
+		std::unordered_set<Pos> boundingVoxels;
+
 		std::queue<Pos> q;
 		std::unordered_map<Pos, bool> visited(2000);
 
@@ -196,22 +196,20 @@ void Grid::UpdateVoxels(VoxelState tile, GridObject* object)
 				}
 			}
 		}
+		UpdateVoxelsEdgeCost(boundingVoxels);
 	}
-
-	UpdateVoxelsEdgeCost(boundingVoxels);
 }
 
 void Grid::UpdateVoxelsEdgeCost(const std::unordered_set<Pos>& boundingVoxels)
 {
 	for (const Pos& voxel : boundingVoxels) {
-		CalcRowEdgeCost(voxel, boundingVoxels);
-		CalcColEdgeCost(voxel, boundingVoxels);
-		mEdgeCosts[voxel] /= 2;
-		mEdgeCosts[voxel] = std::pow(mEdgeCosts[voxel], 2);
+		int rowCost = CalcRowEdgeCost(voxel, boundingVoxels);
+		int colCost = CalcColEdgeCost(voxel, boundingVoxels);
+		mEdgeCosts[voxel] += min(rowCost, colCost);
 	}
 }
 
-void Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
+int Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
 {
 	int leftMoveCnt{};
 	Pos nextLeft = voxel.Left();
@@ -227,10 +225,10 @@ void Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boun
 		rightMoveCnt++;
 	}
 
-	mEdgeCosts[voxel] += abs(leftMoveCnt - rightMoveCnt);
+	return abs(leftMoveCnt - rightMoveCnt);
 }
 
-void Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
+int Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
 {
 	int forwardMoveCnt{};
 	Pos nextForward = voxel.Forward();
@@ -246,7 +244,7 @@ void Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boun
 		backwardMoveCnt++;
 	}
 
-	mEdgeCosts[voxel] += abs(forwardMoveCnt - backwardMoveCnt);
+	return abs(forwardMoveCnt - backwardMoveCnt);
 }
 
 void Grid::RemoveObject(GridObject* object)

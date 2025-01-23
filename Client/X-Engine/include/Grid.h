@@ -72,8 +72,8 @@ public:
 	// BFS를 활용하여 타일 업데이트
 	void UpdateVoxels(VoxelState tile, GridObject* object);
 	void UpdateVoxelsEdgeCost(const std::unordered_set<Pos>& boundingVoxels);
-	void CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
-	void CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
+	int CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
+	int CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
 
 	// collision check for objects contained in grid
 	void CheckCollisions();
