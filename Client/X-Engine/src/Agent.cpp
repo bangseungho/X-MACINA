@@ -90,7 +90,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 			if (nextTile == VoxelState::None) continue;
 			if (visited.contains(nextPos)) continue;
 			if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
-			if (prevDir != gkFront3D[dir]) dirPathCost = gkCost3D[dir] / 2;
+			if (prevDir != gkFront3D[dir]) dirPathCost = gkCost3D[dir];
 
 			float g = curNode.G + gkCost3D[dir] + dirPathCost + onVoxelCountCost + proximityCost + edgeCost;
 			float h = heuristic(nextPos, dest) * PathOption::I->GetHeuristicWeight();

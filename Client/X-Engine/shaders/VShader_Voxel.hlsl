@@ -21,8 +21,7 @@ struct VSOutput_Voxel {
 
 VSOutput_Voxel VSVoxel(VSInput_Voxel input)
 {
-    VSOutput_Voxel output;
-
+    VSOutput_Voxel output = (VSOutput_Voxel)0;
     matrix mtxWorld = gInstBuffer[input.ID].MtxObject;
     output.PosH = mul(mul(mul(float4(input.PosL, 1.f), mtxWorld), gPassCB.MtxView), gPassCB.MtxProj);
     output.NormalW = mul(input.NormalL, (float3x3) mtxWorld);

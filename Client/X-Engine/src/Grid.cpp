@@ -210,20 +210,23 @@ void Grid::UpdateVoxelsEdgeCost(const std::unordered_set<Pos>& boundingVoxels)
 {
 	float maxRowValue{};
 	float maxColValue{};
-	std::vector<Pos> validVoxels{};
 	for (const Pos& voxel : boundingVoxels) {
+		bool isOverlapped = false;
+
 		if (mRowEdgeCosts.count(voxel) && mColEdgeCosts.count(voxel)) {
-			mRowEdgeCosts[voxel] *= 0.5f;
-			mRowEdgeCosts[voxel] *= 0.5f;
-			continue;
+			isOverlapped = true;
 		}
 
-		maxRowValue = max(mRowEdgeCosts[voxel], CalcRowEdgeCost(voxel, boundingVoxels));
-		maxColValue = max(mColEdgeCosts[voxel], CalcColEdgeCost(voxel, boundingVoxels));
-		validVoxels.push_back(voxel);
+		maxRowValue = max(maxRowValue, CalcRowEdgeCost(voxel, boundingVoxels));
+		maxColValue = max(maxColValue, CalcColEdgeCost(voxel, boundingVoxels));
+
+		if (isOverlapped) {
+			mRowEdgeCosts[voxel] *= 0.5f;
+			mRowEdgeCosts[voxel] *= 0.5f;
+		}
 	}
 
-	for (const Pos& voxel : validVoxels) {
+	for (const Pos& voxel : boundingVoxels) {
 		if (maxRowValue != 0) {
 			mRowEdgeCosts[voxel] /= maxRowValue;
 		}
@@ -251,7 +254,7 @@ float Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& bou
 		rightMoveCnt++;
 	}
 
-	mRowEdgeCosts[voxel] += abs(leftMoveCnt - rightMoveCnt);
+	mRowEdgeCosts[voxel] = static_cast<float>(abs(leftMoveCnt - rightMoveCnt));
 	return mRowEdgeCosts[voxel];
 }
 
@@ -271,7 +274,7 @@ float Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& bou
 		backwardMoveCnt++;
 	}
 
-	mColEdgeCosts[voxel] += abs(forwardMoveCnt - backwardMoveCnt);
+	mColEdgeCosts[voxel] = static_cast<float>(abs(forwardMoveCnt - backwardMoveCnt));
 	return mColEdgeCosts[voxel];
 }
 

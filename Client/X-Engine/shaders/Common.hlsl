@@ -250,18 +250,18 @@ SamplerState gsamDepthMap         : register(s7);
 // 감마 보정을 적용하는 함수
 float4 GammaEncoding(float4 color)
 {
-    return float4(pow(color.rgb, 1 / 2.2f), color.a);
+    return float4(pow(abs(color.rgb), 1 / 2.2f), color.a);
 }
 
 float4 GammaEncodingAlpha(float4 color)
 {
-    return float4(pow(color, 1 / 2.2f));
+    return float4(pow(abs(color), 1 / 2.2f));
 }
 
 // 감마 보정을 해제하는 함수
 float4 GammaDecoding(float4 color)
 {
-    return float4(pow(color.rgb, 2.2f), color.a);
+    return float4(pow(abs(color.rgb), 2.2f), color.a);
 }
 
 float4 GammaDecodingAlpha(float4 color)
@@ -518,8 +518,8 @@ void ApplyOcculsionMaskByCamera(float3 posW, float2 uvW)
     
     float yDist = abs(gPassCB.CameraPos.y - posW.y);
         
-    float3 pinPosV = mul(float4(posW, 1.f), gPassCB.MtxNoLagView);
-    float3 camPosV = mul(float4(gPassCB.CameraPos, 1.f), gPassCB.MtxNoLagView);
+    float3 pinPosV = mul(float4(posW, 1.f), gPassCB.MtxNoLagView).xyz;
+    float3 camPosV = mul(float4(gPassCB.CameraPos, 1.f), gPassCB.MtxNoLagView).xyz;
         
     float sphereMask = SphereMask(float4(pinPosV.xy, 0.f, 0.f), float4(camPosV.xy, 0.f, 0.f), radius, 0.1f);
     

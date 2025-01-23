@@ -22,8 +22,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
-	GameFramework::I->Init(hInstance, 1920 * 0.8, 1080 * 0.8);
-	//GameFramework::I->Init(hInstance, 1080, 640);
+	constexpr float kWindowSize = 0.8f;
+	GameFramework::I->Init(hInstance, static_cast<short>(1980 * kWindowSize), static_cast<short>(1080 * kWindowSize));
 	GameFramework::I->Launch();
 	GameFramework::I->Release();
 

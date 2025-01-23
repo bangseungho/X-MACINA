@@ -325,7 +325,7 @@ void Scene::UpdateVoxelsOnTerrain()
 
 void Scene::UpdateVoxelsProximityCost(const Pos& index)
 {
-	constexpr int radius = 3;
+	constexpr int radius = 5;
 	int totalVoxelRows = static_cast<int>(kBorderExtents.x / Grid::mkTileWidth);
 	int totalVoxelCols = static_cast<int>(kBorderExtents.z / Grid::mkTileWidth);
 	
