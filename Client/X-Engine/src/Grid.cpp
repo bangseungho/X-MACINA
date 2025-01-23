@@ -70,14 +70,20 @@ int Grid::GetProximityCost(const Pos& index)
 	}
 }
 
-int Grid::GetEdgeCost(const Pos& index)
+int Grid::GetEdgeCost(const Pos& index, bool isRowEdge)
 {
-	if (mEdgeCosts.count(index)) {
-		return mEdgeCosts[index];
+	if (isRowEdge) {
+		if (mRowEdgeCosts.count(index)) {
+			return mRowEdgeCosts[index];
+		}
 	}
 	else {
-		return 0;
+		if (mColEdgeCosts.count(index)) {
+			return mColEdgeCosts[index];
+		}
 	}
+
+	return 0;
 }
 
 void Grid::SetVoxelState(const Pos& index, VoxelState state)
@@ -203,13 +209,12 @@ void Grid::UpdateVoxels(VoxelState tile, GridObject* object)
 void Grid::UpdateVoxelsEdgeCost(const std::unordered_set<Pos>& boundingVoxels)
 {
 	for (const Pos& voxel : boundingVoxels) {
-		int rowCost = CalcRowEdgeCost(voxel, boundingVoxels);
-		int colCost = CalcColEdgeCost(voxel, boundingVoxels);
-		mEdgeCosts[voxel] += min(rowCost, colCost);
+		CalcRowEdgeCost(voxel, boundingVoxels);
+		CalcColEdgeCost(voxel, boundingVoxels);
 	}
 }
 
-int Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
+void Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
 {
 	int leftMoveCnt{};
 	Pos nextLeft = voxel.Left();
@@ -225,10 +230,10 @@ int Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& bound
 		rightMoveCnt++;
 	}
 
-	return abs(leftMoveCnt - rightMoveCnt);
+	mRowEdgeCosts[voxel] += abs(leftMoveCnt - rightMoveCnt);
 }
 
-int Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
+void Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
 {
 	int forwardMoveCnt{};
 	Pos nextForward = voxel.Forward();
@@ -244,7 +249,7 @@ int Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& bound
 		backwardMoveCnt++;
 	}
 
-	return abs(forwardMoveCnt - backwardMoveCnt);
+	mColEdgeCosts[voxel] += abs(forwardMoveCnt - backwardMoveCnt);
 }
 
 void Grid::RemoveObject(GridObject* object)

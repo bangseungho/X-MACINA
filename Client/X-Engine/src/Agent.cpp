@@ -83,7 +83,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 			int dirPathCost{};
 			int onVoxelCountCost = onVoxelCount * PathOption::I->GetOnVoxelCost();
 			int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
-			int edgeCost = Scene::I->GetEdgeCost(nextPos);
+			int edgeCost = GetEdgeCost(nextPos, prevDir) * PathOption::I->GetEdgeWeight();
 			if (onVoxelCount < PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
 			if ((nextTile == VoxelState::Static || nextTile == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
 			if (nextTile == VoxelState::None) continue;
@@ -295,6 +295,19 @@ int Agent::GetOnVoxelCount(const Pos& pos)
 	}
 
 	return cnt;
+}
+
+int Agent::GetEdgeCost(const Pos& nextPos, const Pos& dir)
+{
+	int cost{};
+	if (dir.Z != 0) {
+		cost = Scene::I->GetEdgeCost(nextPos, true);
+	}
+	else if (dir.X != 0) {
+		cost = Scene::I->GetEdgeCost(nextPos, false);
+	}
+
+	return cost;
 }
 
 void Agent::ClearPath()

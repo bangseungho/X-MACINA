@@ -174,7 +174,8 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	}
 
 	VoxelState selectedVoxelState = Scene::I->GetVoxelState(mSelectedVoxel);
-	mSelectedVoxelEdgeCost = Scene::I->GetEdgeCost(mSelectedVoxel);
+	mSelectedVoxelEdgeCost.first = Scene::I->GetEdgeCost(mSelectedVoxel, true);
+	mSelectedVoxelEdgeCost.second = Scene::I->GetEdgeCost(mSelectedVoxel, false);
 	mSelectedVoxelProximityCost = Scene::I->GetProximityCost(mSelectedVoxel);
 
 	switch (mOption.CreateMode)

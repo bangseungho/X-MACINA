@@ -911,9 +911,9 @@ int Scene::GetProximityCost(const Pos& index) const
 	return mGrids[GetGridIndex(index)]->GetProximityCost(index);
 }
 
-int Scene::GetEdgeCost(const Pos& index) const
+int Scene::GetEdgeCost(const Pos& index, bool isRowEdge) const
 {
-	return mGrids[GetGridIndex(index)]->GetEdgeCost(index);
+	return mGrids[GetGridIndex(index)]->GetEdgeCost(index, isRowEdge);
 }
 
 Voxel Scene::GetVoxel(const Pos& index) const

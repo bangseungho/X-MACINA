@@ -163,7 +163,8 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
     
 	// costs
 	ImGui::Text("Proximity Cost : %d", VoxelManager::I->GetSelectedVoxelProximityCost());
-	ImGui::Text("Edge Cost : %d", VoxelManager::I->GetSelectedVoxelEdgeCost());
+	ImGui::Text("RowEdge Cost : %d", VoxelManager::I->GetSelectedVoxelEdgeCost().first);
+	ImGui::Text("ColEdge Cost : %d", VoxelManager::I->GetSelectedVoxelEdgeCost().second);
 
     // tile
     const VoxelState selectedVoxelTile = Scene::I->GetVoxelState(selectedVoxelIndex);
@@ -274,13 +275,22 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		PathOption::I->SetHeuristicWeight(max(0, value));
 	}
 
-	// heuristic weight
+	// proximity weight
 	{
 		int value = PathOption::I->GetProximityWeight();
 		ImGui::Text("ProximityWeight :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
 		ImGui::InputInt("##int_ProximityWeight", &value, 5, 10);
 		PathOption::I->SetProximityWeight(max(0, value));
+	}
+
+	// edge weight
+	{
+		int value = PathOption::I->GetEdgeWeight();
+		ImGui::Text("EdgeWeight :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+		ImGui::InputInt("##int_EdgeWeight", &value, 5, 10);
+		PathOption::I->SetEdgeWeight(max(0, value));
 	}
 
 	{

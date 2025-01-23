@@ -35,6 +35,7 @@ private:
 	int			mOnVoxelCost = 30;
 	int			mHeuristicWeight = 10;
 	int			mProximityWeight = 10;
+	int			mEdgeWeight = 10;
 	bool		mDirPathOptimize = false;
 	bool		mRayPathOptimize = false;
 	bool		mSplinePath = false;
@@ -47,6 +48,7 @@ public:
 	int			GetOnVoxelCost() const { return mOnVoxelCost; }
 	int			GetHeuristicWeight() const { return mHeuristicWeight; }
 	int			GetProximityWeight() const { return mProximityWeight; }
+	int			GetEdgeWeight() const { return mEdgeWeight; }
 	bool		GetDirPathOptimize() const { return mDirPathOptimize; }
 	bool		GetRayPathOptimize() const { return mRayPathOptimize; }
 	bool		GetSplinePath() const { return mSplinePath; }
@@ -58,6 +60,7 @@ public:
 	void		SetOnVoxelCost(int cost) { mOnVoxelCost = cost; }
 	void		SetHeuristicWeight(int weight) { mHeuristicWeight = weight; }
 	void		SetProximityWeight(int weight) { mProximityWeight = weight; }
+	void		SetEdgeWeight(int weight) { mEdgeWeight = weight; }
 	void		SetDirPathOptimize(bool optimize) { mDirPathOptimize = optimize; }
 	void		SetRayPathOptimize(bool optimize) { mRayPathOptimize = optimize; if (optimize) SetDirPathOptimize(optimize); }
 	void		SetSplinePath(bool spline) { mSplinePath = spline; }
@@ -86,6 +89,7 @@ private:
 private:
 	void	MoveToPath();
 	int		GetOnVoxelCount(const Pos& pos);
+	int		GetEdgeCost(const Pos& nextPos, const Pos& dir);
 	void	ClearPath();
 };
 #pragma endregion

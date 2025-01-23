@@ -37,7 +37,8 @@ private:
 
 	// 추후에 UINT8로 변경
 	std::unordered_map<Pos, int> mProximityCosts{};
-	std::unordered_map<Pos, int> mEdgeCosts{};
+	std::unordered_map<Pos, int> mRowEdgeCosts{};
+	std::unordered_map<Pos, int> mColEdgeCosts{};
 
 public:
 	Grid(int index, int width, const BoundingBox& bb);
@@ -51,7 +52,7 @@ public:
 
 	Voxel GetVoxel(const Pos& index);
 	int GetProximityCost(const Pos& index);
-	int GetEdgeCost(const Pos& index);
+	int GetEdgeCost(const Pos& index, bool isRowEdge);
 	VoxelState GetVoxelState(const Pos& tPos);
 	VoxelCondition GetVoxelCondition(const Pos& tPos);
 	void SetVoxelState(const Pos& index, VoxelState state);
@@ -72,8 +73,8 @@ public:
 	// BFS를 활용하여 타일 업데이트
 	void UpdateVoxels(VoxelState tile, GridObject* object);
 	void UpdateVoxelsEdgeCost(const std::unordered_set<Pos>& boundingVoxels);
-	int CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
-	int CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
+	void CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
+	void CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
 
 	// collision check for objects contained in grid
 	void CheckCollisions();
