@@ -61,8 +61,8 @@ private:
 private:
 	Pos					mSelectedVoxel{};
 	Pos					mCenterPos{};
-	std::pair<int, int>	mSelectedVoxelEdgeCost{};
 	int					mSelectedVoxelProximityCost{};
+	std::pair<float, float>	mSelectedVoxelEdgeCost{};
 
 private:
 	Pos					mAboveVoxel{};
@@ -87,7 +87,7 @@ public:
 	int GetRenderVoxelHeight() const { return mOption.RenderVoxelHeight; }
 	CreateMode GetCreateMode() const { return mOption.CreateMode; }
 	RenderMode GetRenderMode() const { return mOption.RenderMode; }
-	const std::pair<int, int> GetSelectedVoxelEdgeCost() const { return mSelectedVoxelEdgeCost; }
+	const std::pair<float, float> GetSelectedVoxelEdgeCost() const { return mSelectedVoxelEdgeCost; }
 	int GetSelectedVoxelProximityCost() const { return mSelectedVoxelProximityCost; }
 
 public:

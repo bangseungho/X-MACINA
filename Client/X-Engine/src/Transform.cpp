@@ -346,6 +346,9 @@ void Transform::RotateOffset(const Vec3& axis, float angle, const Vec3& offset)
 bool Transform::RotateTargetAxisY(const Vec3& target, float rotationSpeed)
 {
 	const float angle = Vector3::SignedAngle(GetLook().xz(), (target - GetPosition()).xz(), Vector3::Up);
+	if (std::isnan(angle)) {
+		return false;
+	}
 
 	constexpr float minAngle = 2.f;
 	if (fabs(angle) < minAngle) {

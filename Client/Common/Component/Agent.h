@@ -17,8 +17,8 @@ enum class Heuristic : UINT8 {
 struct PQNode {
 	bool operator<(const PQNode& rhs) const { return F < rhs.F; }
 	bool operator>(const PQNode& rhs) const { return F > rhs.F; }
-	int	F{};
-	int	G{};
+	float F{};
+	float G{};
 	Pos	Pos{};
 };
 #pragma endregion
@@ -74,6 +74,7 @@ class Agent : public Component {
 private:
 	std::vector<Vec3>	mFinalPath{};
 	Pos					mStart{};
+	Pos					mDest{};
 
 public:
 	virtual void Update() override;
@@ -89,7 +90,7 @@ private:
 private:
 	void	MoveToPath();
 	int		GetOnVoxelCount(const Pos& pos);
-	int		GetEdgeCost(const Pos& nextPos, const Pos& dir);
+	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
 	void	ClearPath();
 };
 #pragma endregion

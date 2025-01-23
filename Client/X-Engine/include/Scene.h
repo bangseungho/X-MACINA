@@ -111,7 +111,7 @@ public:
 	VoxelState		GetVoxelState(const Pos& index) const;
 	VoxelCondition	GetVoxelCondition(const Pos& index) const;
 	int				GetProximityCost(const Pos& index) const;
-	int				GetEdgeCost(const Pos& index, bool isRowEdge) const;
+	float			GetEdgeCost(const Pos& index, bool isRowEdge) const;
 	void			SetVoxelState(const Pos& index, VoxelState state) const;
 	void			SetVoxelCondition(const Pos& index, VoxelCondition condition) const;
 	void			SetProximityCost(const Pos& index, int cost) const;

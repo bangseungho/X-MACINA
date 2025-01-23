@@ -1,18 +1,19 @@
 #include "EnginePch.h"
 #include "Component/Agent.h"
 
+#include "DXGIMgr.h"
 #include "Scene.h"
 #include "Timer.h"
 #include "VoxelManager.h"
 
 namespace {
-	int HeuristicManhattan(const Pos& start, const Pos& dest) {
-		return std::abs(dest.X - start.X) +
+	float HeuristicManhattan(const Pos& start, const Pos& dest) {
+		return static_cast<float>(std::abs(dest.X - start.X) +
 			std::abs(dest.Y - start.Y) +
-			std::abs(dest.Z - start.Z);
+			std::abs(dest.Z - start.Z));
 	}
-	int HeuristicEuclidean(const Pos& start, const Pos& dest) {
-		return static_cast<int>(std::sqrt(std::pow(dest.X - start.X, 2) +
+	float HeuristicEuclidean(const Pos& start, const Pos& dest) {
+		return static_cast<float>(std::sqrt(std::pow(dest.X - start.X, 2) +
 			std::pow(dest.Y - start.Y, 2) +
 			std::pow(dest.Z - start.Z, 2)));
 	}
@@ -25,16 +26,16 @@ void Agent::Update()
 
 bool Agent::PathPlanningToAstar(const Pos& dest)
 {
+	mDest = dest;
 	std::stack<Pos>	path{};
-
 	VoxelManager::I->ClearPathList();
 
 	std::unordered_map<Pos, Pos> parent;
 	std::unordered_map<Pos, int> onVoxel;
-	std::unordered_map<Pos, int> distance;
+	std::unordered_map<Pos, float> distance;
 	std::unordered_map<Pos, bool> visited;
 
-	std::function<int(const Pos&, const Pos&)> heuristic{};
+	std::function<float(const Pos&, const Pos&)> heuristic{};
 	switch (PathOption::I->GetHeuristic())
 	{
 	case Heuristic::Manhattan:
@@ -49,8 +50,8 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 
 	// f = g + h
 	std::priority_queue<PQNode, std::vector<PQNode>, std::greater<PQNode>> pq;
-	int g = 0;
-	int h = heuristic(mStart, dest) * PathOption::I->GetHeuristicWeight();
+	float g = 0;
+	float h = heuristic(mStart, dest) * PathOption::I->GetHeuristicWeight();
 	pq.push({ g + h, g, mStart });
 	distance[mStart] = g + h;
 	parent[mStart] = mStart;
@@ -83,16 +84,16 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 			int dirPathCost{};
 			int onVoxelCountCost = onVoxelCount * PathOption::I->GetOnVoxelCost();
 			int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
-			int edgeCost = GetEdgeCost(nextPos, prevDir) * PathOption::I->GetEdgeWeight();
+			float edgeCost = GetEdgeCost(nextPos, prevDir) * PathOption::I->GetEdgeWeight();
 			if (onVoxelCount < PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
 			if ((nextTile == VoxelState::Static || nextTile == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
 			if (nextTile == VoxelState::None) continue;
 			if (visited.contains(nextPos)) continue;
-			if (!distance.contains(nextPos)) distance[nextPos] = INT32_MAX;
+			if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
 			if (prevDir != gkFront3D[dir]) dirPathCost = gkCost3D[dir] / 2;
 
-			int g = curNode.G + gkCost3D[dir] + dirPathCost + onVoxelCountCost + edgeCost + proximityCost ;
-			int h = heuristic(nextPos, dest) * PathOption::I->GetHeuristicWeight();
+			float g = curNode.G + gkCost3D[dir] + dirPathCost + onVoxelCountCost + proximityCost + edgeCost;
+			float h = heuristic(nextPos, dest) * PathOption::I->GetHeuristicWeight();
 			if (g + h < distance[nextPos]) {
 				distance[nextPos] = g + h;
 				pq.push({ g + h, g, nextPos });
@@ -266,13 +267,7 @@ void Agent::MoveToPath()
 		return;
 	}
 
-	if (mFinalPath.back() == mObject->GetPosition()) {
-		mFinalPath.pop_back();
-		return;
-	}
-	
 	Vec3 nextPos = (mFinalPath.back() - mObject->GetPosition());
-
 	mObject->RotateTargetAxisY(mFinalPath.back(), 1000.f);
 	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
 
@@ -297,13 +292,16 @@ int Agent::GetOnVoxelCount(const Pos& pos)
 	return cnt;
 }
 
-int Agent::GetEdgeCost(const Pos& nextPos, const Pos& dir)
+float Agent::GetEdgeCost(const Pos& nextPos, const Pos& dir)
 {
-	int cost{};
-	if (dir.Z != 0) {
+	float cost{};
+	if (dir.X != 0 && dir.Z != 0) {
+		cost = (Scene::I->GetEdgeCost(nextPos, true) + Scene::I->GetEdgeCost(nextPos, true)) / 2.f;
+	}
+	else if (dir.Z != 0 && dir.X == 0) {
 		cost = Scene::I->GetEdgeCost(nextPos, true);
 	}
-	else if (dir.X != 0) {
+	else if (dir.X != 0 && dir.Z == 0) {
 		cost = Scene::I->GetEdgeCost(nextPos, false);
 	}
 

@@ -163,8 +163,8 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
     
 	// costs
 	ImGui::Text("Proximity Cost : %d", VoxelManager::I->GetSelectedVoxelProximityCost());
-	ImGui::Text("RowEdge Cost : %d", VoxelManager::I->GetSelectedVoxelEdgeCost().first);
-	ImGui::Text("ColEdge Cost : %d", VoxelManager::I->GetSelectedVoxelEdgeCost().second);
+	ImGui::Text("RowEdge Cost : %.1f", VoxelManager::I->GetSelectedVoxelEdgeCost().first);
+	ImGui::Text("ColEdge Cost : %.1f", VoxelManager::I->GetSelectedVoxelEdgeCost().second);
 
     // tile
     const VoxelState selectedVoxelTile = Scene::I->GetVoxelState(selectedVoxelIndex);

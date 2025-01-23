@@ -911,7 +911,7 @@ int Scene::GetProximityCost(const Pos& index) const
 	return mGrids[GetGridIndex(index)]->GetProximityCost(index);
 }
 
-int Scene::GetEdgeCost(const Pos& index, bool isRowEdge) const
+float Scene::GetEdgeCost(const Pos& index, bool isRowEdge) const
 {
 	return mGrids[GetGridIndex(index)]->GetEdgeCost(index, isRowEdge);
 }

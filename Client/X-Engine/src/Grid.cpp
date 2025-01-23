@@ -70,7 +70,7 @@ int Grid::GetProximityCost(const Pos& index)
 	}
 }
 
-int Grid::GetEdgeCost(const Pos& index, bool isRowEdge)
+float Grid::GetEdgeCost(const Pos& index, bool isRowEdge)
 {
 	if (isRowEdge) {
 		if (mRowEdgeCosts.count(index)) {
@@ -208,13 +208,34 @@ void Grid::UpdateVoxels(VoxelState tile, GridObject* object)
 
 void Grid::UpdateVoxelsEdgeCost(const std::unordered_set<Pos>& boundingVoxels)
 {
+	float maxRowValue{};
+	float maxColValue{};
+	std::vector<Pos> validVoxels{};
 	for (const Pos& voxel : boundingVoxels) {
-		CalcRowEdgeCost(voxel, boundingVoxels);
-		CalcColEdgeCost(voxel, boundingVoxels);
+		if (mRowEdgeCosts.count(voxel) && mColEdgeCosts.count(voxel)) {
+			mRowEdgeCosts[voxel] *= 0.5f;
+			mRowEdgeCosts[voxel] *= 0.5f;
+			continue;
+		}
+
+		maxRowValue = max(mRowEdgeCosts[voxel], CalcRowEdgeCost(voxel, boundingVoxels));
+		maxColValue = max(mColEdgeCosts[voxel], CalcColEdgeCost(voxel, boundingVoxels));
+		validVoxels.push_back(voxel);
+	}
+
+	for (const Pos& voxel : validVoxels) {
+		if (maxRowValue != 0) {
+			mRowEdgeCosts[voxel] /= maxRowValue;
+		}
+		if (maxColValue != 0) {
+			mColEdgeCosts[voxel] /= maxColValue;
+		}
+		mRowEdgeCosts[voxel] *= 10;
+		mColEdgeCosts[voxel] *= 10;
 	}
 }
 
-void Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
+float Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
 {
 	int leftMoveCnt{};
 	Pos nextLeft = voxel.Left();
@@ -231,9 +252,10 @@ void Grid::CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boun
 	}
 
 	mRowEdgeCosts[voxel] += abs(leftMoveCnt - rightMoveCnt);
+	return mRowEdgeCosts[voxel];
 }
 
-void Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
+float Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels)
 {
 	int forwardMoveCnt{};
 	Pos nextForward = voxel.Forward();
@@ -250,6 +272,7 @@ void Grid::CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boun
 	}
 
 	mColEdgeCosts[voxel] += abs(forwardMoveCnt - backwardMoveCnt);
+	return mColEdgeCosts[voxel];
 }
 
 void Grid::RemoveObject(GridObject* object)
