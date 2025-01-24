@@ -84,7 +84,7 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 			int dirPathCost{};
 			int onVoxelCountCost = onVoxelCount * PathOption::I->GetOnVoxelCost();
 			int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
-			float edgeCost = GetEdgeCost(nextPos, prevDir) * PathOption::I->GetEdgeWeight();
+			float edgeCost = GetEdgeCost(nextPos, gkFront3D[dir]) * PathOption::I->GetEdgeWeight();
 			if (onVoxelCount < PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
 			if ((nextTile == VoxelState::Static || nextTile == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
 			if (nextTile == VoxelState::None) continue;
