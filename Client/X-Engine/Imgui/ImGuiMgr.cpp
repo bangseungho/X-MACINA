@@ -166,30 +166,30 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 	ImGui::Text("RowEdge Cost : %.1f", VoxelManager::I->GetSelectedVoxelEdgeCost().first);
 	ImGui::Text("ColEdge Cost : %.1f", VoxelManager::I->GetSelectedVoxelEdgeCost().second);
 
-    // tile
-    const VoxelState selectedVoxelTile = Scene::I->GetVoxelState(selectedVoxelIndex);
-    std::string tileName{};
-    switch (selectedVoxelTile)
+    // voxel
+    const VoxelState selectedVoxelState = Scene::I->GetVoxelState(selectedVoxelIndex);
+    std::string voxelName{};
+    switch (selectedVoxelState)
     {
     case VoxelState::None:
-        tileName = "None";
+        voxelName = "None";
         break;
     case VoxelState::Static:
-		tileName = "Static";
+		voxelName = "Static";
 		break;
     case VoxelState::Dynamic:
-		tileName = "Dynamic";
+		voxelName = "Dynamic";
         break;
     case VoxelState::Terrain:
-		tileName = "Terrain";
+		voxelName = "Terrain";
 		break;
 	case VoxelState::TerrainStatic:
-		tileName = "TerrainStatic";
+		voxelName = "TerrainStatic";
 		break;
     default:
         break;
     }
-	ImGui::Text("Tile : %s", tileName);
+	ImGui::Text("Voxel : %s", voxelName);
 
 	// render mode
 	// TODO : 라디오 버튼에서 체크 박스로 변경 예정 -> 해당 옵션 뿐만 아니라 오픈 클로즈 리스트 그리는 것도 결정

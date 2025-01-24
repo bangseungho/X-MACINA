@@ -26,11 +26,11 @@ private:
 	std::unordered_set<GridObject*> mDynamicObjets{};
 
 public:
-	static constexpr float mkTileHeight = 0.5f;
-	static constexpr float mkTileWidth = 0.5f;
-	static constexpr Vec3 mkTileExtent = Vec3{ mkTileWidth / 2.f, mkTileWidth / 2.f, mkTileHeight / 2.f };
-	static int mTileRows;
-	static int mTileCols;
+	static constexpr float mkVoxelHeight = 0.5f;
+	static constexpr float mkVoxelWidth = 0.5f;
+	static constexpr Vec3 mkVoxelExtent = Vec3{ mkVoxelWidth / 2.f, mkVoxelWidth / 2.f, mkVoxelHeight / 2.f };
+	static int mVoxelRows;
+	static int mVoxelCols;
 
 private:
 	std::unordered_map<Pos, Voxel> mVoxels{};
@@ -73,7 +73,7 @@ public:
 	bool Intersects(GridObject* object);
 
 	// BFS를 활용하여 타일 업데이트
-	void UpdateVoxels(VoxelState tile, GridObject* object);
+	void UpdateVoxels(VoxelState voxel, GridObject* object);
 	void UpdateVoxelsEdgeCost(const std::unordered_set<Pos>& boundingVoxels);
 	float CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
 	float CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);

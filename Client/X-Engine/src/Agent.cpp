@@ -70,24 +70,25 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 
 		visited[curNode.Pos] = true;
 
-		// 해당 지점이 목적지인 경우 종료
 		if (curNode.Pos == dest)
 			break;
 
 		// 26방향으로 탐색
-		for (int dir = 0; dir < 26; ++dir) {
+		for (int dir = 0; dir < gkCubeDirCount; ++dir) {
 			Pos nextPos = curNode.Pos + gkFront3D[dir];
-			VoxelState nextTile = Scene::I->GetVoxelState(nextPos);
+			VoxelState nextVoxel = Scene::I->GetVoxelState(nextPos);
 
-			// 다음 방향 노드의 상태가 static이라면 continue
+			// costs
+			int diffPosY = nextPos.Y - curNode.Pos.Y;
 			int onVoxelCount = GetOnVoxelCount(nextPos);
+			int onVoxelCountDiffPosY = onVoxelCount + diffPosY;
 			int dirPathCost{};
 			int onVoxelCountCost = onVoxelCount * PathOption::I->GetOnVoxelCost();
 			int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
 			float edgeCost = GetEdgeCost(nextPos, gkFront3D[dir]) * PathOption::I->GetEdgeWeight();
-			if (onVoxelCount < PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
-			if ((nextTile == VoxelState::Static || nextTile == VoxelState::TerrainStatic) && onVoxelCount >= PathOption::I->GetAllowedHeight()) continue;
-			if (nextTile == VoxelState::None) continue;
+			if (onVoxelCountDiffPosY < PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
+			if ((nextVoxel == VoxelState::Static || nextVoxel == VoxelState::TerrainStatic) && onVoxelCountDiffPosY > PathOption::I->GetAllowedHeight()) continue;
+			if (nextVoxel == VoxelState::None) continue;
 			if (visited.contains(nextPos)) continue;
 			if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
 			if (prevDir != gkFront3D[dir]) dirPathCost = gkCost3D[dir];
@@ -188,7 +189,7 @@ void Agent::RayPathOptimize(std::stack<Pos>& path, const Pos& dest)
 				for (int y = startPoint.Y; y <= endPoint.Y; ++y) {
 					const Pos voxel = Pos{ z, x, y };
 					VoxelState state = Scene::I->GetVoxelState(voxel); float dist;
-					if (ray.Intersects(BoundingBox{ Scene::I->GetVoxelPos(voxel), Grid::mkTileExtent }, dist)) {
+					if (ray.Intersects(BoundingBox{ Scene::I->GetVoxelPos(voxel), Grid::mkVoxelExtent }, dist)) {
 						if (state == VoxelState::None) {
 							optimizePath.push(prev);
 							now = prev;

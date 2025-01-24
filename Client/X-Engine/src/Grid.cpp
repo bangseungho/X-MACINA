@@ -12,16 +12,16 @@
 #include "Component/Agent.h"
 #include "InputMgr.h"
 
-int Grid::mTileRows = 0;
-int Grid::mTileCols = 0;
+int Grid::mVoxelRows = 0;
+int Grid::mVoxelCols = 0;
 
 Grid::Grid(int index, int width, const BoundingBox& bb)
 	:
 	mIndex(index),
 	mBB(bb)
 {
-	mTileRows = static_cast<int>(width / mkTileWidth);
-	mTileCols = static_cast<int>(width / mkTileWidth);
+	mVoxelRows = static_cast<int>(width / mkVoxelWidth);
+	mVoxelCols = static_cast<int>(width / mkVoxelWidth);
 }
 
 VoxelState Grid::GetVoxelState(const Pos& index)
@@ -99,7 +99,7 @@ void Grid::SetVoxelState(const Pos& index, VoxelState state)
 	else {
 		Voxel voxel;
 		voxel.State = state;
-		const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
+		const Matrix scaleMtx = Matrix::CreateScale(mkVoxelWidth, mkVoxelHeight, mkVoxelWidth);
 		const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetVoxelPos(index));
 		const Matrix matrix = scaleMtx * translationMtx;
 		voxel.MtxWorld = matrix.Transpose();
@@ -115,7 +115,7 @@ void Grid::SetVoxelCondition(const Pos& index, VoxelCondition condition)
 	else {
 		Voxel voxel;
 		voxel.Condition = condition;
-		const Matrix scaleMtx = Matrix::CreateScale(mkTileWidth, mkTileHeight, mkTileWidth);
+		const Matrix scaleMtx = Matrix::CreateScale(mkVoxelWidth, mkVoxelHeight, mkVoxelWidth);
 		const Matrix translationMtx = Matrix::CreateTranslation(Scene::I->GetVoxelPos(index));
 		const Matrix matrix = scaleMtx * translationMtx;
 		voxel.MtxWorld = matrix.Transpose();
@@ -155,7 +155,7 @@ inline bool IsNotBuilding(ObjectTag tag)
 	return tag != ObjectTag::Building && tag != ObjectTag::DissolveBuilding;
 }
 
-void Grid::UpdateVoxels(VoxelState tile, GridObject* object)
+void Grid::UpdateVoxels(VoxelState voxel, GridObject* object)
 {
 	// 정적 오브젝트가 Building 태그인 경우에만 벽으로 설정
 	if (IsNotBuilding(object->GetTag()))
@@ -175,7 +175,7 @@ void Grid::UpdateVoxels(VoxelState tile, GridObject* object)
 		// 오브젝트의 타일 기준 인덱스 계산
 		Vec3 pos = collider->GetCenter();
 		Pos index = Scene::I->GetVoxelIndex(pos);
-		Scene::I->SetVoxelState(index, tile);
+		Scene::I->SetVoxelState(index, voxel);
 		q.push(index);
 
 		// q가 빌 때까지 BFS를 돌며 현재 타일이 오브젝트와 충돌 했다면 해당 타일을 업데이트
@@ -191,13 +191,13 @@ void Grid::UpdateVoxels(VoxelState tile, GridObject* object)
 				}
 
 				Vec3 nextPosW = Scene::I->GetVoxelPos(nextPosT);
-				BoundingBox bb{ nextPosW, mkTileExtent };
+				BoundingBox bb{ nextPosW, mkVoxelExtent };
 
 				visited[nextPosT] = true;
 
 				if (collider->Intersects(bb)) {
 					boundingVoxels.insert(nextPosT);
-					Scene::I->SetVoxelState(nextPosT, tile);
+					Scene::I->SetVoxelState(nextPosT, voxel);
 					q.push(nextPosT);
 				}
 			}

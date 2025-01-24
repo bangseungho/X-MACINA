@@ -798,6 +798,8 @@ static Pos gkFront3D[] = {
 	{  1,  1, -1 }, {  1,  1,  0 }, {  1,  1,  1 }
 };
 
+static int gkCubeDirCount = 26;
+
 static int gkCost3D[] = {
 	// x = -1
 	28, 14, 28,

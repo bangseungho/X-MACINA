@@ -305,8 +305,8 @@ void Scene::UpdateGridInfo()
 
 void Scene::UpdateVoxelsOnTerrain()
 {
-	for (int i = 0; i < static_cast<int>(kBorderExtents.z / Grid::mkTileWidth); ++i) {
-		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkTileWidth); ++j) {
+	for (int i = 0; i < static_cast<int>(kBorderExtents.z / Grid::mkVoxelWidth); ++i) {
+		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkVoxelWidth); ++j) {
 			Vec3 pos = GetVoxelPos(Pos{i, j, 0});
 			Pos index = Pos{ i, j, static_cast<int>(std::round(GetTerrainHeight(pos.x, pos.z))) };
 			Pos upIndex = index.Up();
@@ -326,8 +326,8 @@ void Scene::UpdateVoxelsOnTerrain()
 void Scene::UpdateVoxelsProximityCost(const Pos& index)
 {
 	constexpr int radius = 5;
-	int totalVoxelRows = static_cast<int>(kBorderExtents.x / Grid::mkTileWidth);
-	int totalVoxelCols = static_cast<int>(kBorderExtents.z / Grid::mkTileWidth);
+	int totalVoxelRows = static_cast<int>(kBorderExtents.x / Grid::mkVoxelWidth);
+	int totalVoxelCols = static_cast<int>(kBorderExtents.z / Grid::mkVoxelWidth);
 	
 	for (int dz = -radius; dz <= radius; ++dz) {
 		for (int dx = -radius; dx <= radius; ++dx) {
@@ -860,8 +860,8 @@ void Scene::PopObjectBuffer()
 
 //////////////////* Others *//////////////////
 int Scene::GetGridIndex(const Pos& index) const {
-	const int gridX = static_cast<int>(index.X * Grid::mkTileWidth / kGridWidth);
-	const int gridZ = static_cast<int>(index.Z * Grid::mkTileHeight / kGridWidth);
+	const int gridX = static_cast<int>(index.X * Grid::mkVoxelWidth / kGridWidth);
+	const int gridZ = static_cast<int>(index.Z * Grid::mkVoxelHeight / kGridWidth);
 	return gridZ * kGridCols + gridX;
 }
 
@@ -879,19 +879,19 @@ int Scene::GetGridIndex(Vec3 pos) const
 Pos Scene::GetVoxelIndex(const Vec3& pos) const
 {
 	// 월드 포지션으로부터 타일의 고유 인덱스를 계산
-	const int tileGroupIndexX = static_cast<int>((pos.x - mGridStartPoint) / Grid::mkTileWidth);
-	const int tileGroupIndexZ = static_cast<int>((pos.z - mGridStartPoint) / Grid::mkTileWidth);
-	const int tileGroupIndexY = static_cast<int>(pos.y / Grid::mkTileHeight);
+	const int voxelInGridIndexX = static_cast<int>((pos.x - mGridStartPoint) / Grid::mkVoxelWidth);
+	const int voxelInGridIndexZ = static_cast<int>((pos.z - mGridStartPoint) / Grid::mkVoxelWidth);
+	const int voxelInGridIndexY = static_cast<int>(pos.y / Grid::mkVoxelHeight);
 
-	return Pos{ tileGroupIndexZ, tileGroupIndexX, tileGroupIndexY };
+	return Pos{ voxelInGridIndexZ, voxelInGridIndexX, voxelInGridIndexY };
 }
 
 Vec3 Scene::GetVoxelPos(const Pos& index) const
 {
 	// 타일의 고유 인덱스로부터 월드 포지션을 계산
-	const float posX = index.X * Grid::mkTileWidth + mGridStartPoint;
-	const float posZ = index.Z * Grid::mkTileWidth + mGridStartPoint;
-	const float posY = index.Y * Grid::mkTileHeight;
+	const float posX = index.X * Grid::mkVoxelWidth + mGridStartPoint;
+	const float posZ = index.Z * Grid::mkVoxelWidth + mGridStartPoint;
+	const float posY = index.Y * Grid::mkVoxelHeight;
 
 	return Vec3{ posX, posY, posZ };
 }

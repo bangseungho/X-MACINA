@@ -163,7 +163,7 @@ void VoxelManager::PickTopVoxel(bool makePath)
 		Vec3 voxelPosW = Scene::I->GetVoxelPos(voxel);
 		Scene::I->SetVoxelCondition(voxel, VoxelCondition::None);
 		if (Scene::I->GetVoxelState(voxel) == VoxelState::None) continue;
-		BoundingBox bb{ voxelPosW, Grid::mkTileExtent };
+		BoundingBox bb{ voxelPosW, Grid::mkVoxelExtent };
 		float dist{};
 		if (ray.Intersects(bb, dist)) {
 			if (minValue > dist) {
