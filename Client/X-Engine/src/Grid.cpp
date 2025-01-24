@@ -123,9 +123,14 @@ void Grid::SetVoxelCondition(const Pos& index, VoxelCondition condition)
 	}
 }
 
-void Grid::SetProximityCost(const Pos& index, int cost)
+void Grid::SetProximityCost(const Pos& index, int cost, bool isReset)
 {
-	mProximityCosts[index] = max(cost, mProximityCosts[index]);
+	if (isReset) {
+		mProximityCosts.erase(index);
+	}
+	else {
+		mProximityCosts[index] = max(cost, mProximityCosts[index]);
+	}
 }
 
 void Grid::AddObject(GridObject* object)

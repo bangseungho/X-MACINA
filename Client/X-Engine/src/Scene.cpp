@@ -323,21 +323,20 @@ void Scene::UpdateVoxelsOnTerrain()
 	}
 }
 
-void Scene::UpdateVoxelsProximityCost(const Pos& index)
+void Scene::UpdateVoxelsProximityCost(const Pos& index, bool isReset)
 {
 	constexpr int radius = 5;
-	int totalVoxelRows = static_cast<int>(kBorderExtents.x / Grid::mkVoxelWidth);
-	int totalVoxelCols = static_cast<int>(kBorderExtents.z / Grid::mkVoxelWidth);
-	
+	int maxCost = static_cast<int>(std::sqrt(radius * radius));
+
 	for (int dz = -radius; dz <= radius; ++dz) {
 		for (int dx = -radius; dx <= radius; ++dx) {
 			int nx = index.X + dx;
 			int nz = index.Z + dz;
 			double distance = std::sqrt((nx - index.X) * (nx - index.X) + (nz - index.Z) * (nz - index.Z));
-			int cost = static_cast<int>(radius - distance);
+			int cost = isReset ? 0 : static_cast<int>(maxCost - distance);
 			Vec3 pos = GetVoxelPos(Pos{ nz, nx, 0 });
 			int yIndex = static_cast<int>(std::round(GetTerrainHeight(pos.x, pos.z)));
-			SetProximityCost(Pos{ nz, nx, yIndex }, cost);
+			SetProximityCost(Pos{ nz, nx, yIndex }, cost, isReset);
 		}
 	}
 }
@@ -931,9 +930,9 @@ void Scene::SetVoxelCondition(const Pos& index, VoxelCondition condition) const
 	mGrids[GetGridIndex(index)]->SetVoxelCondition(index, condition);
 }
 
-void Scene::SetProximityCost(const Pos& index, int cost) const
+void Scene::SetProximityCost(const Pos& index, int cost, bool isReset) const
 {
-	mGrids[GetGridIndex(index)]->SetProximityCost(index, cost);
+	mGrids[GetGridIndex(index)]->SetProximityCost(index, cost, isReset);
 }
 
 void Scene::ToggleDrawBoundings()

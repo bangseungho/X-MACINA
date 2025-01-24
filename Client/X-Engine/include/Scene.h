@@ -114,7 +114,7 @@ public:
 	float			GetEdgeCost(const Pos& index, bool isRowEdge) const;
 	void			SetVoxelState(const Pos& index, VoxelState state) const;
 	void			SetVoxelCondition(const Pos& index, VoxelCondition condition) const;
-	void			SetProximityCost(const Pos& index, int cost) const;
+	void			SetProximityCost(const Pos& index, int cost, bool isReset) const;
 #pragma endregion
 
 #pragma region DirectX
@@ -137,7 +137,7 @@ public:
 	void BuildObjects();
 	void ReleaseObjects();
 	void UpdateVoxelsOnTerrain();
-	void UpdateVoxelsProximityCost(const Pos& index);
+	void UpdateVoxelsProximityCost(const Pos& index, bool isReset = false);
 
 private:
 	/* Object */

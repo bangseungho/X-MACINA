@@ -59,7 +59,7 @@ public:
 public:
 	void SetVoxelState(const Pos& index, VoxelState state);
 	void SetVoxelCondition(const Pos& index, VoxelCondition condition);
-	void SetProximityCost(const Pos& index, int cost);
+	void SetProximityCost(const Pos& index, int cost, bool isReset);
 
 public:
 	bool Empty() const { return mObjects.empty(); }

@@ -240,6 +240,7 @@ void VoxelManager::UpdateRemoveMode(VoxelState selectedVoxelState)
 	}
 
 	mUsedCreateModeVoxels.insert(mSelectedVoxel.XZ());
+	Scene::I->UpdateVoxelsProximityCost(mSelectedVoxel, true);
 }
 
 void VoxelManager::UpdatePlanningPathMode(bool makePath, VoxelState selectedVoxelState)
