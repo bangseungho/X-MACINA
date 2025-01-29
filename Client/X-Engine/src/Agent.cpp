@@ -24,12 +24,16 @@ void Agent::Update()
 	MoveToPath();
 }
 
-bool Agent::PathPlanningToAstar(const Pos& dest)
+std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList)
 {
+	if (clearPathList) {
+		VoxelManager::I->ClearPathList();
+	}
+
+	std::vector<Vec3> finalPath{};
+
 	mDest = dest;
 	std::stack<Pos>	path{};
-	VoxelManager::I->ClearPathList();
-
 	std::unordered_map<Pos, Pos> parent;
 	std::unordered_map<Pos, int> onVoxel;
 	std::unordered_map<Pos, float> distance;
@@ -108,9 +112,8 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 	// 경로를 못 찾은 경우
 	if (curNode.Pos != dest) {
 		VoxelManager::I->ClearPathList();
-		ClearPath();
 		VoxelManager::I->PushClosedVoxel(mStart);
-		return false;
+		return finalPath;
 	}
 
 	Pos pos = dest;
@@ -141,17 +144,17 @@ bool Agent::PathPlanningToAstar(const Pos& dest)
 	while (!path.empty()) {
 		const Pos& now = path.top();
 		VoxelManager::I->PushClosedVoxel(now);
-		mFinalPath.push_back(Scene::I->GetVoxelPos(now));
+		finalPath.push_back(Scene::I->GetVoxelPos(now));
 		path.pop();
 	}
 
 	if (PathOption::I->GetSplinePath()) {
-		MakeSplinePath();
+		MakeSplinePath(finalPath);
 	}
 
-	std::reverse(mFinalPath.begin(), mFinalPath.end());
+	std::reverse(finalPath.begin(), finalPath.end());
 
-	return true;
+	return finalPath;
 }
 
 void Agent::ReadyPlanningToPath(const Pos& start)
@@ -235,46 +238,69 @@ static Vec3 CubicBezier(const Vec3& p0, const Vec3& p1, const Vec3& p2, const Ve
 	return (p0 * uuu) + (p1 * (3 * uu * t)) + (p2 * (3 * u * tt)) + (p3 * ttt);
 }
 
-void Agent::MakeSplinePath()
+void Agent::MakeSplinePath(std::vector<Vec3>& path)
 {
-	if (mFinalPath.size() <= 2) {
+	if (path.size() <= 2) {
 		return;
 	}
 
 	std::vector<Vec3> splinePath{};
-	const int pathSize = static_cast<int>(mFinalPath.size());
+	const int pathSize = static_cast<int>(path.size());
 	const int sampleCount = 10;
 
-	Vec3 p4 = mFinalPath.back() + mFinalPath[pathSize - 1].xz() - mFinalPath[pathSize - 2].xz();
-	mFinalPath.push_back(p4);
+	Vec3 p4 = path.back() + path[pathSize - 1].xz() - path[pathSize - 2].xz();
+	path.push_back(p4);
 
 	for (int i = 0; i < pathSize - 2; ++i) {
-		Vec3 p0 = mFinalPath[i];
-		Vec3 p1 = mFinalPath[i + 1];
-		Vec3 p2 = mFinalPath[i + 2];
-		Vec3 p3 = mFinalPath[i + 3];
+		Vec3 p0 = path[i];
+		Vec3 p1 = path[i + 1];
+		Vec3 p2 = path[i + 2];
+		Vec3 p3 = path[i + 3];
 
 		for (int j = 0; j <= sampleCount; ++j) {
 			float t = static_cast<float>(j) / sampleCount;
 			splinePath.push_back(Vec3::CatmullRom(p0, p1, p2, p3, t));
 		}
 	}
-	mFinalPath = splinePath;
+	path = splinePath;
 }
 
 void Agent::MoveToPath()
 {
-	if (mFinalPath.empty()) {
+	if (mPath.empty()) {
 		return;
 	}
 
-	Vec3 nextPos = (mFinalPath.back() - mObject->GetPosition());
-	mObject->RotateTargetAxisY(mFinalPath.back(), 1000.f);
+	Vec3 nextPos = (mPath.back() - mObject->GetPosition());
+	mObject->RotateTargetAxisY(mPath.back(), 1000.f);
 	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
 
 	const float kMinDistance = 0.1f;
 	if (nextPos.Length() < kMinDistance) {
-		mFinalPath.pop_back();
+		const Vec3& crntPathPos = mPath.back();
+		const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
+		mPath.pop_back();
+
+		bool addPath{};
+		while (!mPath.empty()) {
+			const Pos& nextPathIndex = Scene::I->GetVoxelIndex(mPath.back()).Up();
+			VoxelState nextPathVoxelState = Scene::I->GetVoxelState(nextPathIndex);
+			
+			if (nextPathVoxelState != VoxelState::Static && nextPathVoxelState != VoxelState::TerrainStatic) {
+				break;
+			}
+			
+			mPath.pop_back();
+			addPath = true;
+		}
+		
+		if (addPath) {
+			mStart = crntPathIndex;
+			Pos dest = Scene::I->GetVoxelIndex(mPath.back());
+			std::vector<Vec3> newPath = PathPlanningToAstar(dest, false);
+			std::copy(newPath.begin(), newPath.end(), std::back_inserter(mPath));
+			mPath.pop_back();
+		}
 	}
 }
 
@@ -311,5 +337,5 @@ float Agent::GetEdgeCost(const Pos& nextPos, const Pos& dir)
 
 void Agent::ClearPath()
 {
-	mFinalPath.clear();
+	mPath.clear();
 }

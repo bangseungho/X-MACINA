@@ -249,13 +249,17 @@ void VoxelManager::UpdatePlanningPathMode(bool makePath, VoxelState selectedVoxe
 		return;
 	}
 
+	sptr<Agent> agent = mPlayer->GetComponent<Agent>();
+
 	if (!mReadyMakePath) {
-		if (!mPlayer->GetComponent<Agent>()->PathPlanningToAstar(mSelectedVoxel)) {
+		std::vector<Vec3> path = agent->PathPlanningToAstar(mSelectedVoxel);
+		if (path.empty()) {
 			return;
 		}
+		agent->SetPath(path);
 	}
 	else {
-		mPlayer->GetComponent<Agent>()->ReadyPlanningToPath(mSelectedVoxel);
+		agent->ReadyPlanningToPath(mSelectedVoxel);
 	}
 	mReadyMakePath = !mReadyMakePath;
 }

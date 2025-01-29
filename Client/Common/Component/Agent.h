@@ -72,7 +72,7 @@ class Agent : public Component {
 	COMPONENT(Agent, Component)
 
 private:
-	std::vector<Vec3>	mFinalPath{};
+	std::vector<Vec3>	mPath{};
 	Pos					mStart{};
 	Pos					mDest{};
 
@@ -80,12 +80,13 @@ public:
 	virtual void Update() override;
 
 public:
-	bool	PathPlanningToAstar(const Pos& dest);
-	void	ReadyPlanningToPath(const Pos& start);
+	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, bool clearPathList = true);
+	void				ReadyPlanningToPath(const Pos& start);
+	void				SetPath(std::vector<Vec3>& path) { mPath = path; }
 
 private:
 	void	RayPathOptimize(std::stack<Pos>& path, const Pos& dest);
-	void	MakeSplinePath();
+	void	MakeSplinePath(std::vector<Vec3>& path);
 
 private:
 	void	MoveToPath();
