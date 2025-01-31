@@ -1,10 +1,13 @@
 #include "EnginePch.h"
 #include "Component/Agent.h"
+#include "Component/Camera.h"
+#include "Component/Collider.h"
 
 #include "DXGIMgr.h"
 #include "Scene.h"
 #include "Timer.h"
 #include "VoxelManager.h"
+#include "InputMgr.h"
 
 namespace {
 	float HeuristicManhattan(const Pos& start, const Pos& dest) {
@@ -19,6 +22,28 @@ namespace {
 	}
 }
 
+void Agent::ClearPathList()
+{
+	for (auto& voxel : mCloseList) {
+		Scene::I->SetVoxelCondition(voxel, VoxelCondition::None);
+	}
+
+	for (auto& voxel : mOpenList) {
+		Scene::I->SetVoxelCondition(voxel, VoxelCondition::None);
+	}
+
+	mCloseList.clear();
+	mOpenList.clear();
+}
+
+void Agent::Start()
+{
+	AgentManager::I->AddAgent(this);
+	mCloseList.reserve(10000);
+	mOpenList.reserve(10000);
+	mObject->SetPosition(100, 0, 260);
+}
+
 void Agent::Update()
 {
 	MoveToPath();
@@ -27,7 +52,7 @@ void Agent::Update()
 std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList)
 {
 	if (clearPathList) {
-		VoxelManager::I->ClearPathList();
+		ClearPathList();
 	}
 
 	std::vector<Vec3> finalPath{};
@@ -104,15 +129,15 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 				pq.push({ g + h, g, nextPos });
 				parent[nextPos] = curNode.Pos;
 				openNodeCount++;
-				VoxelManager::I->PushOpenedVoxel(nextPos);
+				mOpenList.push_back(nextPos);
 			}
 		}
 	}
 
 	// 경로를 못 찾은 경우
 	if (curNode.Pos != dest) {
-		VoxelManager::I->ClearPathList();
-		VoxelManager::I->PushClosedVoxel(mStart);
+		//VoxelManager::I->ClearPathList();
+		mCloseList.push_back(mStart);
 		return finalPath;
 	}
 
@@ -143,7 +168,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 	// 최종 경로 설정
 	while (!path.empty()) {
 		const Pos& now = path.top();
-		VoxelManager::I->PushClosedVoxel(now);
+		mCloseList.push_back(now);
 		finalPath.push_back(Scene::I->GetVoxelPos(now));
 		path.pop();
 	}
@@ -160,7 +185,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 void Agent::ReadyPlanningToPath(const Pos& start)
 {
 	mStart = start;
-	VoxelManager::I->PushClosedVoxel(start);
+	mCloseList.push_back(mStart);
 	mObject->SetPosition(Scene::I->GetVoxelPos(start));
 	ClearPath();
 }
@@ -338,4 +363,66 @@ float Agent::GetEdgeCost(const Pos& nextPos, const Pos& dir)
 void Agent::ClearPath()
 {
 	mPath.clear();
+}
+
+bool Agent::PickAgent()
+{
+	const Ray& ray = MAIN_CAMERA->ScreenToWorldRay(InputMgr::I->GetMousePos());
+
+	float distance = 0.f;
+	if (ray.Intersects(mObject->GetComponent<ObjectCollider>()->GetBS(), distance)) {
+		mObject->mObjectCB.RimFactor = 1.f;
+		return true;
+	}
+
+	mObject->mObjectCB.RimFactor = 0.f;
+	return false;
+}
+
+void Agent::RenderOpenList()
+{
+	for (auto& voxel : mOpenList) {
+		if (Scene::I->GetVoxelCondition(voxel) != VoxelCondition::Picked) {
+			Scene::I->SetVoxelCondition(voxel, VoxelCondition::Opened);
+		}
+	}
+}
+
+void Agent::RenderCloseList()
+{
+	for (auto& voxel : mCloseList) {
+		if (Scene::I->GetVoxelCondition(voxel) != VoxelCondition::Picked) {
+			Scene::I->SetVoxelCondition(voxel, VoxelCondition::Closed);
+		}
+	}
+}
+
+void AgentManager::RenderPathList()
+{
+	for (Agent* agent : mAgents) {
+		agent->RenderOpenList();
+	}
+
+	for (Agent* agent : mAgents) {
+		agent->RenderCloseList();
+	}
+}
+
+void AgentManager::ClearPathList()
+{
+	for (Agent* agent : mAgents) {
+		agent->ClearPathList();
+	}
+}
+
+Agent* AgentManager::PickAgent()
+{
+	Agent* pickedAgent{};
+	for (Agent* agent : mAgents) {
+		if (agent->PickAgent()) {
+			pickedAgent = agent;
+		}
+	}
+
+	return pickedAgent;
 }

@@ -212,7 +212,6 @@ void Scene::SetAbilityCB(int idx) const
 void Scene::SetPlayer(Object* player)
 {
 	mPlayer = player;
-	VoxelManager::I->Init(mPlayer);
 }
 
 void Scene::UpdateMaterialBuffer()
@@ -247,6 +246,8 @@ void Scene::BuildObjects()
 
 	// skybox
 	mSkyBox = std::make_shared<SkyBox>();
+
+	VoxelManager::I->Init();
 }
 
 void Scene::ReleaseObjects()
@@ -832,9 +833,7 @@ void Scene::UpdateObjects()
 		});
 
 	ProcessActiveObjects([this](sptr<Object> object) {
-		if (object->GetTag() == ObjectTag::Player) {
 			object->Animate();
-		}
 		});
 
 	ProcessActiveObjects([this](sptr<Object> object) {

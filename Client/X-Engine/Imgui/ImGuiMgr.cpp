@@ -235,6 +235,21 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 			VoxelManager::I->SetRenderVoxelHeight(value);
 		}
 	}
+
+	{
+		ImGui::Text("Agent :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+
+		if (ImGui::Button("Add Agent", ImVec2{ 100, 30 })) {
+			Scene::I->Instantiate("EliteTrooper")->AddComponent<Agent>();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Clear Path", ImVec2{ 100, 30 })) {
+			AgentManager::I->ClearPathList();
+		}
+	}
 }
 
 void ImGuiPathFunc::Execute(GameObject* selectedObject)

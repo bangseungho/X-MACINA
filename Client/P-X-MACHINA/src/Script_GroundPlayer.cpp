@@ -87,8 +87,6 @@ void Script_GroundPlayer::Awake()
 	base::Awake();
 
 	// add scripts //
-	mObject->AddComponent<Agent>();
-
 	mSpineBone = mObject->FindFrame("Humanoid_ Spine1");
 
 	mAnimator = mObject->GetObj<GameObject>()->GetAnimator();

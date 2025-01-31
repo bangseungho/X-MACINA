@@ -5,6 +5,7 @@
 #pragma region ClassForwardDecl
 class Object;
 class Camera;
+class Agent;
 #pragma endregion
 
 #pragma region Using
@@ -53,27 +54,24 @@ private:
 
 private:
 	std::set<Pos, VoxelSort> mRenderVoxels{};
-
-	Object*				mPlayer{};
-	bool				mReadyMakePath{ true };
-	bool				mHoldingClick{};
+	Agent*					mPickedAgent{};
+	bool					mReadyMakePath{ true };
+	bool					mHoldingClick{};
 
 private:
-	Pos					mSelectedVoxel{};
-	Pos					mCenterPos{};
-	int					mSelectedVoxelProximityCost{};
+	Pos						mSelectedVoxel{};
+	Pos						mCenterPos{};
+	int						mSelectedVoxelProximityCost{};
 	std::pair<float, float>	mSelectedVoxelEdgeCost{};
 
 private:
-	Pos					mAboveVoxel{};
+	Pos						mAboveVoxel{};
 
 private:
-	VoxelOption			mOption{};
+	VoxelOption				mOption{};
 
 private:
 	std::vector<uptr<UploadBuffer<InstanceData>>> mInstanceBuffers{};
-	std::vector<Pos> mCloseList{};
-	std::vector<Pos> mOpenList{};
 	std::unordered_set<Pos> mUsedCreateModeVoxels{};
 
 public:
@@ -98,13 +96,10 @@ public:
 
 public:
 	void UpdateRenderVoxels(const Pos& pos, bool checkCenterPos = true);
-	void PushClosedVoxel(const Pos& pos) { mCloseList.push_back(pos); }
-	void PushOpenedVoxel(const Pos& pos) { mOpenList.push_back(pos); }
-	void ClearPathList();
 
 public:
 	void ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam);
-	void Init(Object* player);
+	void Init();
 	void Render();
 
 private:

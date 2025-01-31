@@ -62,7 +62,7 @@ PSOutput_MRT PSDeferred(VSOutput_Standard pin)
         occlusion = (float)GammaDecoding(gTextureMaps[occlusionMapIndex].Sample(gsamAnisotropicWrap, pin.UV).x);
     
     // apply rim light
-    float4 rimLight = ComputeRimLight(float4(1.f, 0.f, 0.f, 0.f), 0.6f, gObjectCB.RimFactor, pin.PosW, bumpedNormalW);
+    float4 rimLight = ComputeRimLight(float4(1.f, 0.f, 0.f, 0.f), 1.f, gObjectCB.RimFactor, pin.PosW, pin.NormalW);
 
     // apply occlusion mask
     if (occlusionMask == TRUE) 

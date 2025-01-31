@@ -2,6 +2,7 @@
 
 #pragma region Include
 #include "Component/Component.h"
+#include <Imgui/ImguiCode/imgui.h>
 #pragma endregion
 
 
@@ -76,13 +77,21 @@ private:
 	Pos					mStart{};
 	Pos					mDest{};
 
+	std::vector<Pos>	mCloseList{};
+	std::vector<Pos>	mOpenList{};
+
 public:
+	virtual void Start() override;
 	virtual void Update() override;
 
 public:
 	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, bool clearPathList = true);
 	void				ReadyPlanningToPath(const Pos& start);
 	void				SetPath(std::vector<Vec3>& path) { mPath = path; }
+	bool				PickAgent();
+	void				RenderOpenList();
+	void				RenderCloseList();
+	void				ClearPathList();
 
 private:
 	void	RayPathOptimize(std::stack<Pos>& path, const Pos& dest);
@@ -94,4 +103,24 @@ private:
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
 	void	ClearPath();
 };
+
+
+class AgentManager : public Singleton<AgentManager> {
+	friend Singleton;
+
+private:
+	std::set<Agent*> mAgents{};
+
+public:
+	void AddAgent(Agent* agent) { mAgents.insert(agent); }
+	void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
+
+public:
+	void RenderPathList();
+	void ClearPathList();
+
+public:
+	Agent* PickAgent();
+};
+
 #pragma endregion

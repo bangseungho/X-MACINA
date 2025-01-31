@@ -328,7 +328,7 @@ void GameFramework::ConnectToServer()
 		CLIENT_NETWORK->ProcessEvents();
 	}
 #else
-	InitPlayer(0);
+	//InitPlayer(0);
 
 #endif
 

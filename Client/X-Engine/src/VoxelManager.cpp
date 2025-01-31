@@ -14,26 +14,18 @@
 #include "InputMgr.h"
 
 
-void VoxelManager::ClearPathList()
-{
-	for (auto& voxel : mCloseList) {
-		Scene::I->SetVoxelCondition(voxel, VoxelCondition::None);
-	}
-
-	for (auto& voxel : mOpenList) {
-		Scene::I->SetVoxelCondition(voxel, VoxelCondition::None);
-	}
-
-	mCloseList.clear();
-	mOpenList.clear();
-}
-
 void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 {
 	switch (messageID) {
 	case WM_RBUTTONDOWN:
 		mHoldingClick = true;
 		PickTopVoxel(true);
+		break;
+	case WM_LBUTTONDOWN:
+	{
+		Agent* pickedAgent = AgentManager::I->PickAgent();
+		if (pickedAgent) mPickedAgent = pickedAgent;
+	}
 		break;
 	case WM_RBUTTONUP:
 		mHoldingClick = false;
@@ -48,12 +40,9 @@ void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 	}
 }
 
-void VoxelManager::Init(Object* player)
+void VoxelManager::Init()
 {
-	mPlayer = player;
 	CalcRenderVoxelCount(50);
-	mCloseList.reserve(10000);
-	mOpenList.reserve(10000);
 	mOption.RenderVoxelHeight = 10;
 
 	mInstanceBuffers.resize(FrameResourceMgr::mkFrameResourceCount);
@@ -95,20 +84,9 @@ void VoxelManager::Render()
 	}
 
 	DXGIMgr::I->SetGraphicsRootShaderResourceView(RootParam::Instancing, FrameResourceMgr::GetBufferGpuAddr(0, mInstanceBuffers[CURR_FRAME_INDEX].get()));
+	AgentManager::I->RenderPathList();
 
 	int buffIdx{};
-
-	for (auto& voxel : mOpenList) {
-		if (Scene::I->GetVoxelCondition(voxel) != VoxelCondition::Picked) {
-			Scene::I->SetVoxelCondition(voxel, VoxelCondition::Opened);
-		}
-	}
-	for (auto& voxel : mCloseList) {
-		if (Scene::I->GetVoxelCondition(voxel) != VoxelCondition::Picked) {
-			Scene::I->SetVoxelCondition(voxel, VoxelCondition::Closed);
-		}
-	}
-
 	for (auto& renderVoxel : mRenderVoxels) {
 		Voxel voxel = Scene::I->GetVoxel(renderVoxel);
 
@@ -155,7 +133,6 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	const Vec2& aimPos = InputMgr::I->GetMousePos();
 	const Ray& ray = MAIN_CAMERA->ScreenToWorldRay(aimPos);
 
-	Pos start = Scene::I->GetVoxelIndex(mPlayer->GetPosition());
 	mSelectedVoxel = Pos{};
 	// 추후 분할정복으로 변경 예정
 	float minValue{ FLT_MAX };
@@ -249,17 +226,19 @@ void VoxelManager::UpdatePlanningPathMode(bool makePath, VoxelState selectedVoxe
 		return;
 	}
 
-	sptr<Agent> agent = mPlayer->GetComponent<Agent>();
+	if (!mPickedAgent) {
+		return;
+	}
 
 	if (!mReadyMakePath) {
-		std::vector<Vec3> path = agent->PathPlanningToAstar(mSelectedVoxel);
+		std::vector<Vec3> path = mPickedAgent->PathPlanningToAstar(mSelectedVoxel);
 		if (path.empty()) {
 			return;
 		}
-		agent->SetPath(path);
+		mPickedAgent->SetPath(path);
 	}
 	else {
-		agent->ReadyPlanningToPath(mSelectedVoxel);
+		mPickedAgent->ReadyPlanningToPath(mSelectedVoxel);
 	}
 	mReadyMakePath = !mReadyMakePath;
 }
