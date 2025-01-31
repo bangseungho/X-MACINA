@@ -195,7 +195,7 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 	// TODO : 라디오 버튼에서 체크 박스로 변경 예정 -> 해당 옵션 뿐만 아니라 오픈 클로즈 리스트 그리는 것도 결정
 	ImGui::Text("Render Mode : ");
 	ImGui::SameLine(mTextSpacing);
-    static RenderMode renderMode = RenderMode::Voxel;
+	RenderMode renderMode = VoxelManager::I->GetRenderMode();
 	if (ImGui::RadioButton("Voxel", renderMode == RenderMode::Voxel)) renderMode = RenderMode::Voxel; ImGui::SameLine();
 	if (ImGui::RadioButton("World", renderMode == RenderMode::World)) renderMode = RenderMode::World; ImGui::SameLine();
 	if (ImGui::RadioButton("Both", renderMode == RenderMode::Both)) renderMode = RenderMode::Both;
@@ -204,7 +204,7 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 	// create mode
 	ImGui::Text("Create Mode : ");
 	ImGui::SameLine(mTextSpacing);
-	static CreateMode createMode = CreateMode::None;
+	CreateMode createMode = VoxelManager::I->GetCreateMode();
 	if (ImGui::RadioButton("None", createMode == CreateMode::None)) createMode = CreateMode::None; ImGui::SameLine();
 	if (ImGui::RadioButton("Create", createMode == CreateMode::Create)) createMode = CreateMode::Create; ImGui::SameLine();
 	if (ImGui::RadioButton("Remove", createMode == CreateMode::Remove)) createMode = CreateMode::Remove;

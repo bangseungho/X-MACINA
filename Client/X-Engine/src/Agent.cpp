@@ -371,11 +371,9 @@ bool Agent::PickAgent()
 
 	float distance = 0.f;
 	if (ray.Intersects(mObject->GetComponent<ObjectCollider>()->GetBS(), distance)) {
-		mObject->mObjectCB.RimFactor = 1.f;
 		return true;
 	}
 
-	mObject->mObjectCB.RimFactor = 0.f;
 	return false;
 }
 
@@ -415,14 +413,21 @@ void AgentManager::ClearPathList()
 	}
 }
 
-Agent* AgentManager::PickAgent()
+void AgentManager::PickAgent(Agent** agent)
 {
 	Agent* pickedAgent{};
-	for (Agent* agent : mAgents) {
-		if (agent->PickAgent()) {
-			pickedAgent = agent;
+	for (Agent* mAgent : mAgents) {
+		if (mAgent->PickAgent()) {
+			pickedAgent = mAgent;
 		}
+		mAgent->SetRimFactor(0.f);
 	}
 
-	return pickedAgent;
+	if (pickedAgent) {
+		*agent = pickedAgent;
+	}
+
+	if (*agent) {
+		(*agent)->SetRimFactor(1.f);
+	}
 }

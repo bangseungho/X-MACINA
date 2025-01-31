@@ -196,6 +196,7 @@ void GameFramework::ProcessKeyboardMsg(HWND hWnd, UINT message, WPARAM wParam, L
 	if (const auto& playerScript = mPlayerScript.lock()) {
 		playerScript->ProcessKeyboardMsg(message, wParam, lParam);
 	}
+	VoxelManager::I->ProcessKeyboardMsg(message, wParam, lParam);
 }
 
 void GameFramework::ProcessMouseMsg(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)

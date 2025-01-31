@@ -22,10 +22,7 @@ void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 		PickTopVoxel(true);
 		break;
 	case WM_LBUTTONDOWN:
-	{
-		Agent* pickedAgent = AgentManager::I->PickAgent();
-		if (pickedAgent) mPickedAgent = pickedAgent;
-	}
+		AgentManager::I->PickAgent(&mPickedAgent);
 		break;
 	case WM_RBUTTONUP:
 		mHoldingClick = false;
@@ -34,11 +31,36 @@ void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEMOVE:
 		PickTopVoxel(false);
 		break;
-
 	default:
 		break;
 	}
 }
+
+
+void VoxelManager::ProcessKeyboardMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
+{
+	switch (messageID) {
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case '1':
+			mOption.CreateMode = CreateMode::None;
+			break;
+		case '2':
+			mOption.CreateMode = CreateMode::Create;
+			break;
+		case '3':
+			mOption.CreateMode = CreateMode::Remove;
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 
 void VoxelManager::Init()
 {

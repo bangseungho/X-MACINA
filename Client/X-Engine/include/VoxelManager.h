@@ -99,6 +99,7 @@ public:
 
 public:
 	void ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam);
+	void ProcessKeyboardMsg(UINT messageID, WPARAM wParam, LPARAM lParam);
 	void Init();
 	void Render();
 

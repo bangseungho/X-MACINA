@@ -92,6 +92,7 @@ public:
 	void				RenderOpenList();
 	void				RenderCloseList();
 	void				ClearPathList();
+	void				SetRimFactor(float factor) { mObject->mObjectCB.RimFactor = factor; }
 
 private:
 	void	RayPathOptimize(std::stack<Pos>& path, const Pos& dest);
@@ -120,7 +121,7 @@ public:
 	void ClearPathList();
 
 public:
-	Agent* PickAgent();
+	void PickAgent(Agent** agent);
 };
 
 #pragma endregion
