@@ -105,7 +105,7 @@ private:
 
 private:
 	void	MoveToPath();
-	void	AvoidStatic(const Pos& crntPathIndex, std::vector<Vec3>* crntPath);
+	void	AvoidStaticVoxel(const Pos& crntPathIndex, std::vector<Vec3>* crntPath);
 	int		GetOnVoxelCount(const Pos& pos);
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
 	void	ClearPath();

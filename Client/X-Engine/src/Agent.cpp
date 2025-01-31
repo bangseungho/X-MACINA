@@ -136,13 +136,13 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 
 	// 경로를 못 찾은 경우
 	if (curNode.Pos != dest) {
-		//VoxelManager::I->ClearPathList();
+		ClearPathList();
 		mCloseList.push_back(mStart);
 		return finalPath;
 	}
 
 	Pos pos = dest;
-	prevDir = Pos{};
+	prevDir.Init();
 	// 부모를 통해 경로 설정
 	while (pos != parent[pos]) {
 		Pos newPos = pos + Pos{ 0, 0, onVoxel[pos] };
@@ -298,7 +298,7 @@ void Agent::MoveToPath()
 	
 	std::vector<Vec3>* crntPath = &mGlobalPath;
 	if (mLocalPath.empty()) {
-		mFirstCollisionVoxel = Pos{};
+		mFirstCollisionVoxel.Init();
 	}
 	else {
 		crntPath = &mLocalPath;
@@ -314,11 +314,11 @@ void Agent::MoveToPath()
 		const Vec3& crntPathPos = crntPath->back();
 		const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
 		crntPath->pop_back();
-		AvoidStatic(crntPathIndex, crntPath);
+		AvoidStaticVoxel(crntPathIndex, crntPath);
 	}
 }
 
-void Agent::AvoidStatic(const Pos& crntPathIndex, std::vector<Vec3>* crntPath)
+void Agent::AvoidStaticVoxel(const Pos& crntPathIndex, std::vector<Vec3>* crntPath)
 {
 	bool addPath{};
 	for (int i = mkAvoidPathCount; i > 0; --i) {
@@ -404,6 +404,7 @@ void Agent::ClearPath()
 {
 	mGlobalPath.clear();
 	mLocalPath.clear();
+	mFirstCollisionVoxel.Init();
 }
 
 bool Agent::PickAgent()
