@@ -292,40 +292,80 @@ void Agent::MakeSplinePath(std::vector<Vec3>& path)
 
 void Agent::MoveToPath()
 {
-	if (mPath.empty()) {
+	if (mGlobalPath.empty()) {
 		return;
 	}
+	
+	std::vector<Vec3>* crntPath = &mGlobalPath;
+	if (mLocalPath.empty()) {
+		mFirstCollisionVoxel = Pos{};
+	}
+	else {
+		crntPath = &mLocalPath;
+	}
 
-	Vec3 nextPos = (mPath.back() - mObject->GetPosition());
-	mObject->RotateTargetAxisY(mPath.back(), 1000.f);
+	Vec3 nextPos = (crntPath->back() - mObject->GetPosition());
+	mObject->RotateTargetAxisY(crntPath->back(), 1000.f);
 	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
 
 	const float kMinDistance = 0.1f;
-	if (nextPos.Length() < kMinDistance) {
-		const Vec3& crntPathPos = mPath.back();
-		const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
-		mPath.pop_back();
 
-		bool addPath{};
-		while (!mPath.empty()) {
-			const Pos& nextPathIndex = Scene::I->GetVoxelIndex(mPath.back()).Up();
-			VoxelState nextPathVoxelState = Scene::I->GetVoxelState(nextPathIndex);
-			
-			if (nextPathVoxelState != VoxelState::Static && nextPathVoxelState != VoxelState::TerrainStatic) {
+	if (nextPos.Length() < kMinDistance) {
+		const Vec3& crntPathPos = crntPath->back();
+		const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
+		crntPath->pop_back();
+		AvoidStatic(crntPathIndex, crntPath);
+	}
+}
+
+void Agent::AvoidStatic(const Pos& crntPathIndex, std::vector<Vec3>* crntPath)
+{
+	bool addPath{};
+	for (int i = mkAvoidPathCount; i > 0; --i) {
+		if (crntPath->size() <= i) {
+			continue;
+		}
+
+		Pos nextPathIndex{};
+		VoxelState nextPathVoxelState{};
+		while (true) {
+			nextPathIndex = Scene::I->GetVoxelIndex((*crntPath)[crntPath->size() - i]).Up();
+			nextPathVoxelState = Scene::I->GetVoxelState(nextPathIndex);
+
+			if (nextPathVoxelState != VoxelState::Static) {
 				break;
 			}
-			
-			mPath.pop_back();
+
+			if (crntPath->size() > 1) {
+				crntPath->pop_back();
+			}
+
 			addPath = true;
 		}
-		
+
 		if (addPath) {
-			mStart = crntPathIndex;
-			Pos dest = Scene::I->GetVoxelIndex(mPath.back());
-			std::vector<Vec3> newPath = PathPlanningToAstar(dest, false);
-			std::copy(newPath.begin(), newPath.end(), std::back_inserter(mPath));
-			mPath.pop_back();
+			if (mFirstCollisionVoxel.IsZero()) {
+				mFirstCollisionVoxel = nextPathIndex;
+			}
+
+			const Pos& objectIndex = Scene::I->GetVoxelIndex(mObject->GetPosition());
+			const float distToFirstCollisionVoxel = HeuristicEuclidean(objectIndex, mFirstCollisionVoxel);
+			while (mGlobalPath.size() > 1) {
+				if (HeuristicManhattan(mFirstCollisionVoxel, Scene::I->GetVoxelIndex(mGlobalPath.back())) < distToFirstCollisionVoxel) {
+					mGlobalPath.pop_back();
+				}
+				else {
+					break;
+				}
+			}
+			break;
 		}
+	}
+
+	if (addPath) {
+		mStart = crntPathIndex;
+		Pos dest = Scene::I->GetVoxelIndex(mGlobalPath.back());
+		mLocalPath = PathPlanningToAstar(dest, false);
 	}
 }
 
@@ -362,7 +402,8 @@ float Agent::GetEdgeCost(const Pos& nextPos, const Pos& dir)
 
 void Agent::ClearPath()
 {
-	mPath.clear();
+	mGlobalPath.clear();
+	mLocalPath.clear();
 }
 
 bool Agent::PickAgent()

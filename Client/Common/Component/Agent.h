@@ -30,8 +30,8 @@ class PathOption : public Singleton<PathOption> {
 	friend Singleton;
 	
 private:
-	float		mAgentSpeed = 3.2f;
-	int			mAllowedHeight = 1;
+	float		mAgentSpeed = 2.2f;
+	int			mAllowedHeight = 0;
 	int			mMaxOpenNodeCount = 50000;
 	int			mOnVoxelCost = 30;
 	int			mHeuristicWeight = 10;
@@ -72,13 +72,18 @@ public:
 class Agent : public Component {
 	COMPONENT(Agent, Component)
 
+public:
+	static constexpr int mkAvoidPathCount = 5;
+
 private:
-	std::vector<Vec3>	mPath{};
+	std::vector<Vec3>	mGlobalPath{};
+	std::vector<Vec3>	mLocalPath{};
 	Pos					mStart{};
 	Pos					mDest{};
 
 	std::vector<Pos>	mCloseList{};
 	std::vector<Pos>	mOpenList{};
+	Pos					mFirstCollisionVoxel{};
 
 public:
 	virtual void Start() override;
@@ -87,7 +92,7 @@ public:
 public:
 	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, bool clearPathList = true);
 	void				ReadyPlanningToPath(const Pos& start);
-	void				SetPath(std::vector<Vec3>& path) { mPath = path; }
+	void				SetPath(std::vector<Vec3>& path) { mGlobalPath = path; }
 	bool				PickAgent();
 	void				RenderOpenList();
 	void				RenderCloseList();
@@ -100,6 +105,7 @@ private:
 
 private:
 	void	MoveToPath();
+	void	AvoidStatic(const Pos& crntPathIndex, std::vector<Vec3>* crntPath);
 	int		GetOnVoxelCount(const Pos& pos);
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
 	void	ClearPath();

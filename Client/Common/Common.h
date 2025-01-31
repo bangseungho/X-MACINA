@@ -710,7 +710,8 @@ struct Pos
 	Pos Right() const { return *this + Pos{ 0, -1, 0 }; }
 	Pos Forward() const { return *this + Pos{ +1, 0, 0 }; }
 	Pos Backward() const { return *this + Pos{ -1, 0, 0 }; }
-	Pos XZ() const { return Pos{ this->Z, this->X, 0 }; }
+	Pos XZ() const { return Pos{ Z, X, 0 }; }
+	bool IsZero() const { return Z == 0 && X == 0 && Y == 0; }
 
 	Vec3 ToVec3() const {
 		return Vec3{ static_cast<float>(Z), static_cast<float>(X), static_cast<float>(Y) };
