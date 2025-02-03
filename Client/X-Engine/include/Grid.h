@@ -19,7 +19,7 @@ class Grid {
 private:
 	const int mIndex{};
 	const BoundingBox mBB{};
-
+	
 	std::unordered_set<GridObject*> mObjects{};			// all objects (env, static, dynamic, ...)
 	std::unordered_set<GridObject*> mEnvObjects{};
 	std::unordered_set<GridObject*> mStaticObjects{};

@@ -96,7 +96,13 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 		if (openNodeCount >= PathOption::I->GetMaxOpenNodeCount()) break;
 		if (visited.contains(curNode.Pos)) continue;
 		if (distance[curNode.Pos] < curNode.F) continue;
-
+		if (mGlobalPathCache.count(curNode.Pos)) {
+			while (mGlobalPath.size() > 1 && Scene::I->GetVoxelIndex(mGlobalPath.back()) != curNode.Pos) {
+				mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
+				mGlobalPath.pop_back();
+			}
+			break;
+		}
 		visited[curNode.Pos] = true;
 
 		if (curNode.Pos == dest)
@@ -134,14 +140,14 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 		}
 	}
 
-	// 경로를 못 찾은 경우
-	if (curNode.Pos != dest) {
-		ClearPathList();
-		mCloseList.push_back(mStart);
-		return finalPath;
-	}
+	//// 경로를 못 찾은 경우
+	//if (curNode.Pos != dest) {
+	//	ClearPathList();
+	//	mCloseList.push_back(mStart);
+	//	return finalPath;
+	//}
 
-	Pos pos = dest;
+	Pos pos = curNode.Pos;
 	prevDir.Init();
 	// 부모를 통해 경로 설정
 	while (pos != parent[pos]) {
@@ -169,6 +175,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 	while (!path.empty()) {
 		const Pos& now = path.top();
 		mCloseList.push_back(now);
+		mGlobalPathCache.insert({ now, static_cast<int>(finalPath.size()) });
 		finalPath.push_back(Scene::I->GetVoxelPos(now));
 		path.pop();
 	}
@@ -296,76 +303,43 @@ void Agent::MoveToPath()
 		return;
 	}
 	
-	std::vector<Vec3>* crntPath = &mGlobalPath;
-	if (mLocalPath.empty()) {
-		mFirstCollisionVoxel.Init();
-	}
-	else {
-		crntPath = &mLocalPath;
-	}
-
-	Vec3 nextPos = (crntPath->back() - mObject->GetPosition());
-	mObject->RotateTargetAxisY(crntPath->back(), 1000.f);
+	Vec3 nextPos = (mGlobalPath.back() - mObject->GetPosition());
+	mObject->RotateTargetAxisY(mGlobalPath.back(), 1000.f);
 	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
 
 	const float kMinDistance = 0.1f;
 
 	if (nextPos.Length() < kMinDistance) {
-		const Vec3& crntPathPos = crntPath->back();
+		const Vec3& crntPathPos = mGlobalPath.back();
 		const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
-		crntPath->pop_back();
-		AvoidStaticVoxel(crntPathIndex, crntPath);
+		mGlobalPath.pop_back();
+		mGlobalPathCache.erase(crntPathIndex);
+		AvoidStaticVoxel(crntPathIndex);
 	}
 }
 
-void Agent::AvoidStaticVoxel(const Pos& crntPathIndex, std::vector<Vec3>* crntPath)
+void Agent::AvoidStaticVoxel(const Pos& crntPathIndex)
 {
 	bool addPath{};
 	for (int i = mkAvoidPathCount; i > 0; --i) {
-		if (crntPath->size() <= i) {
+		if (mGlobalPath.size() <= i) {
 			continue;
 		}
 
-		Pos nextPathIndex{};
-		VoxelState nextPathVoxelState{};
-		while (true) {
-			nextPathIndex = Scene::I->GetVoxelIndex((*crntPath)[crntPath->size() - i]).Up();
-			nextPathVoxelState = Scene::I->GetVoxelState(nextPathIndex);
+		Pos nextPathIndex = Scene::I->GetVoxelIndex(mGlobalPath[mGlobalPath.size() - i]);
+		VoxelState nextPathUpVoxelState = Scene::I->GetVoxelState(nextPathIndex.Up());
 
-			if (nextPathVoxelState != VoxelState::Static) {
-				break;
+		if (nextPathUpVoxelState == VoxelState::Static) {
+			for (int j = 0; j < i; ++j) {
+				mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
+				mGlobalPath.pop_back();
 			}
 
-			if (crntPath->size() > 1) {
-				crntPath->pop_back();
-			}
-
-			addPath = true;
+			mStart = crntPathIndex;
+			mLocalPath = PathPlanningToAstar(mDest, false);
+			std::copy(mLocalPath.begin(), mLocalPath.end(), std::back_inserter(mGlobalPath));
+			return;
 		}
-
-		if (addPath) {
-			if (mFirstCollisionVoxel.IsZero()) {
-				mFirstCollisionVoxel = nextPathIndex;
-			}
-
-			const Pos& objectIndex = Scene::I->GetVoxelIndex(mObject->GetPosition());
-			const float distToFirstCollisionVoxel = HeuristicEuclidean(objectIndex, mFirstCollisionVoxel);
-			while (mGlobalPath.size() > 1) {
-				if (HeuristicManhattan(mFirstCollisionVoxel, Scene::I->GetVoxelIndex(mGlobalPath.back())) < distToFirstCollisionVoxel) {
-					mGlobalPath.pop_back();
-				}
-				else {
-					break;
-				}
-			}
-			break;
-		}
-	}
-
-	if (addPath) {
-		mStart = crntPathIndex;
-		Pos dest = Scene::I->GetVoxelIndex(mGlobalPath.back());
-		mLocalPath = PathPlanningToAstar(dest, false);
 	}
 }
 
@@ -404,6 +378,7 @@ void Agent::ClearPath()
 {
 	mGlobalPath.clear();
 	mLocalPath.clear();
+	mGlobalPathCache.clear();
 	mFirstCollisionVoxel.Init();
 }
 

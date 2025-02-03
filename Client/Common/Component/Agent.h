@@ -73,17 +73,20 @@ class Agent : public Component {
 	COMPONENT(Agent, Component)
 
 public:
-	static constexpr int mkAvoidPathCount = 5;
+	static constexpr int mkAvoidPathCount = 3;
 
 private:
 	std::vector<Vec3>	mGlobalPath{};
 	std::vector<Vec3>	mLocalPath{};
+	std::unordered_map<Pos, int> mGlobalPathCache{};
+
 	Pos					mStart{};
 	Pos					mDest{};
 
 	std::vector<Pos>	mCloseList{};
 	std::vector<Pos>	mOpenList{};
 	Pos					mFirstCollisionVoxel{};
+
 
 public:
 	virtual void Start() override;
@@ -105,7 +108,7 @@ private:
 
 private:
 	void	MoveToPath();
-	void	AvoidStaticVoxel(const Pos& crntPathIndex, std::vector<Vec3>* crntPath);
+	void	AvoidStaticVoxel(const Pos& crntPathIndex);
 	int		GetOnVoxelCount(const Pos& pos);
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
 	void	ClearPath();
