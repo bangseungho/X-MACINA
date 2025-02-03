@@ -79,14 +79,14 @@ private:
 	std::vector<Vec3>	mGlobalPath{};
 	std::vector<Vec3>	mLocalPath{};
 	std::unordered_map<Pos, int> mGlobalPathCache{};
+	std::unordered_map<Pos, int> mOpenListMinusCost{};
+	std::unordered_map<Pos, int> mPrevPathMinusCost{};
 
 	Pos					mStart{};
 	Pos					mDest{};
 
 	std::vector<Pos>	mCloseList{};
 	std::vector<Pos>	mOpenList{};
-	Pos					mFirstCollisionVoxel{};
-
 
 public:
 	virtual void Start() override;

@@ -129,7 +129,8 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 			if (prevDir != gkFront3D[dir]) dirPathCost = gkCost3D[dir];
 
 			float g = curNode.G + gkCost3D[dir] + dirPathCost + onVoxelCountCost + proximityCost + edgeCost;
-			float h = heuristic(nextPos, dest) * PathOption::I->GetHeuristicWeight();
+			float h = (heuristic(nextPos, dest) + mOpenListMinusCost[nextPos] + mPrevPathMinusCost[nextPos]) * PathOption::I->GetHeuristicWeight();
+
 			if (g + h < distance[nextPos]) {
 				distance[nextPos] = g + h;
 				pq.push({ g + h, g, nextPos });
@@ -139,13 +140,6 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 			}
 		}
 	}
-
-	//// 경로를 못 찾은 경우
-	//if (curNode.Pos != dest) {
-	//	ClearPathList();
-	//	mCloseList.push_back(mStart);
-	//	return finalPath;
-	//}
 
 	Pos pos = curNode.Pos;
 	prevDir.Init();
@@ -186,6 +180,13 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 
 	std::reverse(finalPath.begin(), finalPath.end());
 
+	for (const Pos& openList : mOpenList) {
+		mOpenListMinusCost[openList] -= 10;
+	}
+	for (const Vec3& path : finalPath) {
+		mPrevPathMinusCost[Scene::I->GetVoxelIndex(path)] -= 20;
+	}
+
 	return finalPath;
 }
 
@@ -195,6 +196,7 @@ void Agent::ReadyPlanningToPath(const Pos& start)
 	mCloseList.push_back(mStart);
 	mObject->SetPosition(Scene::I->GetVoxelPos(start));
 	ClearPath();
+	PathOption::I->SetHeuristic(Heuristic::Manhattan);
 }
 
 void Agent::RayPathOptimize(std::stack<Pos>& path, const Pos& dest)
@@ -336,7 +338,9 @@ void Agent::AvoidStaticVoxel(const Pos& crntPathIndex)
 			}
 
 			mStart = crntPathIndex;
+			PathOption::I->SetHeuristic(Heuristic::Euclidean);
 			mLocalPath = PathPlanningToAstar(mDest, false);
+			std::cout << "Add Path Count : " << mLocalPath.size() << '\n';
 			std::copy(mLocalPath.begin(), mLocalPath.end(), std::back_inserter(mGlobalPath));
 			return;
 		}
@@ -379,7 +383,8 @@ void Agent::ClearPath()
 	mGlobalPath.clear();
 	mLocalPath.clear();
 	mGlobalPathCache.clear();
-	mFirstCollisionVoxel.Init();
+	mPrevPathMinusCost.clear();
+	mOpenListMinusCost.clear();
 }
 
 bool Agent::PickAgent()

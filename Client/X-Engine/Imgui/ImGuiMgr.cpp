@@ -311,7 +311,7 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 	{
 		ImGui::Text("Heuristic : ");
 		ImGui::SameLine(mTextSpacing);
-		static Heuristic heuri = Heuristic::Manhattan;
+		Heuristic heuri = PathOption::I->GetHeuristic();
 		if (ImGui::RadioButton("Manhattan", heuri == Heuristic::Manhattan)) heuri = Heuristic::Manhattan; ImGui::SameLine();
 		if (ImGui::RadioButton("Euclidean", heuri == Heuristic::Euclidean)) heuri = Heuristic::Euclidean;
 		PathOption::I->SetHeuristic(heuri);
