@@ -741,6 +741,7 @@ enum class VoxelState : UINT8 {
 	Dynamic,
 	Terrain,
 	TerrainStatic,
+	CanWalk,
 };
 
 enum class VoxelCondition : UINT8 {
@@ -832,5 +833,18 @@ namespace std {
 			return h1 ^ (h2 << 1) ^ (h3 << 2);
 		}
 	};
+
+	template<>
+	struct hash<std::pair<int, int>>
+	{
+		size_t operator () (pair<int, int> const& v) const {
+			auto h1 = hash<int>{}(v.first);
+			auto h2 = hash<int>{}(v.second);
+			return h1 ^ h2;
+		}
+	};
 }
+
+using PairMap = std::unordered_multimap<std::pair<int, int>, int>;
+using PairMapRange = std::pair<PairMap::iterator, PairMap::iterator>;
 #pragma endregion

@@ -313,12 +313,13 @@ void Scene::UpdateVoxelsOnTerrain()
 			Pos upIndex = index.Up();
 
 			// 위 복셀이 스태틱이면 해당 아래 복셀도 스태틱으로 설정
-			if (GetVoxelState(upIndex) == VoxelState::Static) {
-				SetVoxelState(index, VoxelState::TerrainStatic);
+			VoxelState upState = GetVoxelState(upIndex);
+			if (upState == VoxelState::Static || upState == VoxelState::CanWalk) {
+				SetVoxelState(index, VoxelState::Static);
 				UpdateVoxelsProximityCost(index);
 			}
 			else {
-				SetVoxelState(index, VoxelState::Terrain);
+				SetVoxelState(index, VoxelState::CanWalk);
 			}
 		}
 	}
@@ -917,6 +918,16 @@ float Scene::GetEdgeCost(const Pos& index, bool isRowEdge) const
 Voxel Scene::GetVoxel(const Pos& index) const
 {
 	return mGrids[GetGridIndex(index)]->GetVoxel(index);
+}
+
+PairMapRange Scene::GetCanWalkVoxels(const Pos& index) const
+{
+	return mGrids[GetGridIndex(index)]->GetCanWalkVoxels(index);
+}
+
+void Scene::RemoveCanWalkVoxel(const Pos& index) const
+{
+	return mGrids[GetGridIndex(index)]->RemoveCanWalkVoxel(index);
 }
 
 void Scene::SetVoxelState(const Pos& index, VoxelState state) const

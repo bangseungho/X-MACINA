@@ -33,6 +33,7 @@ public:
 	static int mVoxelCols;
 
 private:
+	PairMap mCanWalkVoxels{};
 	std::unordered_map<Pos, Voxel> mVoxels{};
 
 	// 추후에 UINT8로 변경
@@ -51,6 +52,7 @@ public:
 	const auto& GetObjects() const		{ return mObjects; }
 
 	Voxel GetVoxel(const Pos& index);
+	PairMapRange GetCanWalkVoxels(const Pos& index);
 	int GetProximityCost(const Pos& index);
 	float GetEdgeCost(const Pos& index, bool isRowEdge);
 	VoxelState GetVoxelState(const Pos& tPos);
@@ -60,6 +62,7 @@ public:
 	void SetVoxelState(const Pos& index, VoxelState state);
 	void SetVoxelCondition(const Pos& index, VoxelCondition condition);
 	void SetProximityCost(const Pos& index, int cost, bool isReset);
+	void RemoveCanWalkVoxel(const Pos& index);
 
 public:
 	bool Empty() const { return mObjects.empty(); }
@@ -75,6 +78,7 @@ public:
 	// BFS를 활용하여 타일 업데이트
 	void UpdateVoxels(VoxelState voxel, GridObject* object);
 	void UpdateVoxelsEdgeCost(const std::unordered_set<Pos>& boundingVoxels);
+	void UpdateTopVoxels(const std::unordered_set<Pos>& boundingVoxels);
 	float CalcRowEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
 	float CalcColEdgeCost(const Pos& voxel, const std::unordered_set<Pos>& boundingVoxels);
 

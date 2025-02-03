@@ -117,11 +117,11 @@ void VoxelManager::Render()
 		
 		switch (voxel.State) {
 		case VoxelState::Static:
+		case VoxelState::TerrainStatic:
 			instData.Color = Vec4{ 1.f, 0.f, 0.f, 1.f };
 			break;
-		case VoxelState::Terrain:
-		case VoxelState::TerrainStatic:
-			instData.Color = Vec4{ 0.f, 1.f, 0.f, 1.f };
+		case VoxelState::CanWalk:
+			instData.Color = Vec4{ 0.f, 1.0f, 0.f, 1.f };
 			break;
 		default:
 			break;
@@ -212,13 +212,8 @@ void VoxelManager::UpdateCreateMode(VoxelState selectedVoxelState)
 		return;
 	}
 
-	if (selectedVoxelState == VoxelState::Terrain || selectedVoxelState == VoxelState::TerrainStatic) {
-		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::TerrainStatic);
-	}
-	else {
-		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::Static);
-	}
-	Scene::I->SetVoxelState(mSelectedVoxel.Up(), VoxelState::Static);
+	Scene::I->RemoveCanWalkVoxel(mSelectedVoxel);
+	Scene::I->SetVoxelState(mSelectedVoxel.Up(), VoxelState::CanWalk);
 
 	mUsedCreateModeVoxels.insert(mSelectedVoxel.XZ());
 	Scene::I->UpdateVoxelsProximityCost(mSelectedVoxel);

@@ -86,8 +86,8 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 	parent[mStart] = mStart;
 
 	Pos prevDir;
-	int openNodeCount{};
 	PQNode curNode{};
+	int openNodeCount{};
 	while (!pq.empty()) {
 		curNode = pq.top();
 		prevDir = curNode.Pos - parent[curNode.Pos];
@@ -96,6 +96,9 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 		if (openNodeCount >= PathOption::I->GetMaxOpenNodeCount()) break;
 		if (visited.contains(curNode.Pos)) continue;
 		if (distance[curNode.Pos] < curNode.F) continue;
+
+		visited[curNode.Pos] = true;
+
 		if (mGlobalPathCache.count(curNode.Pos)) {
 			while (mGlobalPath.size() > 1 && Scene::I->GetVoxelIndex(mGlobalPath.back()) != curNode.Pos) {
 				mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
@@ -103,55 +106,49 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 			}
 			break;
 		}
-		visited[curNode.Pos] = true;
 
 		if (curNode.Pos == dest)
 			break;
 
-		// 26방향으로 탐색
-		for (int dir = 0; dir < gkCubeDirCount; ++dir) {
-			Pos nextPos = curNode.Pos + gkFront3D[dir];
-			VoxelState nextVoxel = Scene::I->GetVoxelState(nextPos);
+		for (int dir = 0; dir < 8; ++dir) {
+			Pos nextPosZX = curNode.Pos + gkFront[dir];
+			PairMapRange range = Scene::I->GetCanWalkVoxels(nextPosZX);
+			for (auto it = range.first; it != range.second; ++it) {
+				Pos nextPos = Pos{ it->first.first, it->first.second, it->second };
+				int diffPosY = abs(nextPos.Y - curNode.Pos.Y);
+				int dirPathCost{};
+				int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
+				float edgeCost = GetEdgeCost(nextPos, gkFront[dir]) * PathOption::I->GetEdgeWeight();
+				if (diffPosY > PathOption::I->GetAllowedHeight()) continue;
+				if (visited.contains(nextPos)) continue;
+				if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
+				if (prevDir != gkFront[dir]) dirPathCost = gkCost[dir];
 
-			// costs
-			int diffPosY = nextPos.Y - curNode.Pos.Y;
-			int onVoxelCount = GetOnVoxelCount(nextPos);
-			int onVoxelCountDiffPosY = onVoxelCount + diffPosY;
-			int dirPathCost{};
-			int onVoxelCountCost = onVoxelCount * PathOption::I->GetOnVoxelCost();
-			int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
-			float edgeCost = GetEdgeCost(nextPos, gkFront3D[dir]) * PathOption::I->GetEdgeWeight();
-			if (onVoxelCountDiffPosY < PathOption::I->GetAllowedHeight()) onVoxel[nextPos] = onVoxelCount;
-			if ((nextVoxel == VoxelState::Static || nextVoxel == VoxelState::TerrainStatic) && onVoxelCountDiffPosY > PathOption::I->GetAllowedHeight()) continue;
-			if (nextVoxel == VoxelState::None) continue;
-			if (visited.contains(nextPos)) continue;
-			if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
-			if (prevDir != gkFront3D[dir]) dirPathCost = gkCost3D[dir];
+				float g = curNode.G + gkCost[dir] + dirPathCost + proximityCost + edgeCost;
+				float h = (heuristic(nextPos, dest) + mOpenListMinusCost[nextPos] + mPrevPathMinusCost[nextPos]) * PathOption::I->GetHeuristicWeight();
 
-			float g = curNode.G + gkCost3D[dir] + dirPathCost + onVoxelCountCost + proximityCost + edgeCost;
-			float h = (heuristic(nextPos, dest) + mOpenListMinusCost[nextPos] + mPrevPathMinusCost[nextPos]) * PathOption::I->GetHeuristicWeight();
-
-			if (g + h < distance[nextPos]) {
-				distance[nextPos] = g + h;
-				pq.push({ g + h, g, nextPos });
-				parent[nextPos] = curNode.Pos;
-				openNodeCount++;
-				mOpenList.push_back(nextPos);
+				if (g + h < distance[nextPos]) {
+					distance[nextPos] = g + h;
+					pq.push({ g + h, g, nextPos });
+					parent[nextPos] = curNode.Pos;
+					openNodeCount++;
+					mOpenList.push_back(nextPos);
+				}
 			}
 		}
 	}
 
 	Pos pos = curNode.Pos;
 	prevDir.Init();
+
 	// 부모를 통해 경로 설정
 	while (pos != parent[pos]) {
-		Pos newPos = pos + Pos{ 0, 0, onVoxel[pos] };
-		parent[newPos] = parent[pos];
-		pos = newPos;
-		Pos dir = parent[pos] - newPos;
+		Pos dir = parent[pos] - pos;
+
 		if (!PathOption::I->GetDirPathOptimize() || prevDir != dir) {
 			path.push(pos);
 		}
+
 		pos = parent[pos];
 		prevDir = dir;
 	}
@@ -181,10 +178,10 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 	std::reverse(finalPath.begin(), finalPath.end());
 
 	for (const Pos& openList : mOpenList) {
-		mOpenListMinusCost[openList] -= 10;
+		mOpenListMinusCost[openList] = -10;
 	}
 	for (const Vec3& path : finalPath) {
-		mPrevPathMinusCost[Scene::I->GetVoxelIndex(path)] -= 20;
+		mPrevPathMinusCost[Scene::I->GetVoxelIndex(path)] = -20;
 	}
 
 	return finalPath;
@@ -316,11 +313,11 @@ void Agent::MoveToPath()
 		const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
 		mGlobalPath.pop_back();
 		mGlobalPathCache.erase(crntPathIndex);
-		AvoidStaticVoxel(crntPathIndex);
+		RePlanningToPath(crntPathIndex);
 	}
 }
 
-void Agent::AvoidStaticVoxel(const Pos& crntPathIndex)
+void Agent::RePlanningToPath(const Pos& crntPathIndex)
 {
 	bool addPath{};
 	for (int i = mkAvoidPathCount; i > 0; --i) {
@@ -329,9 +326,8 @@ void Agent::AvoidStaticVoxel(const Pos& crntPathIndex)
 		}
 
 		Pos nextPathIndex = Scene::I->GetVoxelIndex(mGlobalPath[mGlobalPath.size() - i]);
-		VoxelState nextPathUpVoxelState = Scene::I->GetVoxelState(nextPathIndex.Up());
-
-		if (nextPathUpVoxelState == VoxelState::Static) {
+		VoxelState nextPathVoxelState = Scene::I->GetVoxelState(nextPathIndex);
+		if (nextPathVoxelState == VoxelState::Static) {
 			for (int j = 0; j < i; ++j) {
 				mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
 				mGlobalPath.pop_back();

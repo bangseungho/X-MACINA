@@ -108,6 +108,8 @@ public:
 	Pos				GetVoxelIndex(const Vec3& pos) const;
 	Vec3			GetVoxelPos(const Pos& index) const;
 	Voxel			GetVoxel(const Pos& index) const;
+	PairMapRange	GetCanWalkVoxels(const Pos& index) const;
+	void			RemoveCanWalkVoxel(const Pos& index) const;
 	VoxelState		GetVoxelState(const Pos& index) const;
 	VoxelCondition	GetVoxelCondition(const Pos& index) const;
 	int				GetProximityCost(const Pos& index) const;

@@ -108,7 +108,7 @@ private:
 
 private:
 	void	MoveToPath();
-	void	AvoidStaticVoxel(const Pos& crntPathIndex);
+	void	RePlanningToPath(const Pos& crntPathIndex);
 	int		GetOnVoxelCount(const Pos& pos);
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
 	void	ClearPath();

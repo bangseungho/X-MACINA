@@ -60,6 +60,11 @@ Voxel Grid::GetVoxel(const Pos& index)
 	}
 }
 
+PairMapRange Grid::GetCanWalkVoxels(const Pos& index)
+{
+	return mCanWalkVoxels.equal_range({ index.Z, index.X });
+}
+
 int Grid::GetProximityCost(const Pos& index)
 {
 	if (mProximityCosts.count(index)) {
@@ -91,6 +96,7 @@ void Grid::SetVoxelState(const Pos& index, VoxelState state)
 	if (mVoxels.count(index)) {
 		if (state == VoxelState::None) {
 			mVoxels.erase(index);
+			return;
 		}
 		else {
 			mVoxels[index].State = state;
@@ -104,6 +110,10 @@ void Grid::SetVoxelState(const Pos& index, VoxelState state)
 		const Matrix matrix = scaleMtx * translationMtx;
 		voxel.MtxWorld = matrix.Transpose();
 		mVoxels.insert({ index, voxel });
+	}
+
+	if (state == VoxelState::CanWalk) {
+		mCanWalkVoxels.insert({ {index.Z, index.X}, index.Y });
 	}
 }
 
@@ -130,6 +140,18 @@ void Grid::SetProximityCost(const Pos& index, int cost, bool isReset)
 	}
 	else {
 		mProximityCosts[index] = max(cost, mProximityCosts[index]);
+	}
+}
+
+void Grid::RemoveCanWalkVoxel(const Pos& index)
+{
+	PairMapRange range = GetCanWalkVoxels(index);
+	mVoxels[index].State = VoxelState::Static;
+	for (auto it = range.first; it != range.second; ++it) {
+		if (it->second == index.Y) {
+			mCanWalkVoxels.erase(it);
+			break;
+		}
 	}
 }
 
@@ -208,6 +230,7 @@ void Grid::UpdateVoxels(VoxelState voxel, GridObject* object)
 			}
 		}
 		UpdateVoxelsEdgeCost(boundingVoxels);
+		UpdateTopVoxels(boundingVoxels);
 	}
 }
 
@@ -240,6 +263,15 @@ void Grid::UpdateVoxelsEdgeCost(const std::unordered_set<Pos>& boundingVoxels)
 		}
 		mRowEdgeCosts[voxel] *= 10;
 		mColEdgeCosts[voxel] *= 10;
+	}
+}
+
+void Grid::UpdateTopVoxels(const std::unordered_set<Pos>& boundingVoxels)
+{
+	for (const Pos& voxel : boundingVoxels) {
+		if (Scene::I->GetVoxelState(voxel.Up()) == VoxelState::None) {
+			Scene::I->SetVoxelState(voxel, VoxelState::CanWalk);
+		}
 	}
 }
 
