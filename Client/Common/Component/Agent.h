@@ -38,6 +38,7 @@ private:
 	bool		mDirPathOptimize = false;
 	bool		mRayPathOptimize = false;
 	bool		mSplinePath = false;
+	bool		mStartFlag = false;
 
 public:
 
@@ -49,6 +50,7 @@ public:
 	bool		GetDirPathOptimize() const { return mDirPathOptimize; }
 	bool		GetRayPathOptimize() const { return mRayPathOptimize; }
 	bool		GetSplinePath() const { return mSplinePath; }
+	bool		GetStartFlag() const { return mStartFlag; }
 
 	void		SetMaxOpenNodeCount(int count) { mMaxOpenNodeCount = count; }
 	void		SetOnVoxelCost(int cost) { mOnVoxelCost = cost; }
@@ -58,11 +60,12 @@ public:
 	void		SetDirPathOptimize(bool optimize) { mDirPathOptimize = optimize; }
 	void		SetRayPathOptimize(bool optimize) { mRayPathOptimize = optimize; if (optimize) SetDirPathOptimize(optimize); }
 	void		SetSplinePath(bool spline) { mSplinePath = spline; }
+	void		SetStartFlag(bool flag) { mStartFlag = flag; }
 };
 
 
 struct AgentOption {
-	float		AgentSpeed = 2.2f;
+	float		AgentSpeed = 1.f;
 	int			AllowedHeight = 0;
 	Heuristic	Heuri = Heuristic::Manhattan;
 };
@@ -86,21 +89,27 @@ private:
 
 	std::vector<Pos>	mCloseList{};
 	std::vector<Pos>	mOpenList{};
+	
+	bool				mIsStart{};
 
 private:
-	static constexpr int mkAvoidPathCount = 3;
+	static constexpr int mkAvoidForwardStaticObjectCount = 3;
+	static constexpr int mkAvoidForwardDynamicObjectCount = 2;
 
 public:
 	virtual void Start() override;
 	virtual void Update() override;
 	
 public:
-	const Matrix& GetWorldMatrix() { return mObject->GetWorldTransform(); }
-	const Vec3& GetWorldPosition() { return mObject->GetPosition(); }
+	const Matrix GetWorldMatrix() const { return mObject->GetWorldTransform(); }
+	const Vec3 GetWorldPosition() const { return mObject->GetPosition(); }
+	const Vec3 GetLook() const { return mObject->GetLook(); }
+	const Pos GetNextPathIndex() const;
 	void SetWorldMatrix(const Matrix& mtxWorld) { return mObject->SetWorldTransform(mtxWorld); }
+	void SetStartMoveToPath(bool isStart) { mIsStart = isStart; }
 	
 public:
-	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, bool clearPathList = true);
+	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList = true);
 	void				ReadyPlanningToPath(const Pos& start);
 	void				SetPath(std::vector<Vec3>& path) { mGlobalPath = path; }
 	bool				PickAgent();
@@ -116,8 +125,8 @@ private:
 
 private:
 	void	MoveToPath();
-	void	RePlanningToPath(const Pos& crntPathIndex);
-	int		GetOnVoxelCount(const Pos& pos);
+	void	RePlanningToPathAvoidStatic(const Pos& crntPathIndex);
+	void	RePlanningToPathAvoidDynamic(const Pos& crntPathIndex);
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
 	void	ClearPath();
 };
@@ -128,16 +137,16 @@ class AgentManager : public Singleton<AgentManager> {
 
 private:
 	std::set<Agent*> mAgents{};
-
+	
 public:
 	void AddAgent(Agent* agent) { mAgents.insert(agent); }
 	void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
 
 public:
+	void StartMoveToPath();
 	void RenderPathList();
 	void ClearPathList();
-
-public:
+	Agent* CheckAgentIndex(const Pos& index, Agent* invoker);
 	void PickAgent(Agent** agent);
 };
 

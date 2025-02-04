@@ -22,6 +22,7 @@
 #include "Component/Collider.h"
 #include "Component/Component.h"
 #include "Component/ParticleSystem.h"
+#include "Component/Agent.h"
 #include "AbilityMgr.h"
 
 #include "TestCube.h"
@@ -315,7 +316,6 @@ void Scene::UpdateVoxelsOnTerrain()
 			// 위 복셀이 스태틱이면 해당 아래 복셀도 스태틱으로 설정
 			VoxelState upState = GetVoxelState(upIndex);
 			if (upState == VoxelState::Static || upState == VoxelState::CanWalk) {
-				SetVoxelState(index, VoxelState::Static);
 				UpdateVoxelsProximityCost(index);
 			}
 			else {

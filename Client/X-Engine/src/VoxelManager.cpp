@@ -252,7 +252,7 @@ void VoxelManager::UpdatePlanningPathMode(bool makePath, VoxelState selectedVoxe
 	}
 
 	if (!mReadyMakePath) {
-		std::vector<Vec3> path = mPickedAgent->PathPlanningToAstar(mSelectedVoxel);
+		std::vector<Vec3> path = mPickedAgent->PathPlanningToAstar(mSelectedVoxel, {}, true);
 		if (path.empty()) {
 			return;
 		}

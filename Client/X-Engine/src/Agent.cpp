@@ -46,10 +46,23 @@ void Agent::Start()
 
 void Agent::Update()
 {
+	if (!PathOption::I->GetStartFlag()) {
+		mIsStart = true;
+	}
+
 	MoveToPath();
 }
 
-std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList)
+const Pos Agent::GetNextPathIndex() const
+{
+	if (!mGlobalPath.empty()) {
+		return Scene::I->GetVoxelIndex(mGlobalPath.back());
+	}
+
+	return Pos{};
+}
+
+std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList)
 {
 	if (clearPathList) {
 		ClearPathList();
@@ -117,7 +130,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 				if (prevDir != gkFront[dir]) dirPathCost = gkCost[dir];
 
 				float g = curNode.G + gkCost[dir] + dirPathCost + proximityCost + edgeCost;
-				float h = (heuristic(nextPos, dest) + mOpenListMinusCost[nextPos] + mPrevPathMinusCost[nextPos]) * PathOption::I->GetHeuristicWeight();
+				float h = (heuristic(nextPos, dest) + avoidCostMap[nextPos.XZ()] + mOpenListMinusCost[nextPos] + mPrevPathMinusCost[nextPos]) * PathOption::I->GetHeuristicWeight();
 
 				if (g + h < distance[nextPos]) {
 					distance[nextPos] = g + h;
@@ -154,7 +167,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 
 	// 시작점이 적용되지 않을 수 있음
 	if (path.top() != mStart) {
-		path.push(mStart);
+		//path.push(mStart);
 	}
 
 	// 광선을 이용한 경로 최소화
@@ -245,7 +258,7 @@ void Agent::RayPathOptimize(std::stack<Pos>& path, const Pos& dest)
 							goto NoOptimizePath;
 						}
 						else if (state == VoxelState::Static) {
-							if (GetOnVoxelCount(voxel) >= mOption.AllowedHeight || prev.Y != y) {
+							if (/*GetOnVoxelCount(voxel) >= mOption.AllowedHeight ||*/ prev.Y != y) {
 								optimizePath.push(prev);
 								now = prev;
 								goto NoOptimizePath;
@@ -312,7 +325,12 @@ void Agent::MakeSplinePath(std::vector<Vec3>& path)
 
 void Agent::MoveToPath()
 {
+	if (!mIsStart) {
+		return;
+	}
+
 	if (mGlobalPath.empty()) {
+		mIsStart = false;
 		return;
 	}
 	
@@ -327,21 +345,22 @@ void Agent::MoveToPath()
 		const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
 		mGlobalPath.pop_back();
 		mGlobalPathCache.erase(crntPathIndex);
-		RePlanningToPath(crntPathIndex);
+
+		RePlanningToPathAvoidStatic(crntPathIndex);
+		RePlanningToPathAvoidDynamic(crntPathIndex);
 	}
 }
 
-void Agent::RePlanningToPath(const Pos& crntPathIndex)
+void Agent::RePlanningToPathAvoidStatic(const Pos& crntPathIndex)
 {
-	bool addPath{};
-	for (int i = mkAvoidPathCount; i > 0; --i) {
+	for (int i = mkAvoidForwardStaticObjectCount; i > 0; --i) {
 		if (mGlobalPath.size() <= i) {
 			continue;
 		}
 
 		Pos nextPathIndex = Scene::I->GetVoxelIndex(mGlobalPath[mGlobalPath.size() - i]);
-		VoxelState nextPathVoxelState = Scene::I->GetVoxelState(nextPathIndex.Up());
-		if (nextPathVoxelState == VoxelState::Dynamic || nextPathVoxelState == VoxelState::Static) {
+		VoxelState nextPathUpVoxelState = Scene::I->GetVoxelState(nextPathIndex.Up());
+		if (nextPathUpVoxelState == VoxelState::Dynamic || nextPathUpVoxelState == VoxelState::Static) {
 			for (int j = 0; j < i; ++j) {
 				mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
 				mGlobalPath.pop_back();
@@ -349,27 +368,50 @@ void Agent::RePlanningToPath(const Pos& crntPathIndex)
 
 			mStart = crntPathIndex;
 			mOption.Heuri = Heuristic::Euclidean;
-			mLocalPath = PathPlanningToAstar(mDest, false);
-			std::cout << "Add Path Count : " << mLocalPath.size() << '\n';
+			mLocalPath = PathPlanningToAstar(mDest, {}, false);
 			std::copy(mLocalPath.begin(), mLocalPath.end(), std::back_inserter(mGlobalPath));
 			return;
 		}
 	}
 }
 
-int Agent::GetOnVoxelCount(const Pos& pos)
+void Agent::RePlanningToPathAvoidDynamic(const Pos& crntPathIndex)
 {
-	Pos next = pos;
-	int cnt{};
-	while (true) {
-		next.Y += 1;
-		if (Scene::I->GetVoxelState(next) == VoxelState::None) {
-			break;
-		}
-		cnt++;
+	if (mGlobalPath.size() <= 1) {
+		return;
 	}
 
-	return cnt;
+	Pos nextPathIndex = Scene::I->GetVoxelIndex(mGlobalPath.back());
+	Agent* otherAgent = AgentManager::I->CheckAgentIndex(nextPathIndex, this);
+	if (!otherAgent) {
+		return;
+	}
+
+	mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
+	mGlobalPath.pop_back();
+
+	Pos otherAgentIndex = Scene::I->GetVoxelIndex(otherAgent->GetWorldPosition());
+	Vec3 otherAgentLook = otherAgent->GetLook();
+
+	std::unordered_map<Pos, int> costMap{};
+	for (int z = -1; z <= 1; ++z) {
+		for (int x = -1; x <= 1; ++x) {
+			int dz = otherAgentIndex.Z + z;
+			int dx = otherAgentIndex.X + x;
+			const Pos& index = Pos{ dz, dx, 0 };
+			const Vec3& pos = Scene::I->GetVoxelPos(index);
+			const Vec3& dir = Vector3::Normalized(pos.xz() - otherAgent->GetWorldPosition().xz());
+			float angle = Vector3::Angle(dir, otherAgentLook);
+			int cost = static_cast<int>((1.f - angle / 180.f) * 50);
+			costMap.insert({ index, cost });
+		}
+	}
+
+	mStart = crntPathIndex;
+	mOption.Heuri = Heuristic::Euclidean;
+	mLocalPath = PathPlanningToAstar(mDest, costMap, false);
+	std::copy(mLocalPath.begin(), mLocalPath.end(), std::back_inserter(mGlobalPath));
+	return;
 }
 
 float Agent::GetEdgeCost(const Pos& nextPos, const Pos& dir)
@@ -427,6 +469,13 @@ void Agent::RenderCloseList()
 	}
 }
 
+void AgentManager::StartMoveToPath()
+{
+	for (Agent* agent : mAgents) {
+		agent->SetStartMoveToPath(true);
+	}
+}
+
 void AgentManager::RenderPathList()
 {
 	for (Agent* agent : mAgents) {
@@ -443,6 +492,30 @@ void AgentManager::ClearPathList()
 	for (Agent* agent : mAgents) {
 		agent->ClearPathList();
 	}
+}
+
+Agent* AgentManager::CheckAgentIndex(const Pos& index, Agent* invoker)
+{
+	Agent* result{};
+	for (auto agent : mAgents) {
+		if (agent == invoker) {
+			continue;
+		}
+
+		const Pos& agentIndex = Scene::I->GetVoxelIndex(agent->GetWorldPosition());
+		if (agentIndex == index) {
+			result = agent;
+		}
+		else {
+			const Pos& agentNextPathIndex = agent->GetNextPathIndex();
+			if (agentNextPathIndex == index) {
+				result = agent;
+				std::cout << "COLLISION'\n";
+			}
+		}
+	}
+
+	return result;
 }
 
 void AgentManager::PickAgent(Agent** agent)

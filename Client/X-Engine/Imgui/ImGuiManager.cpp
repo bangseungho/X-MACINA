@@ -64,7 +64,7 @@ bool ImGuiManager::Init()
 
     uptr<ImGuiFunc> voxelFunc = std::make_unique<ImGuiVoxelFunc>(Vec2{ 0, 0 }, Vec2{ 450, 300 });
     uptr<ImGuiFunc> pathFunc = std::make_unique<ImGuiPathFunc>(Vec2{ 0, 300 }, Vec2{ 450, 200 });
-    uptr<ImGuiFunc> agentFunc = std::make_unique<ImGuiAgentFunc>(Vec2{ 0, 500 }, Vec2{ 450, 200 });
+    uptr<ImGuiFunc> agentFunc = std::make_unique<ImGuiAgentFunc>(Vec2{ 0, 500 }, Vec2{ 450, 300 });
     mFuncs.emplace_back(std::move(voxelFunc));
     mFuncs.emplace_back(std::move(pathFunc));
     mFuncs.emplace_back(std::move(agentFunc));
@@ -310,19 +310,6 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		ImGui::Checkbox("SplinePath", &value);
 		PathOption::I->SetSplinePath(value);
 	}
-
-	// clear path
-	{
-		ImVec2 windowSize = ImGui::GetContentRegionAvail();
-		ImVec2 buttonSize = ImVec2(100, 30);
-		float buttonX = (windowSize.x - buttonSize.x) * 0.5f;
-		float buttonY = windowSize.y - buttonSize.y;
-		ImGui::SetCursorPos(ImVec2(buttonX, buttonY));
-		ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 50);
-		if (ImGui::Button("Clear Path", ImVec2{ 100, 30 })) {
-			AgentManager::I->ClearPathList();
-		}
-	}
 }
 
 void ImGuiAgentFunc::Execute(GameObject* selectedObject)
@@ -359,20 +346,39 @@ void ImGuiAgentFunc::Execute(GameObject* selectedObject)
 		mCrntAgent->mOption.AllowedHeight = max(0, value);
 	}
 
-	// add agent
+	{
+		bool value = PathOption::I->GetStartFlag();
+		ImGui::Checkbox("StartFlag", &value);
+		PathOption::I->SetStartFlag(value);
+	}
+
 	{
 		ImVec2 windowSize = ImGui::GetContentRegionAvail();
 		ImVec2 buttonSize = ImVec2(100, 30);
-		float buttonX = (windowSize.x - buttonSize.x) * 0.5f;
+		float spacing = 10.0f;  // 버튼 사이 간격
+
+		// 전체 버튼들의 너비 계산
+		float totalWidth = (buttonSize.x * 2) + spacing;
+
+		// 버튼을 창의 하단 중앙에 정렬
+		float buttonX = (windowSize.x - totalWidth) * 0.5f;
 		float buttonY = windowSize.y - buttonSize.y;
-		ImGui::SetCursorPos(ImVec2(buttonX, buttonY));
-		ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 50);
-		if (ImGui::Button("Add Agent", ImVec2{ 100, 30 })) {
+
+		// Y 위치 조정 (창 하단에서 50px 위)
+		ImGui::SetCursorPos(ImVec2(buttonX, ImGui::GetWindowHeight() - 50));
+
+		if (ImGui::Button("Add Agent", buttonSize)) {
 			Scene::I->Instantiate("EliteTrooper")->AddComponent<Agent>();
+		}
+
+		ImGui::SameLine(0, spacing); // 같은 줄에서 버튼을 이어서 배치
+
+		if (ImGui::Button("Move Agent", buttonSize)) {
+			AgentManager::I->StartMoveToPath();
 		}
 	}
 
-	UpdateGuizmo();
+	//UpdateGuizmo();
 }
 
 void ImGuiAgentFunc::UpdateGuizmo()
