@@ -79,6 +79,7 @@ public:
 
 public:
 	const Pos& GetSelectedVoxelPos() const { return mSelectedVoxel; }
+	Agent* GetPickedAgent() { return mPickedAgent; }
 
 public:
 	int GetRenderVoxelRows() const { return mOption.RenderVoxelRows; }
@@ -93,6 +94,7 @@ public:
 	void SetRenderVoxelHeight(int height) { mOption.RenderVoxelHeight = height; UpdateRenderVoxels(mCenterPos, false); }
 	void SetCreateMode(CreateMode mode) { mOption.CreateMode = mode; }
 	void SetRenderMode(RenderMode mode) { mOption.RenderMode = mode; }
+	void SetAgent(Agent* agent);
 
 public:
 	void UpdateRenderVoxels(const Pos& pos, bool checkCenterPos = true);

@@ -252,7 +252,7 @@
     <ClCompile Include="include\TLS.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Imgui\ImGuiMgr.cpp">
+    <ClCompile Include="Imgui\ImGuiManager.cpp">
       <Filter>Imgui</Filter>
     </ClCompile>
     <ClCompile Include="src\BehaviorTree.cpp">
@@ -428,7 +428,7 @@
     <ClInclude Include="include\TLS.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Imgui\ImGuiMgr.h">
+    <ClInclude Include="Imgui\ImGuiManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="..\Common\Component\Camera.h">

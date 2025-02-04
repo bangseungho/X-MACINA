@@ -30,8 +30,6 @@ class PathOption : public Singleton<PathOption> {
 	friend Singleton;
 	
 private:
-	float		mAgentSpeed = 2.2f;
-	int			mAllowedHeight = 0;
 	int			mMaxOpenNodeCount = 50000;
 	int			mOnVoxelCost = 30;
 	int			mHeuristicWeight = 10;
@@ -40,11 +38,9 @@ private:
 	bool		mDirPathOptimize = false;
 	bool		mRayPathOptimize = false;
 	bool		mSplinePath = false;
-	Heuristic	mHeuristic = Heuristic::Manhattan;
 
 public:
-	float		GetAgentSpeed() const { return mAgentSpeed; }
-	int			GetAllowedHeight() const { return mAllowedHeight; }
+
 	int			GetMaxOpenNodeCount() const { return mMaxOpenNodeCount; }
 	int			GetOnVoxelCost() const { return mOnVoxelCost; }
 	int			GetHeuristicWeight() const { return mHeuristicWeight; }
@@ -53,10 +49,7 @@ public:
 	bool		GetDirPathOptimize() const { return mDirPathOptimize; }
 	bool		GetRayPathOptimize() const { return mRayPathOptimize; }
 	bool		GetSplinePath() const { return mSplinePath; }
-	Heuristic	GetHeuristic() const { return mHeuristic; }
-	
-	void		SetAgentSpeed(float speed) { mAgentSpeed = speed; }
-	void		SetAllowedHeight(int height) { mAllowedHeight = height; }
+
 	void		SetMaxOpenNodeCount(int count) { mMaxOpenNodeCount = count; }
 	void		SetOnVoxelCost(int cost) { mOnVoxelCost = cost; }
 	void		SetHeuristicWeight(int weight) { mHeuristicWeight = weight; }
@@ -65,7 +58,13 @@ public:
 	void		SetDirPathOptimize(bool optimize) { mDirPathOptimize = optimize; }
 	void		SetRayPathOptimize(bool optimize) { mRayPathOptimize = optimize; if (optimize) SetDirPathOptimize(optimize); }
 	void		SetSplinePath(bool spline) { mSplinePath = spline; }
-	void		SetHeuristic(Heuristic heuristic) { mHeuristic = heuristic; }
+};
+
+
+struct AgentOption {
+	float		AgentSpeed = 2.2f;
+	int			AllowedHeight = 0;
+	Heuristic	Heuri = Heuristic::Manhattan;
 };
 
 
@@ -73,8 +72,8 @@ class Agent : public Component {
 	COMPONENT(Agent, Component)
 
 public:
-	static constexpr int mkAvoidPathCount = 3;
-
+	AgentOption mOption{};
+		
 private:
 	std::vector<Vec3>	mGlobalPath{};
 	std::vector<Vec3>	mLocalPath{};
@@ -87,6 +86,9 @@ private:
 
 	std::vector<Pos>	mCloseList{};
 	std::vector<Pos>	mOpenList{};
+
+private:
+	static constexpr int mkAvoidPathCount = 3;
 
 public:
 	virtual void Start() override;
@@ -103,6 +105,7 @@ public:
 	void				SetRimFactor(float factor) { mObject->mObjectCB.RimFactor = factor; }
 
 private:
+	bool	CheckCurNodeContainPathCache(const Pos& curNode);
 	void	RayPathOptimize(std::stack<Pos>& path, const Pos& dest);
 	void	MakeSplinePath(std::vector<Vec3>& path);
 

@@ -740,7 +740,6 @@ enum class VoxelState : UINT8 {
 	Static,
 	Dynamic,
 	Terrain,
-	TerrainStatic,
 	CanWalk,
 };
 

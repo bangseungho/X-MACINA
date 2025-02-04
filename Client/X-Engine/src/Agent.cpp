@@ -59,19 +59,19 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 
 	mDest = dest;
 	std::stack<Pos>	path{};
-	std::unordered_map<Pos, Pos> parent;
-	std::unordered_map<Pos, int> onVoxel;
-	std::unordered_map<Pos, float> distance;
-	std::unordered_map<Pos, bool> visited;
+	std::unordered_map<Pos, Pos>	parent;
+	std::unordered_map<Pos, int>	onVoxel;
+	std::unordered_map<Pos, float>	distance;
+	std::unordered_map<Pos, bool>	visited;
 
 	std::function<float(const Pos&, const Pos&)> heuristic{};
-	switch (PathOption::I->GetHeuristic())
-	{
-	case Heuristic::Manhattan:
-		heuristic = HeuristicManhattan;
-		break;
+
+	switch (mOption.Heuri) {
 	case Heuristic::Euclidean:
 		heuristic = HeuristicEuclidean;
+		break;
+	case Heuristic::Manhattan:
+		heuristic = HeuristicManhattan;
 		break;
 	default:
 		break;
@@ -88,24 +88,18 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 	Pos prevDir;
 	PQNode curNode{};
 	int openNodeCount{};
+	bool failedPlanningPath{};
 	while (!pq.empty()) {
 		curNode = pq.top();
 		prevDir = curNode.Pos - parent[curNode.Pos];
 		pq.pop();
 
-		if (openNodeCount >= PathOption::I->GetMaxOpenNodeCount()) break;
+		if (openNodeCount >= PathOption::I->GetMaxOpenNodeCount()) {failedPlanningPath = true; break; }
 		if (visited.contains(curNode.Pos)) continue;
 		if (distance[curNode.Pos] < curNode.F) continue;
+		if (CheckCurNodeContainPathCache(curNode.Pos)) break;
 
 		visited[curNode.Pos] = true;
-
-		if (mGlobalPathCache.count(curNode.Pos)) {
-			while (mGlobalPath.size() > 1 && Scene::I->GetVoxelIndex(mGlobalPath.back()) != curNode.Pos) {
-				mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
-				mGlobalPath.pop_back();
-			}
-			break;
-		}
 
 		if (curNode.Pos == dest)
 			break;
@@ -119,7 +113,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 				int dirPathCost{};
 				int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
 				float edgeCost = GetEdgeCost(nextPos, gkFront[dir]) * PathOption::I->GetEdgeWeight();
-				if (diffPosY > PathOption::I->GetAllowedHeight()) continue;
+				if (diffPosY > mOption.AllowedHeight) continue;
 				if (visited.contains(nextPos)) continue;
 				if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
 				if (prevDir != gkFront[dir]) dirPathCost = gkCost[dir];
@@ -138,6 +132,13 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 		}
 	}
 
+	// 경로 설정 실패
+	if (failedPlanningPath || pq.empty()) {
+		ClearPathList();
+		ClearPath();
+		return finalPath;
+	}
+
 	Pos pos = curNode.Pos;
 	prevDir.Init();
 
@@ -153,6 +154,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 		prevDir = dir;
 	}
 
+	// 시작점이 적용되지 않을 수 있음
 	if (path.top() != mStart) {
 		path.push(mStart);
 	}
@@ -171,12 +173,14 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 		path.pop();
 	}
 
+	// 경로 캣멀롬 곡선화
 	if (PathOption::I->GetSplinePath()) {
 		MakeSplinePath(finalPath);
 	}
 
 	std::reverse(finalPath.begin(), finalPath.end());
 
+	// 음수 가중치 적용
 	for (const Pos& openList : mOpenList) {
 		mOpenListMinusCost[openList] = -10;
 	}
@@ -193,7 +197,19 @@ void Agent::ReadyPlanningToPath(const Pos& start)
 	mCloseList.push_back(mStart);
 	mObject->SetPosition(Scene::I->GetVoxelPos(start));
 	ClearPath();
-	PathOption::I->SetHeuristic(Heuristic::Manhattan);
+	mOption.Heuri = Heuristic::Manhattan;
+}
+
+bool Agent::CheckCurNodeContainPathCache(const Pos& curNode)
+{
+	if (mGlobalPathCache.count(curNode)) {
+		while (mGlobalPath.size() > 1 && Scene::I->GetVoxelIndex(mGlobalPath.back()) != curNode) {
+			mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
+			mGlobalPath.pop_back();
+		}
+		return true;
+	}
+	return false;
 }
 
 void Agent::RayPathOptimize(std::stack<Pos>& path, const Pos& dest)
@@ -230,8 +246,8 @@ void Agent::RayPathOptimize(std::stack<Pos>& path, const Pos& dest)
 							path.pop();
 							goto NoOptimizePath;
 						}
-						else if (state == VoxelState::Static || state == VoxelState::TerrainStatic) {
-							if (GetOnVoxelCount(voxel) >= PathOption::I->GetAllowedHeight() || prev.Y != y) {
+						else if (state == VoxelState::Static) {
+							if (GetOnVoxelCount(voxel) >= mOption.AllowedHeight || prev.Y != y) {
 								optimizePath.push(prev);
 								now = prev;
 								goto NoOptimizePath;
@@ -304,7 +320,7 @@ void Agent::MoveToPath()
 	
 	Vec3 nextPos = (mGlobalPath.back() - mObject->GetPosition());
 	mObject->RotateTargetAxisY(mGlobalPath.back(), 1000.f);
-	mObject->Translate(XMVector3Normalize(nextPos), PathOption::I->GetAgentSpeed() * DeltaTime());
+	mObject->Translate(XMVector3Normalize(nextPos), mOption.AgentSpeed * DeltaTime());
 
 	const float kMinDistance = 0.1f;
 
@@ -334,7 +350,7 @@ void Agent::RePlanningToPath(const Pos& crntPathIndex)
 			}
 
 			mStart = crntPathIndex;
-			PathOption::I->SetHeuristic(Heuristic::Euclidean);
+			mOption.Heuri = Heuristic::Euclidean;
 			mLocalPath = PathPlanningToAstar(mDest, false);
 			std::cout << "Add Path Count : " << mLocalPath.size() << '\n';
 			std::copy(mLocalPath.begin(), mLocalPath.end(), std::back_inserter(mGlobalPath));

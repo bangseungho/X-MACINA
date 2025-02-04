@@ -5,7 +5,7 @@
 #include "X-Engine.h"
 
 #include "InputMgr.h"
-#include "Imgui/ImGuiMgr.h"
+#include "Imgui/ImGuiManager.h"
 
 #include "Scene.h"
 #include "Timer.h"
@@ -175,7 +175,7 @@ void GameFramework::ProcessKeyboardMsg(HWND hWnd, UINT message, WPARAM wParam, L
 			Scene::I->ToggleDrawBoundings();
 			break;
 		case VK_F6:
-			ImGuiMgr::I->ToggleImGui();
+			ImGuiManager::I->ToggleImGui();
 			break;
 		case VK_F8:
 			Scene::I->ToggleFilterOptions();

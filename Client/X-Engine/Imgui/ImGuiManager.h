@@ -2,6 +2,7 @@
 #include "Singleton.h"
 
 class GameObject;
+class Agent;
 
 class ImGuiFunc {
 protected:
@@ -9,10 +10,14 @@ protected:
 	Vec2			mSize{};
 	std::string		mName{};
 	float			mTextSpacing = 130;
+	Agent*			mCrntAgent{};
 
 public:
 	ImGuiFunc(const Vec2& pos, const Vec2& size, std::string label);
 	virtual ~ImGuiFunc() = default;
+
+public:
+	void SetAgent(Agent* pickedAgent);
 
 public:
 	std::string GetLabel() const { return mName; }
@@ -52,15 +57,26 @@ public:
 };
 
 
-class ImGuiMgr : public Singleton<ImGuiMgr>
+class ImGuiAgentFunc : public ImGuiFunc {
+	using base = ImGuiFunc;
+
+public:
+	ImGuiAgentFunc(const Vec2& pos, const Vec2& size) : ImGuiFunc(pos, size, "Agent") {}
+
+public:
+	virtual void Execute(GameObject* selectedObject) override;
+};
+
+
+class ImGuiManager : public Singleton<ImGuiManager>
 {
 	friend Singleton;
 
 private:
-	bool							mOnImGui = true;
-	bool							mShowDemo = false;
-	bool							mIsFocused = false;
-	bool							mNoMoveWindow = true;
+	bool	mOnImGui = true;
+	bool	mShowDemo = false;
+	bool	mIsFocused = false;
+	bool	mNoMoveWindow = true;
 
 private:
 	ComPtr<ID3D12DescriptorHeap>	mSrvDescHeap{};
@@ -69,8 +85,8 @@ private:
 	std::vector<uptr<ImGuiFunc>>	mFuncs{};
 
 public:
-	ImGuiMgr();
-	~ImGuiMgr();
+	ImGuiManager();
+	~ImGuiManager();
 
 public:
 	void ToggleImGui() { mOnImGui = !mOnImGui; }
@@ -81,6 +97,7 @@ public:
 	void DestroyImGui();
 
 public:
+	void SetAgent(Agent* pickedAgent);
 	bool GetMoveWindow() const { return mNoMoveWindow; }
 
 public:

@@ -5,7 +5,7 @@
 #include "ImguiCode/imgui_impl_dx12.h"
 #include "ImguiCode/imgui_internal.h"
 
-#include "ImGuiMgr.h"
+#include "ImGuiManager.h"
 #include "DXGIMgr.h"
 #include "Scene.h"
 #include "Object.h"
@@ -15,16 +15,16 @@
 #include <iostream>
 #include "Grid.h"
 
-ImGuiMgr::ImGuiMgr()
+ImGuiManager::ImGuiManager()
 {
 }
 
-ImGuiMgr::~ImGuiMgr()
+ImGuiManager::~ImGuiManager()
 {
     DestroyImGui();
 }
 
-bool ImGuiMgr::Init()
+bool ImGuiManager::Init()
 {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -61,14 +61,16 @@ bool ImGuiMgr::Init()
         , mSrvDescHeap.Get()->GetGPUDescriptorHandleForHeapStart());
 
     uptr<ImGuiFunc> voxelFunc = std::make_unique<ImGuiVoxelFunc>(Vec2{ 0, 0 }, Vec2{ 450, 300 });
-    uptr<ImGuiFunc> pathFunc = std::make_unique<ImGuiPathFunc>(Vec2{ 0, 300 }, Vec2{ 450, 300 });
+    uptr<ImGuiFunc> pathFunc = std::make_unique<ImGuiPathFunc>(Vec2{ 0, 300 }, Vec2{ 450, 200 });
+    uptr<ImGuiFunc> agentFunc = std::make_unique<ImGuiAgentFunc>(Vec2{ 0, 500 }, Vec2{ 450, 200 });
     mFuncs.emplace_back(std::move(voxelFunc));
     mFuncs.emplace_back(std::move(pathFunc));
+    mFuncs.emplace_back(std::move(agentFunc));
 
     return true;
 }
 
-void ImGuiMgr::Render_Prepare()
+void ImGuiManager::Render_Prepare()
 {
     if (!mOnImGui)
         return;
@@ -79,7 +81,7 @@ void ImGuiMgr::Render_Prepare()
     ImGui::NewFrame();
 }
 
-void ImGuiMgr::Update()
+void ImGuiManager::Update()
 {
     if (!mOnImGui)
         return;
@@ -94,7 +96,7 @@ void ImGuiMgr::Update()
 	}
 }
 
-void ImGuiMgr::Render()
+void ImGuiManager::Render()
 {
     if (!mOnImGui)
         return;
@@ -113,7 +115,7 @@ void ImGuiMgr::Render()
     }
 }
 
-void ImGuiMgr::DestroyImGui()
+void ImGuiManager::DestroyImGui()
 {
     // Cleanup
     ImGui_ImplDX12_Shutdown();
@@ -121,7 +123,14 @@ void ImGuiMgr::DestroyImGui()
     ImGui::DestroyContext();
 }
 
-void ImGuiMgr::FocusOff()
+void ImGuiManager::SetAgent(Agent* pickedAgent)
+{
+	for (const auto& func : mFuncs) {
+		func->SetAgent(pickedAgent);
+	}
+}
+
+void ImGuiManager::FocusOff()
 {
 	ImGui::FocusWindow(NULL);
 	mIsFocused = false;
@@ -143,12 +152,17 @@ void ImGuiFunc::ExecuteBegin()
     // 창 크기 및 위치 조정
 	ImGui::SetNextWindowPos(ImVec2{ mPosition.x, mPosition.y });
 	ImGui::SetNextWindowSize(ImVec2{ mSize.x, mSize.y });
-	ImGui::Begin(mName.c_str(), nullptr, ImGuiMgr::I->GetMoveWindow() ? ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove : ImGuiWindowFlags_None);
+	ImGui::Begin(mName.c_str(), nullptr, ImGuiManager::I->GetMoveWindow() ? ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove : ImGuiWindowFlags_None);
 }
 
 void ImGuiFunc::ExecuteEnd()
 {
 	ImGui::End();
+}
+
+void ImGuiFunc::SetAgent(Agent* pickedAgent)
+{
+	mCrntAgent = pickedAgent;
 }
 
 void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
@@ -182,9 +196,6 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
         break;
     case VoxelState::Terrain:
 		voxelName = "Terrain";
-		break;
-	case VoxelState::TerrainStatic:
-		voxelName = "TerrainStatic";
 		break;
     default:
         break;
@@ -235,42 +246,10 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
 			VoxelManager::I->SetRenderVoxelHeight(value);
 		}
 	}
-
-	{
-		ImGui::Text("Agent :"); // 안내 텍스트
-		ImGui::SameLine(mTextSpacing);
-
-		if (ImGui::Button("Add Agent", ImVec2{ 100, 30 })) {
-			Scene::I->Instantiate("EliteTrooper")->AddComponent<Agent>();
-		}
-
-		ImGui::SameLine();
-
-		if (ImGui::Button("Clear Path", ImVec2{ 100, 30 })) {
-			AgentManager::I->ClearPathList();
-		}
-	}
 }
 
 void ImGuiPathFunc::Execute(GameObject* selectedObject)
 {
-	// agent speed
-	{
-		float value = PathOption::I->GetAgentSpeed();
-		ImGui::Text("AgentSpeed :"); // 안내 텍스트
-		ImGui::SameLine(mTextSpacing);
-		ImGui::InputFloat("##float_AgentSpeed", &value, 0.5f, 1.0f, "%.3f"); // float 입력 박스
-		PathOption::I->SetAgentSpeed(max(0.f, value));
-	}
-
-	// allowed height
-	{
-		int value = PathOption::I->GetAllowedHeight();
-		ImGui::Text("AllowedHeight :"); // 안내 텍스트
-		ImGui::SameLine(mTextSpacing);
-		ImGui::InputInt("##int_AllowedHeight", &value, 1, 10);
-		PathOption::I->SetAllowedHeight(max(0, value));
-	}
 
 	// on voxel cost
 	{
@@ -308,15 +287,6 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		PathOption::I->SetEdgeWeight(max(0, value));
 	}
 
-	{
-		ImGui::Text("Heuristic : ");
-		ImGui::SameLine(mTextSpacing);
-		Heuristic heuri = PathOption::I->GetHeuristic();
-		if (ImGui::RadioButton("Manhattan", heuri == Heuristic::Manhattan)) heuri = Heuristic::Manhattan; ImGui::SameLine();
-		if (ImGui::RadioButton("Euclidean", heuri == Heuristic::Euclidean)) heuri = Heuristic::Euclidean;
-		PathOption::I->SetHeuristic(heuri);
-	}
-
 	ImGui::Text("PostProcess : ");
 	{
 		ImGui::SameLine(mTextSpacing);
@@ -337,5 +307,67 @@ void ImGuiPathFunc::Execute(GameObject* selectedObject)
 		bool value = PathOption::I->GetSplinePath();
 		ImGui::Checkbox("SplinePath", &value);
 		PathOption::I->SetSplinePath(value);
+	}
+
+	// clear path
+	{
+		ImVec2 windowSize = ImGui::GetContentRegionAvail();
+		ImVec2 buttonSize = ImVec2(100, 30);
+		float buttonX = (windowSize.x - buttonSize.x) * 0.5f;
+		float buttonY = windowSize.y - buttonSize.y;
+		ImGui::SetCursorPos(ImVec2(buttonX, buttonY));
+		ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 50);
+		if (ImGui::Button("Clear Path", ImVec2{ 100, 30 })) {
+			AgentManager::I->ClearPathList();
+		}
+	}
+}
+
+void ImGuiAgentFunc::Execute(GameObject* selectedObject)
+{
+	if (!mCrntAgent) {
+		return;
+	}
+
+
+	// heuristic
+	{
+		ImGui::Text("Heuristic : ");
+		ImGui::SameLine(mTextSpacing);
+		Heuristic heuri = mCrntAgent->mOption.Heuri;
+		if (ImGui::RadioButton("Manhattan", heuri == Heuristic::Manhattan)) heuri = Heuristic::Manhattan; ImGui::SameLine();
+		if (ImGui::RadioButton("Euclidean", heuri == Heuristic::Euclidean)) heuri = Heuristic::Euclidean;
+		mCrntAgent->mOption.Heuri = heuri;
+	}
+
+	// agent speed
+	{
+		float value = mCrntAgent->mOption.AgentSpeed;
+		ImGui::Text("AgentSpeed :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+		ImGui::InputFloat("##float_AgentSpeed", &value, 0.5f, 1.0f, "%.3f"); // float 입력 박스
+		mCrntAgent->mOption.AgentSpeed = max(0.f, value);
+	}
+
+	// allowed height
+	{
+		int value = mCrntAgent->mOption.AllowedHeight;
+		ImGui::Text("AllowedHeight :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+		ImGui::InputInt("##int_AllowedHeight", &value, 1, 10);
+		mCrntAgent->mOption.AllowedHeight = max(0, value);
+	}
+
+	// add agent
+	{
+		ImVec2 windowSize = ImGui::GetContentRegionAvail();
+		ImVec2 buttonSize = ImVec2(100, 30);
+		float buttonX = (windowSize.x - buttonSize.x) * 0.5f;
+		float buttonY = windowSize.y - buttonSize.y;
+		ImGui::SetCursorPos(ImVec2(buttonX, buttonY));
+		ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 50);
+		if (ImGui::Button("Add Agent", ImVec2{ 100, 30 })) {
+			Scene::I->Instantiate("EliteTrooper")->AddComponent<Agent>();
+		}
 	}
 }

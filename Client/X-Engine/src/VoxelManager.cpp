@@ -12,7 +12,7 @@
 #include "Component/Camera.h"
 #include "Component/Agent.h"
 #include "InputMgr.h"
-
+#include "Imgui/ImGuiManager.h"
 
 void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 {
@@ -23,6 +23,7 @@ void VoxelManager::ProcessMouseMsg(UINT messageID, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_LBUTTONDOWN:
 		AgentManager::I->PickAgent(&mPickedAgent);
+		SetAgent(mPickedAgent);
 		break;
 	case WM_RBUTTONUP:
 		mHoldingClick = false;
@@ -61,6 +62,10 @@ void VoxelManager::ProcessKeyboardMsg(UINT messageID, WPARAM wParam, LPARAM lPar
 	}
 }
 
+void VoxelManager::SetAgent(Agent* agent) {
+	mPickedAgent = agent; 
+	ImGuiManager::I->SetAgent(mPickedAgent);
+}
 
 void VoxelManager::Init()
 {
@@ -117,10 +122,10 @@ void VoxelManager::Render()
 		
 		switch (voxel.State) {
 		case VoxelState::Static:
-		case VoxelState::TerrainStatic:
+		case VoxelState::CanWalk:
 			instData.Color = Vec4{ 1.f, 0.f, 0.f, 1.f };
 			break;
-		case VoxelState::CanWalk:
+		case VoxelState::Terrain:
 			instData.Color = Vec4{ 0.f, 1.0f, 0.f, 1.f };
 			break;
 		default:
@@ -225,11 +230,9 @@ void VoxelManager::UpdateRemoveMode(VoxelState selectedVoxelState)
 		return;
 	}
 
-	if (selectedVoxelState == VoxelState::TerrainStatic) {
-		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::Terrain);
-	}
-	else if (selectedVoxelState == VoxelState::Static) {
+	if (selectedVoxelState != VoxelState::Terrain) {
 		Scene::I->SetVoxelState(mSelectedVoxel, VoxelState::None);
+		Scene::I->SetVoxelState(mSelectedVoxel.Down(), VoxelState::CanWalk);
 		mRenderVoxels.erase(mSelectedVoxel);
 	}
 

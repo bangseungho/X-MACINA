@@ -319,7 +319,7 @@ void Scene::UpdateVoxelsOnTerrain()
 				UpdateVoxelsProximityCost(index);
 			}
 			else {
-				SetVoxelState(index, VoxelState::CanWalk);
+				SetVoxelState(index, VoxelState::Terrain);
 			}
 		}
 	}

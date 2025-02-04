@@ -14,13 +14,12 @@
 
 #include "Scene.h"
 #include "Object.h"
-
-
+#include "VoxelManager.h"
 
 void Script_GameManager::Awake()
 {
 	base::Awake();
-	Scene::I->Instantiate("EliteTrooper")->AddComponent<Agent>();
+	VoxelManager::I->SetAgent(Scene::I->Instantiate("EliteTrooper")->AddComponent<Agent>().get());
 }
 
 void Script_GameManager::Start()

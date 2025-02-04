@@ -11,7 +11,7 @@
 
 #pragma region  - 장재문 -
 #include "../Imgui/ImguiCode/imgui.h"
-#include "../Imgui/ImGuiMgr.h"
+#include "../Imgui/ImGuiManager.h"
 #pragma endregion
 
 Engine::Engine()
@@ -31,7 +31,7 @@ void Engine::Init(HINSTANCE hInstance, HWND hWnd, short width, short height)
 	DXGIMgr::I->Init(hInstance, windowInfo);
 
 	BuildObjects();
-	ImGuiMgr::I->Init();
+	ImGuiManager::I->Init();
 }
 
 
@@ -88,8 +88,8 @@ LRESULT Engine::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	// 개선 필요
 	// ImGui가 포커싱되어 있다면 마우스 커서를 보이게 한다.
-	if (ImGuiMgr::I->IsFocused()) {
-		ImGuiMgr::I->FocusOff();	// ImGui의 포커싱을 없앤다.
+	if (ImGuiManager::I->IsFocused()) {
+		ImGuiManager::I->FocusOff();	// ImGui의 포커싱을 없앤다.
 		return true;
 	}
 

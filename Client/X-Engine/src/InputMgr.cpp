@@ -5,7 +5,7 @@
 #include "Timer.h"
 #include "Scene.h"
 
-#include "../Imgui/ImGuiMgr.h"
+#include "../Imgui/ImGuiManager.h"
 
 
 InputMgr::InputMgr()
