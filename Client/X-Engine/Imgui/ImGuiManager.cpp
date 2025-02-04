@@ -4,6 +4,7 @@
 #include "ImguiCode/imgui_impl_win32.h"
 #include "ImguiCode/imgui_impl_dx12.h"
 #include "ImguiCode/imgui_internal.h"
+#include "ImguiCode/ImGuizmo.h"
 
 #include "ImGuiManager.h"
 #include "DXGIMgr.h"
@@ -11,6 +12,7 @@
 #include "Object.h"
 #include "Component/ParticleSystem.h"
 #include "Component/Agent.h"
+#include "Component/Camera.h"
 #include "VoxelManager.h"
 #include <iostream>
 #include "Grid.h"
@@ -329,7 +331,6 @@ void ImGuiAgentFunc::Execute(GameObject* selectedObject)
 		return;
 	}
 
-
 	// heuristic
 	{
 		ImGui::Text("Heuristic : ");
@@ -370,4 +371,73 @@ void ImGuiAgentFunc::Execute(GameObject* selectedObject)
 			Scene::I->Instantiate("EliteTrooper")->AddComponent<Agent>();
 		}
 	}
+
+	UpdateGuizmo();
 }
+
+void ImGuiAgentFunc::UpdateGuizmo()
+{
+	Matrix mtxWorld = mCrntAgent->GetWorldMatrix();
+	Vec3 posWorld = mCrntAgent->GetWorldPosition();
+
+	IMGUIZMO_NAMESPACE::BeginFrame();
+	static IMGUIZMO_NAMESPACE::OPERATION		currentGizmoOperation(IMGUIZMO_NAMESPACE::ROTATE);
+	static IMGUIZMO_NAMESPACE::MODE			currentGizmoMode(IMGUIZMO_NAMESPACE::WORLD);
+
+	if (ImGui::RadioButton("Scale", currentGizmoOperation == IMGUIZMO_NAMESPACE::SCALE)) currentGizmoOperation = IMGUIZMO_NAMESPACE::SCALE;
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Rotation", currentGizmoOperation == IMGUIZMO_NAMESPACE::ROTATE)) currentGizmoOperation = IMGUIZMO_NAMESPACE::ROTATE;
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Translation", currentGizmoOperation == IMGUIZMO_NAMESPACE::TRANSLATE)) currentGizmoOperation = IMGUIZMO_NAMESPACE::TRANSLATE;
+
+	Vec3 translate{}, rotate{}, scale{};
+	bool isChanged{};
+
+	IMGUIZMO_NAMESPACE::DecomposeMatrixToComponents((float*)&mtxWorld, (float*)&translate, (float*)&rotate, (float*)&scale);
+	if (ImGui::InputFloat3("Scale", (float*)&scale))
+		isChanged = true;
+	if (ImGui::InputFloat3("Rotation", (float*)&rotate))
+		isChanged = true;
+	if (ImGui::InputFloat3("Translation", (float*)&translate))
+		isChanged = true;
+	IMGUIZMO_NAMESPACE::RecomposeMatrixFromComponents((float*)&translate, (float*)&rotate, (float*)&scale, (float*)&mtxWorld);
+
+	if (currentGizmoOperation != ImGuizmo::SCALE)
+	{
+		if (ImGui::RadioButton("LocalSpace", currentGizmoMode == ImGuizmo::LOCAL))
+			currentGizmoMode = ImGuizmo::LOCAL;
+		ImGui::SameLine();
+		if (ImGui::RadioButton("WorldSpace", currentGizmoMode == ImGuizmo::WORLD))
+			currentGizmoMode = ImGuizmo::WORLD;
+	}
+
+	static bool isUseSnap{};
+	ImGui::Checkbox("Grab", &isUseSnap);
+	ImGui::SameLine();
+	Vec3 snap = Vec3{ 0.f, 0.f, 0.f };
+	switch (currentGizmoOperation)
+	{
+	case IMGUIZMO_NAMESPACE::TRANSLATE:
+		ImGui::InputFloat3("Translate Grab", &snap.x);
+		break;
+	case IMGUIZMO_NAMESPACE::ROTATE:
+		ImGui::InputFloat("Rotate Grab", &snap.x);
+		break;
+	case IMGUIZMO_NAMESPACE::SCALE:
+		ImGui::InputFloat("Scale Grab", &snap.x);
+		break;
+	}
+
+	ImGuiIO& io = { ImGui::GetIO() };
+	IMGUIZMO_NAMESPACE::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+	Matrix ProjMatrix, ViewMatrix;
+	ProjMatrix = MAIN_CAMERA->GetProjMtx();
+	ViewMatrix = MAIN_CAMERA->GetViewMtx();
+	IMGUIZMO_NAMESPACE::Manipulate(&ViewMatrix.m[0][0], &ProjMatrix.m[0][0], currentGizmoOperation, currentGizmoMode, &mtxWorld.m[0][0], NULL, isUseSnap ? &snap.x : NULL);
+	mCrntAgent->SetWorldMatrix(mtxWorld);
+}
+
+
+
+
+

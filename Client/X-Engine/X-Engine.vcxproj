@@ -184,6 +184,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Imgui\ImguiCode\ImGuizmo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Imgui\ImguiCode\imgui_demo.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -288,6 +292,7 @@
     <ClInclude Include="..\Common\Singleton.h" />
     <ClInclude Include="Imgui\ImguiCode\imconfig.h" />
     <ClInclude Include="Imgui\ImguiCode\imgui.h" />
+    <ClInclude Include="Imgui\ImguiCode\ImGuizmo.h" />
     <ClInclude Include="Imgui\ImguiCode\imgui_impl_dx12.h" />
     <ClInclude Include="Imgui\ImguiCode\imgui_impl_win32.h" />
     <ClInclude Include="Imgui\ImguiCode\imgui_internal.h" />

@@ -65,6 +65,9 @@ public:
 
 public:
 	virtual void Execute(GameObject* selectedObject) override;
+	
+private:
+	void UpdateGuizmo();
 };
 
 

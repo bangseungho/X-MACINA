@@ -93,7 +93,12 @@ private:
 public:
 	virtual void Start() override;
 	virtual void Update() override;
-
+	
+public:
+	const Matrix& GetWorldMatrix() { return mObject->GetWorldTransform(); }
+	const Vec3& GetWorldPosition() { return mObject->GetPosition(); }
+	void SetWorldMatrix(const Matrix& mtxWorld) { return mObject->SetWorldTransform(mtxWorld); }
+	
 public:
 	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, bool clearPathList = true);
 	void				ReadyPlanningToPath(const Pos& start);

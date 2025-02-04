@@ -98,11 +98,9 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, bool clearPathList
 		if (visited.contains(curNode.Pos)) continue;
 		if (distance[curNode.Pos] < curNode.F) continue;
 		if (CheckCurNodeContainPathCache(curNode.Pos)) break;
+		if (curNode.Pos == dest) break;
 
 		visited[curNode.Pos] = true;
-
-		if (curNode.Pos == dest)
-			break;
 
 		for (int dir = 0; dir < 8; ++dir) {
 			Pos nextPosZX = curNode.Pos + gkFront[dir];
@@ -342,8 +340,8 @@ void Agent::RePlanningToPath(const Pos& crntPathIndex)
 		}
 
 		Pos nextPathIndex = Scene::I->GetVoxelIndex(mGlobalPath[mGlobalPath.size() - i]);
-		VoxelState nextPathVoxelState = Scene::I->GetVoxelState(nextPathIndex);
-		if (nextPathVoxelState == VoxelState::Static) {
+		VoxelState nextPathVoxelState = Scene::I->GetVoxelState(nextPathIndex.Up());
+		if (nextPathVoxelState == VoxelState::Dynamic || nextPathVoxelState == VoxelState::Static) {
 			for (int j = 0; j < i; ++j) {
 				mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
 				mGlobalPath.pop_back();

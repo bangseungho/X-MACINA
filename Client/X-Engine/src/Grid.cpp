@@ -112,7 +112,7 @@ void Grid::SetVoxelState(const Pos& index, VoxelState state)
 		mVoxels.insert({ index, voxel });
 	}
 
-	if (state == VoxelState::CanWalk || state == VoxelState::Terrain) {
+	if (state == VoxelState::CanWalk || state == VoxelState::Terrain || state == VoxelState::Dynamic) {
 		mCanWalkVoxels.insert({ {index.Z, index.X}, index.Y });
 	}
 }
