@@ -76,7 +76,7 @@ class Agent : public Component {
 
 public:
 	AgentOption mOption{};
-		
+
 private:
 	std::vector<Vec3>	mGlobalPath{};
 	std::vector<Vec3>	mLocalPath{};
@@ -87,6 +87,7 @@ private:
 	Pos					mStart{};
 	Pos					mDest{};
 	Pos					mLast{};
+	Vec3				mPathDir{};
 
 	std::vector<Pos>	mCloseList{};
 	std::vector<Pos>	mOpenList{};
@@ -105,7 +106,7 @@ public:
 public:
 	const Matrix GetWorldMatrix() const { return mObject->GetWorldTransform(); }
 	const Vec3 GetWorldPosition() const { return mObject->GetPosition(); }
-	const Vec3 GetLook() const { return mObject->GetLook(); }
+	const Vec3 GetPathDirection() const { return mPathDir; }
 	const Pos GetNextPathIndex() const;
 	const Pos GetLastPathIndex() const { return mLast; }
 

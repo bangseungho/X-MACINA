@@ -190,6 +190,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 		MakeSplinePath(finalPath);
 	}
 
+	mPathDir = Vector3::Normalized(finalPath[1] - finalPath[0]);
 	std::reverse(finalPath.begin(), finalPath.end());
 
 	// 음수 가중치 적용
@@ -355,6 +356,7 @@ void Agent::MoveToPath()
 
 		mSlowSpeedCount = max(mSlowSpeedCount - 1, 0);
 		RePlanningToPathAvoidStatic(crntPathIndex);
+		mPathDir = Vector3::Normalized(mGlobalPath.back() - crntPathPos);
 	}
 	RePlanningToPathAvoidDynamic(crntPathIndex);
 }
@@ -516,14 +518,14 @@ std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Age
 				const Pos& neighborIndex = Pos{ dz, dx, 0 };
 				const Vec3& neighborPos = Scene::I->GetVoxelPos(neighborIndex);
 				const Vec3& dir = Vector3::Normalized(neighborPos.xz() - pos.xz());
-				float angle = Vector3::Angle(dir, otherAgent->GetLook());
+				float angle = Vector3::Angle(dir, otherAgent->GetPathDirection());
 				int cost = static_cast<int>(pow(1.f - angle / 180.f, 5) * 50);
 				costMap.insert({ neighborIndex, cost });
 			}
 		}
 
 		// speed clamp : 0.5 ~ 1.5
-		float angle = Vector3::Angle(otherAgent->GetLook(), invoker->GetLook());
+		float angle = Vector3::Angle(otherAgent->GetPathDirection(), invoker->GetPathDirection());
 		float normAngle = max(0.f, (angle / 180.f) - 0.5f) * 2.f + 0.5f;
 		invoker->SetAngleSpeedRatio(normAngle);
 
