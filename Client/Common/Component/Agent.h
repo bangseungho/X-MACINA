@@ -86,17 +86,16 @@ private:
 
 	Pos					mStart{};
 	Pos					mDest{};
+	Pos					mLast{};
 
 	std::vector<Pos>	mCloseList{};
 	std::vector<Pos>	mOpenList{};
 	
 	bool				mIsStart{};
-	
 	int					mSlowSpeedCount{};
 
 private:
 	static constexpr int mkAvoidForwardStaticObjectCount = 3;
-	static constexpr int mkAvoidForwardDynamicObjectCount = 2;
 
 public:
 	virtual void Start() override;
@@ -107,6 +106,7 @@ public:
 	const Vec3 GetWorldPosition() const { return mObject->GetPosition(); }
 	const Vec3 GetLook() const { return mObject->GetLook(); }
 	const Pos GetNextPathIndex() const;
+	const Pos GetLastPathIndex() const { return mLast; }
 	void SetWorldMatrix(const Matrix& mtxWorld) { return mObject->SetWorldTransform(mtxWorld); }
 	void SetStartMoveToPath(bool isStart) { mIsStart = isStart; }
 	

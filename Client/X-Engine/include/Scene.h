@@ -177,25 +177,15 @@ public:
 	void RenderUI();
 
 private:
-	// 카메라에 보이는 grid만 렌더링한다.
-	// 투명, 빌보드 객체는 별도의 Shader를 사용해 렌더링해야 하므로 렌더링하지 않고 그 집합을 반환한다.
-	// [renderedObjects]    : 렌더링된 모든 객체 (그리드에 포함된)
-	// [transparentObjects] : 투명 객체
-	// [billboardObjects]	: 빌보드 객체 (plane)
 	void RenderGridObjects(RenderType type);
 	void RenderSkinMeshObjects(RenderType type);
 	void RenderEnvironments();
 	void RenderInstanceObjects(RenderType type);
-
 	void RenderTerrain();
-
-	// render [transparentObjects]
 	void RenderTransparentObjects();
 	void RenderDissolveObjects();
 	void RenderSkyBox();
 	void RenderAbilities();
-
-	// [renderedObjects]와 grid의 bounds를 rendering한다.
 	bool RenderBounds(const std::set<GridObject*>& renderedObjects);
 	void RenderObjectBounds(const std::set<GridObject*>& renderedObjects);
 	void RenderGridBounds();

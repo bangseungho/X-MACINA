@@ -42,6 +42,7 @@ void Agent::Start()
 	mCloseList.reserve(10000);
 	mOpenList.reserve(10000);
 	mObject->SetPosition(100, 0, 260);
+	mLast = Scene::I->GetVoxelIndex(mObject->GetPosition());
 }
 
 void Agent::Update()
@@ -167,7 +168,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 
 	// 시작점이 적용되지 않을 수 있음
 	if (path.top() != mStart) {
-		//path.push(mStart);
+		path.push(mStart);
 	}
 
 	// 광선을 이용한 경로 최소화
@@ -205,6 +206,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 void Agent::ReadyPlanningToPath(const Pos& start)
 {
 	mStart = start;
+	mLast = start;
 	mCloseList.push_back(mStart);
 	mObject->SetPosition(Scene::I->GetVoxelPos(start));
 	ClearPath();
@@ -337,6 +339,7 @@ void Agent::MoveToPath()
 	Vec3 nextPos = (mGlobalPath.back() - mObject->GetPosition());
 	mObject->RotateTargetAxisY(mGlobalPath.back(), 1000.f);
 	mObject->Translate(XMVector3Normalize(nextPos), mOption.AgentSpeed * (mSlowSpeedCount ? 0.7f : 1.f) * DeltaTime());
+	mLast.Init();
 
 	const float kMinDistance = 0.05f;
 
@@ -345,10 +348,14 @@ void Agent::MoveToPath()
 	if (nextPos.Length() < kMinDistance) {
 		mGlobalPath.pop_back();
 		mGlobalPathCache.erase(crntPathIndex);
+
+		if (mGlobalPath.empty()) {
+			mLast = crntPathIndex;
+		}
+
 		mSlowSpeedCount = max(mSlowSpeedCount - 1, 0);
 		RePlanningToPathAvoidStatic(crntPathIndex);
 	}
-
 	RePlanningToPathAvoidDynamic(crntPathIndex);
 }
 
@@ -487,13 +494,12 @@ std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Age
 		}
 
 		Agent* otherAgent{};
-		const Pos& agentIndex = Scene::I->GetVoxelIndex(agent->GetWorldPosition());
-		if (agentIndex == index) {
+		const Pos& agentNextPathIndex = agent->GetNextPathIndex();
+		if (agentNextPathIndex == index) {
 			otherAgent = agent;
 		}
 		else {
-			const Pos& agentNextPathIndex = agent->GetNextPathIndex();
-			if (agentNextPathIndex == index) {
+			if (agent->GetLastPathIndex() == index) {
 				otherAgent = agent;
 			}
 		}
@@ -503,7 +509,7 @@ std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Age
 		}
 
 		const Vec3& pos = Scene::I->GetVoxelPos(index);
-		for (int z = -1; z <= 1; ++z) {
+		for (int z = 1; z >= -1; --z) {
 			for (int x = -1; x <= 1; ++x) {
 				int dz = index.Z + z;
 				int dx = index.X + x;
@@ -511,13 +517,12 @@ std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Age
 				const Vec3& neighborPos = Scene::I->GetVoxelPos(neighborIndex);
 				const Vec3& dir = Vector3::Normalized(neighborPos.xz() - pos.xz());
 				float angle = Vector3::Angle(dir, otherAgent->GetLook());
-				int cost = static_cast<int>((1.f - angle / 180.f) * 10);
+				int cost = static_cast<int>(pow(1.f - angle / 180.f, 5) * 50);
 				costMap.insert({ neighborIndex, cost });
 			}
 		}
-		costMap[index] = 1000;
+		costMap[index] = 9999999;
 	}
-
 	return costMap;
 }
 
