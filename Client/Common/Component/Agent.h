@@ -68,7 +68,7 @@ public:
 
 
 struct AgentOption {
-	float		AgentSpeed = 2.2f;
+	float		AgentSpeed = 1.2f;
 	int			AllowedHeight = 0;
 	Heuristic	Heuri = Heuristic::Manhattan;
 };
@@ -167,15 +167,7 @@ public:
 
 public:
 	Pos RandomDest();
-	void ShuffleMoveToPath() {
-		for (auto agent : mAgents) {
-			agent->ReadyPlanningToPath(RandomDest());
-			std::vector<Vec3> path = agent->PathPlanningToAstar(RandomDest(), {});
-			if (!path.empty()) {
-				agent->SetPath(path);
-			}
-		}
-	}
+	void ShuffleMoveToPath();
 };
 
 #pragma endregion

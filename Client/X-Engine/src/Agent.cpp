@@ -542,9 +542,9 @@ std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Age
 			}
 		}
 
-		// speed clamp : 0.5 ~ 1.5
+		// speed clamp : 0.7 ~ 1.4
 		float angle = Vector3::Angle(otherAgent->GetPathDirection(), invoker->GetPathDirection());
-		float normAngle = max(0.f, (angle / 180.f) - 0.5f) * 2.f + 0.5f;
+		float normAngle = max(0.f, (angle / 180.f) * 0.7) + 0.7f;
 		invoker->SetAngleSpeedRatio(normAngle);
 
 		costMap[index] = 9999999;
@@ -581,4 +581,32 @@ Pos AgentManager::RandomDest()
 	float y = Scene::I->GetTerrainHeight(randPos.x, randPos.z);
 	const Pos& randIndex = Scene::I->GetVoxelIndex(Vec3{ randPos.x, y, randPos.z });
 	return cameraTargetIndex.XZ() + randIndex;
+}
+
+void AgentManager::ShuffleMoveToPath()
+{
+	std::unordered_set<Pos> usedPos{};
+	for (auto agent : mAgents) {
+		Pos newPos = RandomDest();
+		while (usedPos.count(newPos)) {
+			newPos = RandomDest();
+		}
+		usedPos.insert(newPos);
+
+		agent->ReadyPlanningToPath(newPos);
+	}
+
+	usedPos.clear();
+	for (auto agent : mAgents) {
+		Pos newPos = RandomDest();
+		while (usedPos.count(newPos)) {
+			newPos = RandomDest();
+		}
+		usedPos.insert(newPos);
+
+		std::vector<Vec3> path = agent->PathPlanningToAstar(newPos, {});
+		if (!path.empty()) {
+			agent->SetPath(path);
+		}
+	}
 }
