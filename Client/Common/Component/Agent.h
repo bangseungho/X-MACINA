@@ -91,6 +91,8 @@ private:
 	std::vector<Pos>	mOpenList{};
 	
 	bool				mIsStart{};
+	
+	int					mSlowSpeedCount{};
 
 private:
 	static constexpr int mkAvoidForwardStaticObjectCount = 3;
@@ -146,7 +148,7 @@ public:
 	void StartMoveToPath();
 	void RenderPathList();
 	void ClearPathList();
-	Agent* CheckAgentIndex(const Pos& index, Agent* invoker);
+	std::unordered_map<Pos, int> CheckAgentIndex(const Pos& index, Agent* invoker);
 	void PickAgent(Agent** agent);
 };
 

@@ -128,9 +128,9 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 				if (visited.contains(nextPos)) continue;
 				if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
 				if (prevDir != gkFront[dir]) dirPathCost = gkCost[dir];
-
-				float g = curNode.G + gkCost[dir] + dirPathCost + proximityCost + edgeCost;
-				float h = (heuristic(nextPos, dest) + avoidCostMap[nextPos.XZ()] + mOpenListMinusCost[nextPos] + mPrevPathMinusCost[nextPos]) * PathOption::I->GetHeuristicWeight();
+				
+				float g = curNode.G + gkCost[dir] + avoidCostMap[nextPos.XZ()] + dirPathCost + proximityCost + edgeCost;
+				float h = (heuristic(nextPos, dest) + mOpenListMinusCost[nextPos] + mPrevPathMinusCost[nextPos]) * PathOption::I->GetHeuristicWeight();
 
 				if (g + h < distance[nextPos]) {
 					distance[nextPos] = g + h;
@@ -336,19 +336,20 @@ void Agent::MoveToPath()
 	
 	Vec3 nextPos = (mGlobalPath.back() - mObject->GetPosition());
 	mObject->RotateTargetAxisY(mGlobalPath.back(), 1000.f);
-	mObject->Translate(XMVector3Normalize(nextPos), mOption.AgentSpeed * DeltaTime());
+	mObject->Translate(XMVector3Normalize(nextPos), mOption.AgentSpeed * (mSlowSpeedCount ? 0.7f : 1.f) * DeltaTime());
 
-	const float kMinDistance = 0.1f;
+	const float kMinDistance = 0.05f;
 
+	const Vec3& crntPathPos = mGlobalPath.back();
+	const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
 	if (nextPos.Length() < kMinDistance) {
-		const Vec3& crntPathPos = mGlobalPath.back();
-		const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
 		mGlobalPath.pop_back();
 		mGlobalPathCache.erase(crntPathIndex);
-
+		mSlowSpeedCount = max(mSlowSpeedCount - 1, 0);
 		RePlanningToPathAvoidStatic(crntPathIndex);
-		RePlanningToPathAvoidDynamic(crntPathIndex);
 	}
+
+	RePlanningToPathAvoidDynamic(crntPathIndex);
 }
 
 void Agent::RePlanningToPathAvoidStatic(const Pos& crntPathIndex)
@@ -382,36 +383,19 @@ void Agent::RePlanningToPathAvoidDynamic(const Pos& crntPathIndex)
 	}
 
 	Pos nextPathIndex = Scene::I->GetVoxelIndex(mGlobalPath.back());
-	Agent* otherAgent = AgentManager::I->CheckAgentIndex(nextPathIndex, this);
-	if (!otherAgent) {
+	std::unordered_map<Pos, int> costMap = AgentManager::I->CheckAgentIndex(nextPathIndex, this);
+	if (costMap.empty()) {
 		return;
 	}
 
 	mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
 	mGlobalPath.pop_back();
 
-	Pos otherAgentIndex = Scene::I->GetVoxelIndex(otherAgent->GetWorldPosition());
-	Vec3 otherAgentLook = otherAgent->GetLook();
-
-	std::unordered_map<Pos, int> costMap{};
-	for (int z = -1; z <= 1; ++z) {
-		for (int x = -1; x <= 1; ++x) {
-			int dz = otherAgentIndex.Z + z;
-			int dx = otherAgentIndex.X + x;
-			const Pos& index = Pos{ dz, dx, 0 };
-			const Vec3& pos = Scene::I->GetVoxelPos(index);
-			const Vec3& dir = Vector3::Normalized(pos.xz() - otherAgent->GetWorldPosition().xz());
-			float angle = Vector3::Angle(dir, otherAgentLook);
-			int cost = static_cast<int>((1.f - angle / 180.f) * 50);
-			costMap.insert({ index, cost });
-		}
-	}
-
 	mStart = crntPathIndex;
 	mOption.Heuri = Heuristic::Euclidean;
 	mLocalPath = PathPlanningToAstar(mDest, costMap, false);
+	mSlowSpeedCount = static_cast<int>(mLocalPath.size());
 	std::copy(mLocalPath.begin(), mLocalPath.end(), std::back_inserter(mGlobalPath));
-	return;
 }
 
 float Agent::GetEdgeCost(const Pos& nextPos, const Pos& dir)
@@ -494,28 +478,47 @@ void AgentManager::ClearPathList()
 	}
 }
 
-Agent* AgentManager::CheckAgentIndex(const Pos& index, Agent* invoker)
+std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Agent* invoker)
 {
-	Agent* result{};
+	std::unordered_map<Pos, int> costMap{};
 	for (auto agent : mAgents) {
 		if (agent == invoker) {
 			continue;
 		}
 
+		Agent* otherAgent{};
 		const Pos& agentIndex = Scene::I->GetVoxelIndex(agent->GetWorldPosition());
 		if (agentIndex == index) {
-			result = agent;
+			otherAgent = agent;
 		}
 		else {
 			const Pos& agentNextPathIndex = agent->GetNextPathIndex();
 			if (agentNextPathIndex == index) {
-				result = agent;
-				std::cout << "COLLISION'\n";
+				otherAgent = agent;
 			}
 		}
+
+		if (!otherAgent) {
+			continue;
+		}
+
+		const Vec3& pos = Scene::I->GetVoxelPos(index);
+		for (int z = -1; z <= 1; ++z) {
+			for (int x = -1; x <= 1; ++x) {
+				int dz = index.Z + z;
+				int dx = index.X + x;
+				const Pos& neighborIndex = Pos{ dz, dx, 0 };
+				const Vec3& neighborPos = Scene::I->GetVoxelPos(neighborIndex);
+				const Vec3& dir = Vector3::Normalized(neighborPos.xz() - pos.xz());
+				float angle = Vector3::Angle(dir, otherAgent->GetLook());
+				int cost = static_cast<int>((1.f - angle / 180.f) * 10);
+				costMap.insert({ neighborIndex, cost });
+			}
+		}
+		costMap[index] = 1000;
 	}
 
-	return result;
+	return costMap;
 }
 
 void AgentManager::PickAgent(Agent** agent)
