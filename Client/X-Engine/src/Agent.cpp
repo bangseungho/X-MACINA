@@ -208,6 +208,7 @@ void Agent::ReadyPlanningToPath(const Pos& start)
 {
 	mStart = start;
 	mLast = start;
+	mIsStart = false;
 	mCloseList.push_back(mStart);
 	mObject->SetPosition(Scene::I->GetVoxelPos(start));
 	ClearPath();
@@ -326,6 +327,8 @@ void Agent::MakeSplinePath(std::vector<Vec3>& path)
 	path = splinePath;
 }
 
+
+
 void Agent::MoveToPath()
 {
 	if (!mIsStart) {
@@ -356,7 +359,10 @@ void Agent::MoveToPath()
 
 		mSlowSpeedCount = max(mSlowSpeedCount - 1, 0);
 		RePlanningToPathAvoidStatic(crntPathIndex);
-		mPathDir = Vector3::Normalized(mGlobalPath.back() - crntPathPos);
+
+		if (!mGlobalPath.empty()) {
+			mPathDir = Vector3::Normalized(mGlobalPath.back() - crntPathPos);
+		}
 	}
 	RePlanningToPathAvoidDynamic(crntPathIndex);
 }
@@ -462,6 +468,18 @@ void Agent::RenderCloseList()
 	}
 }
 
+void AgentManager::Update()
+{
+	bool finish{};
+	for (Agent* agent : mAgents) {
+		if (agent->IsStart()) {
+			mFinishAllAgentMoveToPath = false;
+			return;
+		}
+	}
+	mFinishAllAgentMoveToPath = true;
+}
+
 void AgentManager::StartMoveToPath()
 {
 	for (Agent* agent : mAgents) {
@@ -551,4 +569,16 @@ void AgentManager::PickAgent(Agent** agent)
 	if (*agent) {
 		(*agent)->SetRimFactor(1.f);
 	}
+}
+
+Pos AgentManager::RandomDest()
+{
+	const Vec3& cameraTargetPos = MAIN_CAMERA->GetTargetPosition();
+	const Pos& cameraTargetIndex = Scene::I->GetVoxelIndex(cameraTargetPos);
+	int randZ = Math::RandInt(-10, 10);
+	int randX = Math::RandInt(-10, 10);
+	const Vec3& randPos = Scene::I->GetVoxelPos(Pos{ randZ, randX, 0 });
+	float y = Scene::I->GetTerrainHeight(randPos.x, randPos.z);
+	const Pos& randIndex = Scene::I->GetVoxelIndex(Vec3{ randPos.x, y, randPos.z });
+	return cameraTargetIndex.XZ() + randIndex;
 }

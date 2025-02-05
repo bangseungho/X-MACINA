@@ -367,7 +367,7 @@ void ImGuiAgentFunc::Execute(GameObject* selectedObject)
 		float spacing = 10.0f;  // 버튼 사이 간격
 
 		// 전체 버튼들의 너비 계산
-		float totalWidth = (buttonSize.x * 2) + spacing;
+		float totalWidth = (buttonSize.x * 3) + spacing;
 
 		// 버튼을 창의 하단 중앙에 정렬
 		float buttonX = (windowSize.x - totalWidth) * 0.5f;
@@ -385,8 +385,13 @@ void ImGuiAgentFunc::Execute(GameObject* selectedObject)
 		if (ImGui::Button("Move Agent", buttonSize)) {
 			AgentManager::I->StartMoveToPath();
 		}
-	}
 
+		ImGui::SameLine(0, spacing); // 같은 줄에서 버튼을 이어서 배치
+
+		if (ImGui::Button("Shuffle", buttonSize)) {
+			AgentManager::I->ShuffleMoveToPath();
+		}
+	}
 	//UpdateGuizmo();
 }
 

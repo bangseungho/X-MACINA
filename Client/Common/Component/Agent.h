@@ -39,6 +39,7 @@ private:
 	bool		mRayPathOptimize = false;
 	bool		mSplinePath = false;
 	bool		mStartFlag = false;
+	bool		mMoveRandom = false;
 
 public:
 
@@ -51,6 +52,7 @@ public:
 	bool		GetRayPathOptimize() const { return mRayPathOptimize; }
 	bool		GetSplinePath() const { return mSplinePath; }
 	bool		GetStartFlag() const { return mStartFlag; }
+	bool		GetMoveRandom() const { return mMoveRandom; }
 
 	void		SetMaxOpenNodeCount(int count) { mMaxOpenNodeCount = count; }
 	void		SetOnVoxelCost(int cost) { mOnVoxelCost = cost; }
@@ -61,11 +63,12 @@ public:
 	void		SetRayPathOptimize(bool optimize) { mRayPathOptimize = optimize; if (optimize) SetDirPathOptimize(optimize); }
 	void		SetSplinePath(bool spline) { mSplinePath = spline; }
 	void		SetStartFlag(bool flag) { mStartFlag = flag; }
+	void		SetMoveRandom(bool flag) { mMoveRandom = flag; }
 };
 
 
 struct AgentOption {
-	float		AgentSpeed = 1.f;
+	float		AgentSpeed = 2.2f;
 	int			AllowedHeight = 0;
 	Heuristic	Heuri = Heuristic::Manhattan;
 };
@@ -109,6 +112,7 @@ public:
 	const Vec3 GetPathDirection() const { return mPathDir; }
 	const Pos GetNextPathIndex() const;
 	const Pos GetLastPathIndex() const { return mLast; }
+	const bool IsStart() const { return mIsStart; }
 
 public:
 	void SetWorldMatrix(const Matrix& mtxWorld) { return mObject->SetWorldTransform(mtxWorld); }
@@ -144,10 +148,15 @@ class AgentManager : public Singleton<AgentManager> {
 
 private:
 	std::set<Agent*> mAgents{};
-	
+	bool mFinishAllAgentMoveToPath{};
+
+public:
+	const bool IsFinishAllAgentMoveToPath() const { return mFinishAllAgentMoveToPath; }
+
 public:
 	void AddAgent(Agent* agent) { mAgents.insert(agent); }
 	void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
+	void Update();
 
 public:
 	void StartMoveToPath();
@@ -155,6 +164,18 @@ public:
 	void ClearPathList();
 	std::unordered_map<Pos, int> CheckAgentIndex(const Pos& index, Agent* invoker);
 	void PickAgent(Agent** agent);
+
+public:
+	Pos RandomDest();
+	void ShuffleMoveToPath() {
+		for (auto agent : mAgents) {
+			agent->ReadyPlanningToPath(RandomDest());
+			std::vector<Vec3> path = agent->PathPlanningToAstar(RandomDest(), {});
+			if (!path.empty()) {
+				agent->SetPath(path);
+			}
+		}
+	}
 };
 
 #pragma endregion

@@ -798,6 +798,8 @@ void Scene::Update()
 	UpdateShaderVars();
 
 	PopObjectBuffer();
+
+	AgentManager::I->Update();
 }
 
 void Scene::CheckCollisions()

@@ -225,6 +225,12 @@ namespace Math {
 	inline bool IsEqual(float a, float b) { return Math::IsZero(a - b); }
 	inline float InverseSqrt(float f) { return 1.f / sqrtf(f); }
 
+	inline int RandInt(int min = 0, int max = 1)
+	{
+		std::uniform_int_distribution distribution(min, max);
+		return distribution(dre);
+	}
+
 	inline float RandFloat(float min = 0.f, float max = 1.f)
 	{
 		std::uniform_real_distribution<float> distribution(min, max);
