@@ -93,6 +93,7 @@ private:
 	
 	bool				mIsStart{};
 	int					mSlowSpeedCount{};
+	float				mAngleSpeedRatio{};
 
 private:
 	static constexpr int mkAvoidForwardStaticObjectCount = 3;
@@ -107,9 +108,12 @@ public:
 	const Vec3 GetLook() const { return mObject->GetLook(); }
 	const Pos GetNextPathIndex() const;
 	const Pos GetLastPathIndex() const { return mLast; }
+
+public:
 	void SetWorldMatrix(const Matrix& mtxWorld) { return mObject->SetWorldTransform(mtxWorld); }
 	void SetStartMoveToPath(bool isStart) { mIsStart = isStart; }
-	
+	void SetAngleSpeedRatio(float ratio) { mAngleSpeedRatio = ratio; }
+
 public:
 	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList = true);
 	void				ReadyPlanningToPath(const Pos& start);

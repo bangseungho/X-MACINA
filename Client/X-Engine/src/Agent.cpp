@@ -338,7 +338,7 @@ void Agent::MoveToPath()
 	
 	Vec3 nextPos = (mGlobalPath.back() - mObject->GetPosition());
 	mObject->RotateTargetAxisY(mGlobalPath.back(), 1000.f);
-	mObject->Translate(XMVector3Normalize(nextPos), mOption.AgentSpeed * (mSlowSpeedCount ? 0.7f : 1.f) * DeltaTime());
+	mObject->Translate(XMVector3Normalize(nextPos), mOption.AgentSpeed * (mSlowSpeedCount ? mAngleSpeedRatio : 1.f) * DeltaTime());
 	mLast.Init();
 
 	const float kMinDistance = 0.05f;
@@ -521,6 +521,12 @@ std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Age
 				costMap.insert({ neighborIndex, cost });
 			}
 		}
+
+		// speed clamp : 0.5 ~ 1.5
+		float angle = Vector3::Angle(otherAgent->GetLook(), invoker->GetLook());
+		float normAngle = max(0.f, (angle / 180.f) - 0.5f) * 2.f + 0.5f;
+		invoker->SetAngleSpeedRatio(normAngle);
+
 		costMap[index] = 9999999;
 	}
 	return costMap;
