@@ -129,6 +129,9 @@ void VoxelManager::Render()
 		case VoxelState::Terrain:
 			instData.Color = Vec4{ 0.f, 1.0f, 0.f, 1.f };
 			break;
+		case VoxelState::DynamicAgent:
+			instData.Color = Vec4{ 1.f, 1.0f, 1.f, 1.f };
+			break;
 		default:
 			break;
 		}
@@ -153,7 +156,7 @@ void VoxelManager::Render()
 		mInstanceBuffers[CURR_FRAME_INDEX]->CopyData(buffIdx++, instData);
 	}
 
-	MeshRenderer::RenderInstancingBox(static_cast<UINT>(mRenderVoxels.size()));
+	MeshRenderer::RenderInstancingBox(static_cast<UINT>(buffIdx));
 }
 
 void VoxelManager::PickTopVoxel(bool makePath)

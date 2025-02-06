@@ -79,7 +79,7 @@ const Pos Agent::GetPathIndex(int index) const
 	return Pos{};
 }
 
-std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList, bool inputDest)
+std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList, bool inputDest, bool avoidAgents)
 {
 	if (clearPathList) {
 		ClearPathList();
@@ -119,6 +119,8 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 	PQNode curNode{};
 	int openNodeCount{};
 	bool failedPlanningPath{};
+
+	std::unordered_set<Pos> otherIndices = AgentManager::I->GetOtherAgentIndices(this);
 	while (!pq.empty()) {
 		curNode = pq.top();
 		prevDir = curNode.Pos - parent[curNode.Pos];
@@ -143,6 +145,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 				float edgeCost = GetEdgeCost(nextPos, gkFront[dir]) * PathOption::I->GetEdgeWeight();
 				if (diffPosY > mOption.AllowedHeight) continue;
 				if (visited.contains(nextPos)) continue;
+				if (avoidAgents && otherIndices.count(nextPos)) continue;
 				if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
 				if (prevDir != gkFront[dir]) dirPathCost = gkCost[dir];
 
@@ -405,14 +408,11 @@ void Agent::RePlanningToPathAvoidStatic(const Pos& crntPathIndex)
 
 			mStart = crntPathIndex;
 			mOption.Heuri = Heuristic::Euclidean;
-			mLocalPath = PathPlanningToAstar(mDest, {}, false, false);
+			mLocalPath = PathPlanningToAstar(mDest, {}, false, false, true);
 			std::copy(mLocalPath.begin(), mLocalPath.end(), std::back_inserter(mGlobalPath));
 
 			if (nextPathUpVoxelState == VoxelState::DynamicAgent) {
-				if (AgentManager::I->CheckOtherAgent(backPathIndex, this) == 0) {
-					Scene::I->SetVoxelState(backPathIndex, VoxelState::Terrain);
-					Scene::I->SetVoxelState(backPathIndex.Up(), VoxelState::None);
-				}
+				Scene::I->SetVoxelState(backPathIndex, VoxelState::Terrain);
 			}
 			return;
 		}
@@ -524,6 +524,18 @@ int AgentManager::CheckOtherAgent(const Pos& index, Agent* invoker)
 	return cnt;
 }
 
+std::unordered_set<Pos> AgentManager::GetOtherAgentIndices(Agent* invoker)
+{
+	std::unordered_set<Pos> result{};
+	for (Agent* agent : mAgents) {
+		if (agent == invoker) {
+			continue;
+		}
+		result.insert(agent->GetVoxelIndex());
+	}
+	return result;
+}
+
 void AgentManager::StartMoveToPath()
 {
 	for (Agent* agent : mAgents) {
@@ -533,13 +545,16 @@ void AgentManager::StartMoveToPath()
 
 void AgentManager::RenderPathList()
 {
-	for (Agent* agent : mAgents) {
-		agent->RenderOpenList();
-	}
+	//for (Agent* agent : mAgents) {
+	//	agent->RenderOpenList();
+	//}
 
-	for (Agent* agent : mAgents) {
-		agent->RenderCloseList();
-	}
+	VoxelManager::I->GetPickedAgent()->RenderOpenList();
+	VoxelManager::I->GetPickedAgent()->RenderCloseList();
+
+	//for (Agent* agent : mAgents) {
+	//	agent->RenderCloseList();
+	//}
 }
 
 void AgentManager::ClearPathList()
@@ -644,22 +659,22 @@ void AgentManager::ShuffleMoveToPath()
 {
 	std::unordered_set<Pos> usedPos{};
 	for (auto agent : mAgents) {
-		Pos newPos = RandomDest(10, 0);
-		while (usedPos.count(newPos)) {
-			newPos = RandomDest(10, 0);
-		}
-		usedPos.insert(newPos);
+		Pos newPos = RandomDest(5, 5);
+		//while (usedPos.count(newPos)) {
+		//	newPos = RandomDest(10, 0);
+		//}
+		//usedPos.insert(newPos);
 
 		agent->ReadyPlanningToPath(newPos);
 	}
 
 	usedPos.clear();
 	for (auto agent : mAgents) {
-		Pos newPos = RandomDest(10, 0);
-		while (usedPos.count(newPos)) {
-			newPos = RandomDest(10, 0);
-		}
-		usedPos.insert(newPos);
+		Pos newPos = RandomDest(5, 5);
+		//while (usedPos.count(newPos)) {
+		//	newPos = RandomDest(10, 0);
+		//}
+		//usedPos.insert(newPos);
 
 		std::vector<Vec3> path = agent->PathPlanningToAstar(newPos, {});
 		if (!path.empty()) {

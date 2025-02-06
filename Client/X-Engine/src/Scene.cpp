@@ -307,8 +307,8 @@ void Scene::UpdateGridInfo()
 
 void Scene::UpdateVoxelsOnTerrain()
 {
-	for (int i = 0; i < static_cast<int>(kBorderExtents.z / Grid::mkVoxelWidth); ++i) {
-		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkVoxelWidth); ++j) {
+	for (int i = 1000; i < 2000; ++i) {
+		for (int j = 1000; j < 2000; ++j) {
 			Vec3 pos = GetVoxelPos(Pos{i, j, 0});
 			Pos index = Pos{ i, j, static_cast<int>(std::round(GetTerrainHeight(pos.x, pos.z))) };
 			Pos upIndex = index.Up();

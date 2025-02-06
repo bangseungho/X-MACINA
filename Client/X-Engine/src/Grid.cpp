@@ -113,18 +113,7 @@ void Grid::SetVoxelState(const Pos& index, VoxelState state)
 	}
 
 	if (state == VoxelState::CanWalk || state == VoxelState::Terrain || state == VoxelState::Dynamic) {
-		bool isFind{};
-		PairMapRange range = GetCanWalkVoxels(index);
-		for (auto it = range.first; it != range.second; ++it) {
-			if (it->second == index.Y) {
-				isFind = true;
-				break;
-			}
-		}
-
-		if (!isFind) {
-			mCanWalkVoxels.insert({ {index.Z, index.X}, index.Y });
-		}
+		mCanWalkVoxels.insert({ {index.Z, index.X}, index.Y });
 	}
 }
 
@@ -156,12 +145,12 @@ void Grid::SetProximityCost(const Pos& index, int cost, bool isReset)
 
 void Grid::RemoveCanWalkVoxel(const Pos& index, VoxelState state)
 {
-	PairMapRange range = GetCanWalkVoxels(index);
 	mVoxels[index].State = state;
-	for (auto it = range.first; it != range.second; ++it) {
+
+	auto range = mCanWalkVoxels.equal_range({ index.Z, index.X });
+	for (auto it = range.first; it != range.second;) {
 		if (it->second == index.Y) {
-			mCanWalkVoxels.erase(it);
-			break;
+			it = mCanWalkVoxels.erase(it);
 		}
 	}
 }

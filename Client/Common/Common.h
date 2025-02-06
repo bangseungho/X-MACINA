@@ -843,11 +843,15 @@ namespace std {
 	template<>
 	struct hash<std::pair<int, int>>
 	{
-		size_t operator () (pair<int, int> const& v) const {
-			auto h1 = hash<int>{}(v.first);
-			auto h2 = hash<int>{}(v.second);
-			return h1 ^ h2;
+		std::size_t operator()(const std::pair<int, int>& p) const {
+			return std::hash<int>()(p.first) ^ (std::hash<int>()(p.second) << 1);
 		}
+
+		//size_t operator () (pair<int, int> const& v) const {
+		//	auto h1 = hash<int>{}(v.first);
+		//	auto h2 = hash<int>{}(v.second);
+		//	return h1 ^ h2;
+		//}
 	};
 }
 

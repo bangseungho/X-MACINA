@@ -101,7 +101,7 @@ private:
 	int					mAgentID{};
 
 private:
-	static constexpr int mkAvoidForwardStaticObjectCount = 2;
+	static constexpr int mkAvoidForwardStaticObjectCount = 3;
 
 public:
 	virtual void Start() override;
@@ -122,7 +122,7 @@ public:
 	void SetAgentID(int id) { mAgentID = id; }
 
 public:
-	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList = true, bool inputDest = true);
+	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList = true, bool inputDest = true, bool avoidAgents = false);
 	void				ReadyPlanningToPath(const Pos& start);
 	void				SetPath(std::vector<Vec3>& path) { mGlobalPath = path; }
 	bool				PickAgent();
@@ -163,6 +163,7 @@ public:
 
 public:
 	int CheckOtherAgent(const Pos& index, Agent* invoker);
+	std::unordered_set<Pos> GetOtherAgentIndices(Agent* invoker);
 	void StartMoveToPath();
 	void RenderPathList();
 	void ClearPathList();
