@@ -50,6 +50,7 @@ void Agent::Start()
 	mObject->SetPosition(100, 0, 260);
 }
 
+// 부딪히면 거기만 잠깐 변경
 void Agent::Update()
 {
 	if (!PathOption::I->GetStartFlag()) {
@@ -60,8 +61,12 @@ void Agent::Update()
 
 	Pos voxelIndex = Scene::I->GetVoxelIndex(mObject->GetPosition());
 	if (mVoxelIndex != voxelIndex) {
+		if (AgentManager::I->CheckOtherAgent(mVoxelIndex, this) == 0) {
+			Scene::I->SetVoxelState(mVoxelIndex, VoxelState::Terrain);
+			Scene::I->SetVoxelState(mVoxelIndex.Up(), VoxelState::None);
+		}
+		Scene::I->SetVoxelState(voxelIndex.Up(), VoxelState::DynamicAgent);
 		mVoxelIndex = voxelIndex;
-		RePlanningToPathAvoidDynamic();
 	}
 }
 
@@ -183,7 +188,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 	}
 
 	// 시작점이 적용되지 않을 수 있음
-	if (!path.empty() && path.top() != mStart ) {
+	if (!path.empty() && path.top() != mStart && inputDest) {
 		path.push(mStart);
 	}
 
@@ -386,17 +391,29 @@ void Agent::RePlanningToPathAvoidStatic(const Pos& crntPathIndex)
 		}
 
 		Pos nextPathIndex = Scene::I->GetVoxelIndex(mGlobalPath[mGlobalPath.size() - i]);
+		Pos backPathIndex = Scene::I->GetVoxelIndex(mGlobalPath[mGlobalPath.size() - 1]);
 		VoxelState nextPathUpVoxelState = Scene::I->GetVoxelState(nextPathIndex.Up());
-		if (nextPathUpVoxelState == VoxelState::Dynamic || nextPathUpVoxelState == VoxelState::Static) {
+		if (nextPathUpVoxelState == VoxelState::Dynamic || nextPathUpVoxelState == VoxelState::Static || nextPathUpVoxelState == VoxelState::DynamicAgent) {
 			for (int j = 0; j < i; ++j) {
 				mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
 				mGlobalPath.pop_back();
+			}
+
+			if (nextPathUpVoxelState == VoxelState::DynamicAgent) {
+				Scene::I->RemoveCanWalkVoxel(backPathIndex);
 			}
 
 			mStart = crntPathIndex;
 			mOption.Heuri = Heuristic::Euclidean;
 			mLocalPath = PathPlanningToAstar(mDest, {}, false, false);
 			std::copy(mLocalPath.begin(), mLocalPath.end(), std::back_inserter(mGlobalPath));
+
+			if (nextPathUpVoxelState == VoxelState::DynamicAgent) {
+				if (AgentManager::I->CheckOtherAgent(backPathIndex, this) == 0) {
+					Scene::I->SetVoxelState(backPathIndex, VoxelState::Terrain);
+					Scene::I->SetVoxelState(backPathIndex.Up(), VoxelState::None);
+				}
+			}
 			return;
 		}
 	}
@@ -491,6 +508,22 @@ void AgentManager::Update()
 	mFinishAllAgentMoveToPath = true;
 }
 
+int AgentManager::CheckOtherAgent(const Pos& index, Agent* invoker)
+{
+	int cnt{};
+	for (Agent* agent : mAgents) {
+		if (invoker == agent) {
+			continue;
+		}
+
+		if (index == agent->GetVoxelIndex()) {
+			cnt++;
+		}
+	}
+
+	return cnt;
+}
+
 void AgentManager::StartMoveToPath()
 {
 	for (Agent* agent : mAgents) {
@@ -565,13 +598,13 @@ std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Age
 		break;
 	}
 
-	for (auto agent : mAgents) {
-		if (agent == invoker) {
-			continue;
-		}
+	//for (auto agent : mAgents) {
+	//	if (agent == invoker) {
+	//		continue;
+	//	}
 
-		costMap[agent->GetVoxelIndex()] = 10000000;
-	}
+	//	costMap[agent->GetVoxelIndex()] = 10000000;
+	//}
 
 	return costMap;
 }

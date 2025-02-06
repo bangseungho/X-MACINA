@@ -747,6 +747,7 @@ enum class VoxelState : UINT8 {
 	Dynamic,
 	Terrain,
 	CanWalk,
+	DynamicAgent,
 };
 
 enum class VoxelCondition : UINT8 {

@@ -62,7 +62,7 @@ public:
 	void SetVoxelState(const Pos& index, VoxelState state);
 	void SetVoxelCondition(const Pos& index, VoxelCondition condition);
 	void SetProximityCost(const Pos& index, int cost, bool isReset);
-	void RemoveCanWalkVoxel(const Pos& index);
+	void RemoveCanWalkVoxel(const Pos& index, VoxelState state = VoxelState::Static);
 
 public:
 	bool Empty() const { return mObjects.empty(); }

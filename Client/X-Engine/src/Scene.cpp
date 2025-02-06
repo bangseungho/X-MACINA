@@ -927,9 +927,9 @@ PairMapRange Scene::GetCanWalkVoxels(const Pos& index) const
 	return mGrids[GetGridIndex(index)]->GetCanWalkVoxels(index);
 }
 
-void Scene::RemoveCanWalkVoxel(const Pos& index) const
+void Scene::RemoveCanWalkVoxel(const Pos& index, VoxelState state) const
 {
-	return mGrids[GetGridIndex(index)]->RemoveCanWalkVoxel(index);
+	return mGrids[GetGridIndex(index)]->RemoveCanWalkVoxel(index, state);
 }
 
 void Scene::SetVoxelState(const Pos& index, VoxelState state) const

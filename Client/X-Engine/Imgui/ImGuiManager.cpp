@@ -199,6 +199,12 @@ void ImGuiVoxelFunc::Execute(GameObject* selectedObject)
     case VoxelState::Terrain:
 		voxelName = "Terrain";
 		break;
+	case VoxelState::DynamicAgent:
+		voxelName = "Agent";
+		break;
+	case VoxelState::CanWalk:
+		voxelName = "CanWalk";
+		break;
     default:
         break;
     }

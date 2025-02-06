@@ -101,7 +101,7 @@ private:
 	int					mAgentID{};
 
 private:
-	static constexpr int mkAvoidForwardStaticObjectCount = 3;
+	static constexpr int mkAvoidForwardStaticObjectCount = 2;
 
 public:
 	virtual void Start() override;
@@ -162,6 +162,7 @@ public:
 	void Update();
 
 public:
+	int CheckOtherAgent(const Pos& index, Agent* invoker);
 	void StartMoveToPath();
 	void RenderPathList();
 	void ClearPathList();
