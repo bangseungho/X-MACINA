@@ -325,7 +325,7 @@ void ImGuiAgentFunc::Execute(GameObject* selectedObject)
 	ImGui::Text("Index : x = %d, y = %d, z = %d", crntAgentIndex.X, crntAgentIndex.Y, crntAgentIndex.Z);
 
 	// position
-	ImGui::Text("Pos : x = %.1f, y = %.1f, z = %.1f", crntAgentPos.x, crntAgentPos.y, crntAgentPos.z);
+	ImGui::Text("Pos : x = %.2f, y = %.2f, z = %.2f", crntAgentPos.x, crntAgentPos.y, crntAgentPos.z);
 
 	// heuristic
 	{
@@ -377,7 +377,7 @@ void ImGuiAgentFunc::Execute(GameObject* selectedObject)
 		ImGui::SetCursorPos(ImVec2(buttonX, ImGui::GetWindowHeight() - 50));
 
 		if (ImGui::Button("Add Agent", buttonSize)) {
-			Scene::I->Instantiate("EliteTrooper")->AddComponent<Agent>();
+			Scene::I->Instantiate("Shield")->AddComponent<Agent>();
 		}
 
 		ImGui::SameLine(0, spacing); // 같은 줄에서 버튼을 이어서 배치
@@ -392,6 +392,7 @@ void ImGuiAgentFunc::Execute(GameObject* selectedObject)
 			AgentManager::I->ShuffleMoveToPath();
 		}
 	}
+
 	//UpdateGuizmo();
 }
 
@@ -402,7 +403,7 @@ void ImGuiAgentFunc::UpdateGuizmo()
 
 	IMGUIZMO_NAMESPACE::BeginFrame();
 	static IMGUIZMO_NAMESPACE::OPERATION		currentGizmoOperation(IMGUIZMO_NAMESPACE::ROTATE);
-	static IMGUIZMO_NAMESPACE::MODE			currentGizmoMode(IMGUIZMO_NAMESPACE::WORLD);
+	static IMGUIZMO_NAMESPACE::MODE				currentGizmoMode(IMGUIZMO_NAMESPACE::WORLD);
 
 	if (ImGui::RadioButton("Scale", currentGizmoOperation == IMGUIZMO_NAMESPACE::SCALE)) currentGizmoOperation = IMGUIZMO_NAMESPACE::SCALE;
 	ImGui::SameLine();

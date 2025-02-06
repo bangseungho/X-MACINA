@@ -87,9 +87,9 @@ private:
 	std::unordered_map<Pos, int> mOpenListMinusCost{};
 	std::unordered_map<Pos, int> mPrevPathMinusCost{};
 
+	Pos					mVoxelIndex{};
 	Pos					mStart{};
 	Pos					mDest{};
-	Pos					mLast{};
 	Vec3				mPathDir{};
 
 	std::vector<Pos>	mCloseList{};
@@ -98,6 +98,7 @@ private:
 	bool				mIsStart{};
 	int					mSlowSpeedCount{};
 	float				mAngleSpeedRatio{};
+	int					mAgentID{};
 
 private:
 	static constexpr int mkAvoidForwardStaticObjectCount = 3;
@@ -107,20 +108,21 @@ public:
 	virtual void Update() override;
 	
 public:
-	const Matrix GetWorldMatrix() const { return mObject->GetWorldTransform(); }
-	const Vec3 GetWorldPosition() const { return mObject->GetPosition(); }
-	const Vec3 GetPathDirection() const { return mPathDir; }
-	const Pos GetNextPathIndex() const;
-	const Pos GetLastPathIndex() const { return mLast; }
-	const bool IsStart() const { return mIsStart; }
+	const Pos		GetPathIndex(int index) const;
+	const Matrix	GetWorldMatrix() const { return mObject->GetWorldTransform(); }
+	const Vec3		GetWorldPosition() const { return mObject->GetPosition(); }
+	const Vec3		GetPathDirection() const { return mPathDir; }
+	const Pos		GetVoxelIndex() const { return mVoxelIndex; }
+	const bool		IsStart() const { return mIsStart; }
 
 public:
 	void SetWorldMatrix(const Matrix& mtxWorld) { return mObject->SetWorldTransform(mtxWorld); }
 	void SetStartMoveToPath(bool isStart) { mIsStart = isStart; }
 	void SetAngleSpeedRatio(float ratio) { mAngleSpeedRatio = ratio; }
+	void SetAgentID(int id) { mAgentID = id; }
 
 public:
-	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList = true);
+	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList = true, bool inputDest = true);
 	void				ReadyPlanningToPath(const Pos& start);
 	void				SetPath(std::vector<Vec3>& path) { mGlobalPath = path; }
 	bool				PickAgent();
@@ -137,7 +139,7 @@ private:
 private:
 	void	MoveToPath();
 	void	RePlanningToPathAvoidStatic(const Pos& crntPathIndex);
-	void	RePlanningToPathAvoidDynamic(const Pos& crntPathIndex);
+	void	RePlanningToPathAvoidDynamic();
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
 	void	ClearPath();
 };
@@ -147,6 +149,7 @@ class AgentManager : public Singleton<AgentManager> {
 	friend Singleton;
 
 private:
+	int mAgentIDs{};
 	std::set<Agent*> mAgents{};
 	bool mFinishAllAgentMoveToPath{};
 
@@ -154,7 +157,7 @@ public:
 	const bool IsFinishAllAgentMoveToPath() const { return mFinishAllAgentMoveToPath; }
 
 public:
-	void AddAgent(Agent* agent) { mAgents.insert(agent); }
+	void AddAgent(Agent* agent) { agent->SetAgentID(++mAgentIDs); mAgents.insert(agent); }
 	void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
 	void Update();
 
@@ -166,7 +169,7 @@ public:
 	void PickAgent(Agent** agent);
 
 public:
-	Pos RandomDest();
+	Pos RandomDest(int x, int z);
 	void ShuffleMoveToPath();
 };
 

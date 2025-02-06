@@ -16,6 +16,7 @@ private:
 	Vec3 mRight	   = Vector3::Right;	// right(x) axis in local space
 	Vec3 mUp	   = Vector3::Up;		// up(y)    axis in local space
 	Vec3 mLook	   = Vector3::Forward;	// look(z)  axis in local space
+	Vec3 mScale	   = Vec3{ 1.f, 1.f, 1.f };
 
 	void* mObject{};	// self Object
 

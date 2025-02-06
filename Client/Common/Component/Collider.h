@@ -90,6 +90,8 @@ public:
 public:
 	virtual Type GetType() const { return Type::Sphere; }
 	virtual Vec3 GetCenter() const { return mBS.Center; }
+	
+	void SetScale(float scale) { mBS.Radius *= scale; }
 
 public:
 	virtual void Update() override;
@@ -130,6 +132,9 @@ public:
 	virtual void Awake() override;
 	virtual void Start() override;
 	virtual void Update() override;
+
+public:
+	void SetScale(float scale) { mSphereCollider->SetScale(scale); }
 
 public:
 	void Render() const;

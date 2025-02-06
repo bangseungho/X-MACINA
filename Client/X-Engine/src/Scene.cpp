@@ -880,8 +880,8 @@ int Scene::GetGridIndex(Vec3 pos) const
 Pos Scene::GetVoxelIndex(const Vec3& pos) const
 {
 	// 월드 포지션으로부터 타일의 고유 인덱스를 계산
-	const int voxelInGridIndexX = static_cast<int>((std::round(pos.x * 10.f) / 10.f - mGridStartPoint) / Grid::mkVoxelWidth);
-	const int voxelInGridIndexZ = static_cast<int>((std::round(pos.z * 10.f) / 10.f - mGridStartPoint) / Grid::mkVoxelWidth);
+	const int voxelInGridIndexX = (pos.x - mGridStartPoint + 0.25f) / Grid::mkVoxelWidth;
+	const int voxelInGridIndexZ = (pos.z - mGridStartPoint + 0.25f) / Grid::mkVoxelWidth;
 	const int voxelInGridIndexY = static_cast<int>(std::round(pos.y / Grid::mkVoxelHeight));
 
 	return Pos{ voxelInGridIndexZ, voxelInGridIndexX, voxelInGridIndexY };
