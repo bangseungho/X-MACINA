@@ -62,7 +62,7 @@ Voxel Grid::GetVoxel(const Pos& index)
 
 PairMapRange Grid::GetCanWalkVoxels(const Pos& index)
 {
-	return mCanWalkVoxels.equal_range({ index.Z, index.X });
+	return mCanWalkVoxels.equal_range(std::make_pair(index.Z, index.X));
 }
 
 int Grid::GetProximityCost(const Pos& index)
@@ -145,12 +145,10 @@ void Grid::SetProximityCost(const Pos& index, int cost, bool isReset)
 
 void Grid::RemoveCanWalkVoxel(const Pos& index)
 {
-	PairMapRange range = GetCanWalkVoxels(index);
-	mVoxels[index].State = VoxelState::Static;
-	for (auto it = range.first; it != range.second; ++it) {
+	auto range = mCanWalkVoxels.equal_range(std::make_pair(index.Z, index.X));
+	for (auto it = range.first; it != range.second;) {
 		if (it->second == index.Y) {
-			mCanWalkVoxels.erase(it);
-			break;
+			it = mCanWalkVoxels.erase(it);
 		}
 	}
 }

@@ -109,6 +109,7 @@ public:
 	
 public:
 	const Pos		GetPathIndex(int index) const;
+	const Pos		GetPathDest() const { return mDest; }
 	const Matrix	GetWorldMatrix() const { return mObject->GetWorldTransform(); }
 	const Vec3		GetWorldPosition() const { return mObject->GetPosition(); }
 	const Vec3		GetPathDirection() const { return mPathDir; }
@@ -120,15 +121,17 @@ public:
 	void SetStartMoveToPath(bool isStart) { mIsStart = isStart; }
 	void SetAngleSpeedRatio(float ratio) { mAngleSpeedRatio = ratio; }
 	void SetAgentID(int id) { mAgentID = id; }
+	void SetPathDest(const Pos& dest) { mDest = dest; }
 
 public:
-	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList = true, bool inputDest = true);
+	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, const std::unordered_map<Pos, int>& avoidCostMap, bool clearPathList = true, bool inputDest = true, int maxOpenNodeCount = 50000);
 	void				ReadyPlanningToPath(const Pos& start);
 	void				SetPath(std::vector<Vec3>& path) { mGlobalPath = path; }
 	bool				PickAgent();
 	void				RenderOpenList();
 	void				RenderCloseList();
 	void				ClearPathList();
+	void				ClearPath();
 	void				SetRimFactor(float factor) { mObject->mObjectCB.RimFactor = factor; }
 
 private:
@@ -141,7 +144,6 @@ private:
 	void	RePlanningToPathAvoidStatic(const Pos& crntPathIndex);
 	void	RePlanningToPathAvoidDynamic();
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
-	void	ClearPath();
 };
 
 
@@ -167,6 +169,7 @@ public:
 	void ClearPathList();
 	std::unordered_map<Pos, int> CheckAgentIndex(const Pos& index, Agent* invoker);
 	void PickAgent(Agent** agent);
+	Pos FindEmptyDestVoxel(Agent* agent);
 
 public:
 	Pos RandomDest(int x, int z);

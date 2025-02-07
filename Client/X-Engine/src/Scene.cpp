@@ -307,8 +307,10 @@ void Scene::UpdateGridInfo()
 
 void Scene::UpdateVoxelsOnTerrain()
 {
-	for (int i = 0; i < static_cast<int>(kBorderExtents.z / Grid::mkVoxelWidth); ++i) {
-		for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkVoxelWidth); ++j) {
+	//for (int i = 0; i < static_cast<int>(kBorderExtents.z / Grid::mkVoxelWidth); ++i) {
+	//	for (int j = 0; j < static_cast<int>(kBorderExtents.x / Grid::mkVoxelWidth); ++j) {
+	for (int i = 1300; i < 1600; ++i) {
+		for (int j = 1000; j < 1500; ++j) {
 			Vec3 pos = GetVoxelPos(Pos{i, j, 0});
 			Pos index = Pos{ i, j, static_cast<int>(std::round(GetTerrainHeight(pos.x, pos.z))) };
 			Pos upIndex = index.Up();
@@ -880,7 +882,7 @@ int Scene::GetGridIndex(Vec3 pos) const
 Pos Scene::GetVoxelIndex(const Vec3& pos) const
 {
 	// 월드 포지션으로부터 타일의 고유 인덱스를 계산
-	const int voxelInGridIndexX = (pos.x - mGridStartPoint + 0.25f) / Grid::mkVoxelWidth;
+	const int voxelInGridIndexX = static_cast<int>((pos.x - mGridStartPoint + 0.25f) / Grid::mkVoxelWidth);
 	const int voxelInGridIndexZ = (pos.z - mGridStartPoint + 0.25f) / Grid::mkVoxelWidth;
 	const int voxelInGridIndexY = static_cast<int>(std::round(pos.y / Grid::mkVoxelHeight));
 

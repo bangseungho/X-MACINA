@@ -74,13 +74,18 @@ const Pos Agent::GetPathIndex(int index) const
 	return Pos{};
 }
 
-std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map<Pos, int> avoidCostMap, bool clearPathList, bool inputDest)
+
+std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, const std::unordered_map<Pos, int>& avoidCostMap, bool clearPathList, bool inputDest, int maxOpenNodeCount)
 {
 	if (clearPathList) {
 		ClearPathList();
 	}
 
 	std::vector<Vec3> finalPath{};
+
+	if (dest == mStart) {
+		return finalPath;
+	}
 
 	mDest = dest;
 	std::stack<Pos>	path{};
@@ -119,7 +124,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 		prevDir = curNode.Pos - parent[curNode.Pos];
 		pq.pop();
 
-		if (openNodeCount >= PathOption::I->GetMaxOpenNodeCount()) {failedPlanningPath = true; break; }
+		if (openNodeCount >= maxOpenNodeCount) {failedPlanningPath = true; break; }
 		if (visited.contains(curNode.Pos)) continue;
 		if (distance[curNode.Pos] < curNode.F) continue;
 		if (CheckCurNodeContainPathCache(curNode.Pos)) break;
@@ -133,7 +138,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 			for (auto it = range.first; it != range.second; ++it) {
 				Pos nextPos = Pos{ it->first.first, it->first.second, it->second };
 				int diffPosY = abs(nextPos.Y - curNode.Pos.Y);
-				int dirPathCost{};
+				int avoidCost{}, dirPathCost{};
 				int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
 				float edgeCost = GetEdgeCost(nextPos, gkFront[dir]) * PathOption::I->GetEdgeWeight();
 				if (diffPosY > mOption.AllowedHeight) continue;
@@ -141,7 +146,12 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 				if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
 				if (prevDir != gkFront[dir]) dirPathCost = gkCost[dir];
 
-				float g = curNode.G + gkCost[dir] + avoidCostMap[nextPos.XZ()] + dirPathCost + proximityCost + edgeCost;
+				auto findIt = avoidCostMap.find(nextPos.XZ());
+				if (findIt != avoidCostMap.end()) {
+					avoidCost = avoidCostMap.at(nextPos.XZ());
+				}
+
+				float g = curNode.G + gkCost[dir] + avoidCost + dirPathCost + proximityCost + edgeCost;
 				float h = (heuristic(nextPos, dest) + mOpenListMinusCost[nextPos] + mPrevPathMinusCost[nextPos]) * PathOption::I->GetHeuristicWeight();
 
 				if (g + h < distance[nextPos]) {
@@ -159,6 +169,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 	if (failedPlanningPath || pq.empty()) {
 		ClearPathList();
 		ClearPath();
+		mDest = AgentManager::I->FindEmptyDestVoxel(this);
 		return finalPath;
 	}
 
@@ -183,7 +194,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 	}
 
 	// 시작점이 적용되지 않을 수 있음
-	if (!path.empty() && path.top() != mStart ) {
+	if (!path.empty() && path.top() != mStart && inputDest) {
 		path.push(mStart);
 	}
 
@@ -219,6 +230,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, std::unordered_map
 	for (const Vec3& path : finalPath) {
 		mPrevPathMinusCost[Scene::I->GetVoxelIndex(path)] = -20;
 	}
+
 
 	return finalPath;
 }
@@ -397,6 +409,7 @@ void Agent::RePlanningToPathAvoidStatic(const Pos& crntPathIndex)
 			mOption.Heuri = Heuristic::Euclidean;
 			mLocalPath = PathPlanningToAstar(mDest, {}, false, false);
 			std::copy(mLocalPath.begin(), mLocalPath.end(), std::back_inserter(mGlobalPath));
+			std::cout << "Create Path Count : " << mLocalPath.size() << '\n';
 			return;
 		}
 	}
@@ -409,17 +422,24 @@ void Agent::RePlanningToPathAvoidDynamic()
 	}
 
 	const Pos& nextPathIndex = GetPathIndex(1);
-	std::unordered_map<Pos, int> costMap = AgentManager::I->CheckAgentIndex(nextPathIndex, this);
+	const std::unordered_map<Pos, int>& costMap = AgentManager::I->CheckAgentIndex(nextPathIndex, this);
 	if (costMap.empty()) {
 		return;
 	}
 
-	mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
-	mGlobalPath.pop_back();
+	bool inputDest{};
+	if (!mGlobalPath.empty()) {
+		mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
+		mGlobalPath.pop_back();
+	}
+	else {
+		inputDest = true;
+	}
 
 	mOption.Heuri = Heuristic::Euclidean;
 	mStart = mVoxelIndex;
-	mLocalPath = PathPlanningToAstar(mDest, costMap, false, false);
+	mLocalPath = PathPlanningToAstar(mDest, costMap, false, inputDest, 100);
+
 	mSlowSpeedCount = static_cast<int>(mLocalPath.size());
 	std::copy(mLocalPath.begin(), mLocalPath.end(), std::back_inserter(mGlobalPath));
 }
@@ -518,10 +538,12 @@ void AgentManager::ClearPathList()
 
 std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Agent* invoker)
 {
-	std::vector<Pos> collisionPos{};
 	std::unordered_map<Pos, int> costMap{};
 	for (auto agent : mAgents) {
 		if (agent == invoker) {
+			continue;
+		}
+		if (agent->GetPathDirection() == invoker->GetPathDirection() && agent->IsStart()) {
 			continue;
 		}
 
@@ -529,6 +551,7 @@ std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Age
 		const Pos& agentVoxelIndex = agent->GetVoxelIndex();
 		const Pos& agentCrntPathIndex = agent->GetPathIndex(0);
 		const Pos& agentNextPathIndex = agent->GetPathIndex(1);
+
 		if (agentVoxelIndex == index) {
 			otherAgent = agent;
 		}
@@ -561,16 +584,23 @@ std::unordered_map<Pos, int> AgentManager::CheckAgentIndex(const Pos& index, Age
 		float angle = Vector3::Angle(otherAgent->GetPathDirection(), invoker->GetPathDirection());
 		float normAngle = max(0.f, (angle / 180.f) * 0.7f) + 0.7f;
 		invoker->SetAngleSpeedRatio(normAngle);
-		costMap[index] = 10000000;
-		break;
+
+		if (agent->GetVoxelIndex() == invoker->GetPathDest()) {
+			invoker->ClearPathList();
+			invoker->ClearPath();
+			invoker->SetPathDest(FindEmptyDestVoxel(invoker));
+			break;
+		}
 	}
 
-	for (auto agent : mAgents) {
-		if (agent == invoker) {
-			continue;
-		}
+	if (!costMap.empty()) {
+		for (auto agent : mAgents) {
+			if (agent == invoker) {
+				continue;
+			}
 
-		costMap[agent->GetVoxelIndex()] = 10000000;
+			costMap[agent->GetVoxelIndex()] = 1000000;
+		}
 	}
 
 	return costMap;
@@ -594,6 +624,53 @@ void AgentManager::PickAgent(Agent** agent)
 		(*agent)->SetRimFactor(1.f);
 	}
 }
+
+
+Pos AgentManager::FindEmptyDestVoxel(Agent* invoker)
+{
+	std::queue<Pos> q;
+	std::map<Pos, bool> visited;
+	q.push(invoker->GetPathDest());
+
+	Pos curPos{};
+	while (!q.empty()) {
+		curPos = q.front();
+		q.pop();
+
+		bool isFind = true;
+		for (auto agent : mAgents) {
+			if (agent == invoker) {
+				continue;
+			}
+			
+			if (curPos == agent->GetPathDest()) {
+				isFind = false;
+				break;
+			}
+		}
+
+		if (isFind && curPos != invoker->GetPathDest() && curPos != invoker->GetVoxelIndex()) {
+			break;
+		}
+
+		if (visited[curPos])
+			continue;
+
+		visited[curPos] = true;
+
+		for (int dir = 0; dir < 4; ++dir) {
+			Pos nextPosZX = curPos + gkFront[dir];
+			PairMapRange range = Scene::I->GetCanWalkVoxels(nextPosZX);
+			for (auto it = range.first; it != range.second; ++it) {
+				Pos nextPos = Pos{ it->first.first, it->first.second, it->second };
+				q.push(nextPos);
+			}
+		}
+	}
+
+	return curPos;
+}
+
 
 Pos AgentManager::RandomDest(int x, int z)
 {
