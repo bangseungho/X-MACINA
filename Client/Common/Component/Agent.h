@@ -103,10 +103,22 @@ private:
 private:
 	static constexpr int mkAvoidForwardStaticObjectCount = 3;
 
+private:
+	// steering
+	Vec3 mTarget{};
+	Vec3 mVelocity{};
+	Vec3 mMaxVelocity{};
+	Vec3 mDesiredVelocity{};
+	Vec3 mSteering{};
+	float mMass{};
+
 public:
 	virtual void Start() override;
 	virtual void Update() override;
-	
+
+public:
+	void InitSteering();
+
 public:
 	const Pos		GetPathIndex(int index) const;
 	const Pos		GetPathDest() const { return mDest; }
@@ -122,6 +134,7 @@ public:
 	void SetAngleSpeedRatio(float ratio) { mAngleSpeedRatio = ratio; }
 	void SetAgentID(int id) { mAgentID = id; }
 	void SetPathDest(const Pos& dest) { mDest = dest; }
+	void SetTarget(const Vec3& target) { mTarget = target; }
 
 public:
 	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, const std::unordered_map<Pos, int>& avoidCostMap, bool clearPathList = true, bool inputDest = true, int maxOpenNodeCount = 50000);
@@ -144,6 +157,9 @@ private:
 	void	RePlanningToPathAvoidStatic(const Pos& crntPathIndex);
 	void	RePlanningToPathAvoidDynamic();
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
+
+private:
+	void	MoveToSteering();
 };
 
 
