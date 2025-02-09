@@ -107,10 +107,11 @@ private:
 	// steering
 	Vec3 mTarget{};
 	Vec3 mVelocity{};
-	Vec3 mMaxVelocity{};
-	Vec3 mDesiredVelocity{};
-	Vec3 mSteering{};
+
+	float mMaxForce{};
+	float mMaxSpeed{};
 	float mMass{};
+	float mSlowingRadius{};
 
 public:
 	virtual void Start() override;
@@ -159,7 +160,10 @@ private:
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
 
 private:
+	Vec3	Seek(const Vec3& target);
+	Vec3	PursuitDynamic(const Vec3& target);
 	void	MoveToSteering();
+	Vec3	Truncate(const Vec3& force, float max) const;
 };
 
 

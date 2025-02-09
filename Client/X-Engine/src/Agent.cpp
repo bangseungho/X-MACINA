@@ -69,14 +69,6 @@ void Agent::Update()
 	//}
 }
 
-void Agent::InitSteering()
-{
-	mTarget = mObject->GetPosition();
-	mVelocity = Vec3{ 0.f, 0.f, 0.f };
-	mMaxVelocity = Vec3{ 10.f, 1.f, 10.f };
-	mMass = 20.f;
-}
-
 const Pos Agent::GetPathIndex(int index) const
 {
 	if (!mGlobalPath.empty() && mGlobalPath.size() > index) {
@@ -85,7 +77,6 @@ const Pos Agent::GetPathIndex(int index) const
 
 	return Pos{};
 }
-
 
 std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, const std::unordered_map<Pos, int>& avoidCostMap, bool clearPathList, bool inputDest, int maxOpenNodeCount)
 {
@@ -385,7 +376,7 @@ void Agent::MoveToPath()
 	
 	Vec3 nextPos = (mGlobalPath.back() - mObject->GetPosition());
 	mObject->RotateTargetAxisY(mGlobalPath.back(), 1000.f);
-	mObject->Translate(XMVector3Normalize(nextPos), mOption.AgentSpeed* DeltaTime());
+	mObject->Translate(XMVector3Normalize(nextPos), mOption.AgentSpeed * DeltaTime());
 
 	const float kMinDistance = 0.05f;
 
@@ -403,17 +394,63 @@ void Agent::MoveToPath()
 	}
 }
 
+void Agent::InitSteering()
+{
+	mTarget = mObject->GetPosition();
+	mVelocity = Vec3{ 0.f, 0.f, 0.f };
+	mMass = 100.f;
+	mMaxSpeed = 10.f;
+	mMaxForce = 10.f;
+	mSlowingRadius = 5.f;
+}
+
+Vec3 Agent::Seek(const Vec3& target)
+{
+	const Vec3& pos = mObject->GetPosition();
+	Vec3 desiredVelocity = Vector3::Normalized(target - pos) * mMaxSpeed;
+	Vec3 steering = desiredVelocity - mVelocity;
+	Truncate(steering, mMaxForce);
+	return steering;
+}
+
+Vec3 Agent::PursuitDynamic(const Vec3& target)
+{
+	const Vec3& pos = mObject->GetPosition();
+	float distance = (target - pos).Length();
+	int T = distance / mMaxSpeed;
+	Vec3 futurePosition = target.position + target.velocity * T;
+	return seek(futurePosition);
+}
+
 void Agent::MoveToSteering()
 {
 	const Vec3& pos = mObject->GetPosition();
 
-	mDesiredVelocity = Vector3::Normalized(mTarget - pos) * mMaxVelocity * DeltaTime();
-	mSteering = mDesiredVelocity - mVelocity;
+	Vec3 desiredVelocity = mTarget - pos;
+	float distance = desiredVelocity.Length();
 
-	mVelocity += mSteering / 25.f;
-	const Vec3& newPos = pos + mVelocity;
+	if (distance < mSlowingRadius) {
+		desiredVelocity = Vector3::Normalized(desiredVelocity) * mMaxSpeed * DeltaTime() * (distance / mSlowingRadius);
+	}
+	else {
+		desiredVelocity = Vector3::Normalized(desiredVelocity) * mMaxSpeed * DeltaTime();
+	}
 
-	mObject->SetPosition(newPos);
+	Vec3 steering = Truncate((desiredVelocity - mVelocity), mMaxForce);
+	steering = steering * (1.0f / mMass);
+
+	mVelocity = Truncate(mVelocity + steering, mMaxSpeed);
+	mObject->SetPosition(pos + mVelocity);
+}
+
+Vec3 Agent::Truncate(const Vec3& force, float max) const
+{
+	float magnitude = force.Length();
+	if (magnitude > max) {
+		float scale = max / magnitude;
+		return force * scale;
+	}
+	return force;
 }
 
 void Agent::RePlanningToPathAvoidStatic(const Pos& crntPathIndex)
