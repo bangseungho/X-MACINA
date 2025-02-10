@@ -74,6 +74,24 @@ struct AgentOption {
 };
 
 
+struct Plane {
+public:
+	Vec3 Point{};
+	Vec3 Normal{};
+
+public:
+	Plane() {}
+};
+
+struct Line {
+public:
+	Vec3 Point{};
+	Vec3 Direction{};
+
+public:
+	Line() {}
+};
+
 class Agent : public Component {
 	COMPONENT(Agent, Component)
 
@@ -94,6 +112,7 @@ private:
 	Pos					mStart{};
 	Pos					mDest{};
 	Vec3				mPathDir{};
+	Vec3				mTarget{};
 
 	std::vector<Pos>	mCloseList{};
 	std::vector<Pos>	mOpenList{};
@@ -108,7 +127,9 @@ private:
 
 public:
 	virtual void Start() override;
-	virtual void Update() override;
+
+public:
+	void UpdatePosition();
 	
 public:
 	const Pos		GetPathIndex(int index) const;
@@ -126,6 +147,7 @@ public:
 	void SetAngleSpeedRatio(float ratio) { mAngleSpeedRatio = ratio; }
 	void SetAgentID(int id) { mAgentID = id; }
 	void SetPathDest(const Pos& dest) { mDest = dest; }
+	void SetTarget(const Vec3& target);
 
 public:
 	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, const std::unordered_map<Pos, int>& avoidCostMap, bool clearPathList = true, bool inputDest = true, int maxOpenNodeCount = 50000);
@@ -151,12 +173,25 @@ private:
 
 private:
 	std::vector<std::pair<float, const Agent*>> mAgentNeighbors{};
+	std::vector<Plane> mORCAPlanes{};
 	int mMaxNeighbors{};
 	float mNeighborDist{};
+	float mTimeHorizon{};
+	float mRadius{};
+	float mMaxSpeed{};
+
+	Vec3 mVelocity{};
+	Vec3 mNewVelocity{};
+	Vec3 mPrefVelocity{};
+public:
+	Vec3 GetVelocity() const { return mVelocity; }
+	float GetRadius() const { return mRadius; }
 
 public:
 	void InsertAgentNeightbor(const Agent* agent, float& rangeSq);
 	void ComputeNeighbors();
+	void ComputeNewVelocity();
+	void SetPreferredVelocity();
 };
 
 
@@ -179,10 +214,14 @@ public:
 public:
 	void AddAgent(Agent* agent) { agent->SetAgentID(++mAgentIDs); mAgents.push_back(agent); }
 	//void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
+	void SetAgentPrefVelocity(int agentNo, const Vec3& prefVelocity) { mAgents[agentNo]->mPrefVelocity = prefVelocity; }
 
 public:
 	void Start();
 	void Update();
+
+private:
+	void SetPreferredVelocities();
 
 public:
 	void StartMoveToPath();

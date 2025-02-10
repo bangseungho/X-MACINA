@@ -316,6 +316,10 @@ namespace DirectX
             static void TransformNormal(const Vector3& v, const Matrix& m, Vector3& result) noexcept;
             static Vector3 TransformNormal(const Vector3& v, const Matrix& m) noexcept;
             static void TransformNormal(_In_reads_(count) const Vector3* varray, size_t count, const Matrix& m, _Out_writes_(count) Vector3* resultArray) noexcept;
+
+            static float Abs(const Vector3& v) noexcept;
+            static float AbsSq(const Vector3& v) noexcept;
+            static float Multiply(const Vector3& v1, const Vector3& v2) noexcept;
         };
 
         // Binary operators

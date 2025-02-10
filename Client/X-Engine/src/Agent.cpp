@@ -50,23 +50,47 @@ void Agent::Start()
 	mObject->GetComponent<ObjectCollider>()->SetScale(0.4f);
 	mObject->SetPosition(100, 0, 260);
 
-	mNeighborDist = 5.f;
 	mMaxNeighbors = 10;
+	mNeighborDist = 15.f;
+	mTimeHorizon = 3.f;
+	mRadius = 0.3f;
+	mMaxSpeed = 3.f;
+	//mVelocity = Vec3{ 2.f, 0.f, 0.f };
 }
 
-void Agent::Update()
+void Agent::UpdatePosition()
 {
 	if (!PathOption::I->GetStartFlag()) {
 		mIsStart = true;
 	}
 
-	MoveToPath();
-
-	Pos voxelIndex = Scene::I->GetVoxelIndex(mObject->GetPosition());
-	if (mVoxelIndex != voxelIndex) {
-		mVoxelIndex = voxelIndex;
-		RePlanningToPathAvoidDynamic();
+	if (!mIsStart) {
+		return;
 	}
+
+	//MoveToPath();
+
+	//Pos voxelIndex = Scene::I->GetVoxelIndex(mObject->GetPosition());
+	//if (mVoxelIndex != voxelIndex) {
+	//	mVoxelIndex = voxelIndex;
+	//	RePlanningToPathAvoidDynamic();
+	//}
+
+	mVelocity = mNewVelocity;
+
+	Vec3 newPos = mObject->GetPosition() + mVelocity * DeltaTime();
+	if (XMVector3IsNaN(newPos)) {
+		return;
+	}
+
+	Vec3 nextPos = (mTarget - mObject->GetPosition());
+	const float kMinDistance = 0.1f;
+	if (nextPos.Length() < kMinDistance) {
+		mIsStart = false;
+		return;
+	}
+
+	mObject->SetPosition(newPos);
 }
 
 const Pos Agent::GetPathIndex(int index) const
@@ -78,6 +102,12 @@ const Pos Agent::GetPathIndex(int index) const
 	return Pos{};
 }
 
+
+void Agent::SetTarget(const Vec3& target)
+{
+	mTarget = target;
+	mCloseList.push_back(Scene::I->GetVoxelIndex(mTarget));
+}
 
 std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, const std::unordered_map<Pos, int>& avoidCostMap, bool clearPathList, bool inputDest, int maxOpenNodeCount)
 {
@@ -241,12 +271,13 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, const std::unorder
 
 void Agent::ReadyPlanningToPath(const Pos& start)
 {
-	mStart = start;
+	//mStart = start;
 	mIsStart = false;
 	mCloseList.push_back(mStart);
+	mVelocity = Vec3{};
 	mObject->SetPosition(Scene::I->GetVoxelPos(start));
 	ClearPath();
-	mOption.Heuri = Heuristic::Manhattan;
+	//mOption.Heuri = Heuristic::Manhattan;
 }
 
 bool Agent::CheckCurNodeContainPathCache(const Pos& curNode)
@@ -369,29 +400,13 @@ void Agent::MoveToPath()
 		return;
 	}
 
-	if (mGlobalPath.empty()) {
-		mIsStart = false;
-		return;
-	}
-	
-	Vec3 nextPos = (mGlobalPath.back() - mObject->GetPosition());
-	mObject->RotateTargetAxisY(mGlobalPath.back(), 1000.f);
-	mObject->Translate(XMVector3Normalize(nextPos), mOption.AgentSpeed* DeltaTime());
+	//if (mGlobalPath.empty()) {
+	//	mIsStart = false;
+	//	return;
+	//}
 
-	const float kMinDistance = 0.05f;
-
-	const Vec3& crntPathPos = mGlobalPath.back();
-	const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
-	if (nextPos.Length() < kMinDistance) {
-		mGlobalPath.pop_back();
-		mGlobalPathCache.erase(crntPathIndex);
-		mSlowSpeedCount = max(mSlowSpeedCount - 1, 0);
-		RePlanningToPathAvoidStatic(crntPathIndex);
-
-		if (!mGlobalPath.empty()) {
-			mPathDir = Vector3::Normalized(mGlobalPath.back() - mObject->GetPosition());
-		}
-	}
+	Vec3 toNextPath = mTarget - mObject->GetPosition();
+	mPrefVelocity = Vector3::Normalized(toNextPath);
 }
 
 void Agent::RePlanningToPathAvoidStatic(const Pos& crntPathIndex)
@@ -467,7 +482,7 @@ float Agent::GetEdgeCost(const Pos& nextPos, const Pos& dir)
 void Agent::InsertAgentNeightbor(const Agent* agent, float& rangeSq)
 {
 	if (this != agent) {
-		const float distSq = Vec3::DistanceSquared(mObject->GetPosition(), agent->GetWorldPosition());
+		const float distSq = Vec3::AbsSq(mObject->GetPosition() - agent->GetWorldPosition());
 
 		if (distSq < rangeSq) {
 			if (mAgentNeighbors.size() < mMaxNeighbors) {
@@ -497,6 +512,345 @@ void Agent::ComputeNeighbors()
 	if (mMaxNeighbors > 0) {
 		AgentManager::I->mKdTree->ComputeAgentNeighbors(this, mNeighborDist * mNeighborDist);
 	}
+}
+
+bool LinearProgram1(const std::vector<Plane>& planes, std::size_t planeNo, const Line& line, float radius, const Vec3& optVelocity, bool directionOpt, Vec3& result) { /* NOLINT(runtime/references) */
+	const float dotProduct = Vec3::Multiply(line.Point, line.Direction);
+	const float discriminant = dotProduct * dotProduct + radius * radius - Vec3::AbsSq(line.Point);
+
+	if (discriminant < 0.0F) {
+		/* Max speed sphere fully invalidates line. */
+		return false;
+	}
+
+	const float sqrtDiscriminant = std::sqrt(discriminant);
+	float tLeft = -dotProduct - sqrtDiscriminant;
+	float tRight = -dotProduct + sqrtDiscriminant;
+
+	for (std::size_t i = 0U; i < planeNo; ++i) {
+		const float numerator = Vec3::Multiply((planes[i].Point - line.Point), planes[i].Normal);
+		const float denominator = Vec3::Multiply(line.Direction, planes[i].Normal);
+
+		if (denominator * denominator <= FLT_EPSILON) {
+			/* Lines line is (almost) parallel to plane i. */
+			if (numerator > 0.0F) {
+				return false;
+			}
+
+			continue;
+		}
+
+		const float t = numerator / denominator;
+
+		if (denominator >= 0.0F) {
+			/* Plane i bounds line on the left. */
+			tLeft = max(tLeft, t);
+		}
+		else {
+			/* Plane i bounds line on the right. */
+			tRight = min(tRight, t);
+		}
+
+		if (tLeft > tRight) {
+			return false;
+		}
+	}
+
+	if (directionOpt) {
+		/* Optimize direction. */
+		if (Vec3::Multiply(optVelocity, line.Direction) > 0.0F) {
+			/* Take right extreme. */
+			result = line.Point + tRight * line.Direction;
+		}
+		else {
+			/* Take left extreme. */
+			result = line.Point + tLeft * line.Direction;
+		}
+	}
+	else {
+		/* Optimize closest point. */
+		const float t = Vec3::Multiply(line.Direction, (optVelocity - line.Point));
+
+		if (t < tLeft) {
+			result = line.Point + tLeft * line.Direction;
+		}
+		else if (t > tRight) {
+			result = line.Point + tRight * line.Direction;
+		}
+		else {
+			result = line.Point + t * line.Direction;
+		}
+	}
+
+	return true;
+}
+
+
+bool LinearProgram2(const std::vector<Plane>& planes, std::size_t planeNo,
+	float radius, const Vec3& optVelocity, bool directionOpt,
+	Vec3& result) { /* NOLINT(runtime/references) */
+	const float planeDist = Vec3::Multiply(planes[planeNo].Point, planes[planeNo].Normal);
+	const float planeDistSq = planeDist * planeDist;
+	const float radiusSq = radius * radius;
+
+	if (planeDistSq > radiusSq) {
+		/* Max speed sphere fully invalidates plane planeNo. */
+		return false;
+	}
+
+	const float planeRadiusSq = radiusSq - planeDistSq;
+
+	const Vec3 planeCenter = planeDist * planes[planeNo].Normal;
+
+	if (directionOpt) {
+		/* Project direction optVelocity on plane planeNo. */
+		const Vec3 planeOptVelocity =
+			optVelocity -
+			(optVelocity * planes[planeNo].Normal) * planes[planeNo].Normal;
+		const float planeOptVelocityLengthSq = Vec3::AbsSq(planeOptVelocity);
+
+		if (planeOptVelocityLengthSq <= FLT_EPSILON) {
+			result = planeCenter;
+		}
+		else {
+			result =
+				planeCenter + std::sqrt(planeRadiusSq / planeOptVelocityLengthSq) *
+				planeOptVelocity;
+		}
+	}
+	else {
+		/* Project point optVelocity on plane planeNo. */
+		result = optVelocity +
+			((planes[planeNo].Point - optVelocity) * planes[planeNo].Normal) *
+			planes[planeNo].Normal;
+
+		/* If outside planeCircle, project on planeCircle. */
+		if (Vec3::AbsSq(result) > radiusSq) {
+			const Vec3 planeResult = result - planeCenter;
+			const float planeResultLengthSq = Vec3::AbsSq(planeResult);
+			result = planeCenter +
+				std::sqrt(planeRadiusSq / planeResultLengthSq) * planeResult;
+		}
+	}
+
+	for (std::size_t i = 0U; i < planeNo; ++i) {
+		if (Vec3::Multiply(planes[i].Normal, (planes[i].Point - result)) > 0.0F) {
+			/* Result does not satisfy constraint i. Compute new optimal result.
+			 * Compute intersection line of plane i and plane planeNo.
+			 */
+			Vec3 crossProduct = planes[i].Normal.Cross(planes[planeNo].Normal);
+
+			if (Vec3::AbsSq(crossProduct) <= FLT_EPSILON) {
+				/* Planes planeNo and i are (almost) parallel, and plane i fully
+				 * invalidates plane planeNo.
+				 */
+				return false;
+			}
+
+			Line line;
+			line.Direction = Vector3::Normalized(crossProduct);
+			const Vec3 lineNormal = line.Direction.Cross(planes[planeNo].Normal);
+			line.Point =
+				planes[planeNo].Point +
+				(((planes[i].Point - planes[planeNo].Point) * planes[i].Normal) /
+					(lineNormal * planes[i].Normal)) *
+				lineNormal;
+
+			if (!LinearProgram1(planes, i, line, radius, optVelocity, directionOpt,
+				result)) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+/**
+ * @brief      Solves a three-dimensional linear program subject to linear
+ *             constraints defined by planes and a spherical constraint.
+ * @param[in]  planes       Planes defining the linear constraints.
+ * @param[in]  radius       The radius of the spherical constraint.
+ * @param[in]  optVelocity  The optimization velocity.
+ * @param[in]  directionOpt True if the direction should be optimized.
+ * @param[out] result       A reference to the result of the linear program.
+ * @return     The number of the plane it fails on, and the number of planes if
+ *             successful.
+ */
+std::size_t LinearProgram3(const std::vector<Plane>& planes, float radius,
+	const Vec3& optVelocity, bool directionOpt,
+	Vec3& result) { /* NOLINT(runtime/references) */
+	if (directionOpt) {
+		/* Optimize direction. Note that the optimization velocity is of unit length
+		 * in this case.
+		 */
+		result = optVelocity * radius;
+	}
+	else if (Vec3::AbsSq(optVelocity) > radius * radius) {
+		/* Optimize closest point and outside circle. */
+		result = Vector3::Normalized(optVelocity) * radius;
+	}
+	else {
+		/* Optimize closest point and inside circle. */
+		result = optVelocity;
+	}
+
+	for (std::size_t i = 0U; i < planes.size(); ++i) {
+		if (Vec3::Multiply(planes[i].Normal, (planes[i].Point - result)) > 0.0F) {
+			/* Result does not satisfy constraint i. Compute new optimal result. */
+			const Vec3 tempResult = result;
+
+			if (!LinearProgram2(planes, i, radius, optVelocity, directionOpt,
+				result)) {
+				result = tempResult;
+				return i;
+			}
+		}
+	}
+
+	return planes.size();
+}
+
+/**
+ * @brief      Solves a four-dimensional linear program subject to linear
+ *             constraints defined by planes and a spherical constraint.
+ * @param[in]  planes     Planes defining the linear constraints.
+ * @param[in]  beginPlane The plane on which the three-dimensional linear
+ *                        program failed.
+ * @param[in]  radius     The radius of the spherical constraint.
+ * @param[out] result     A reference to the result of the linear program.
+ */
+void LinearProgram4(const std::vector<Plane>& planes, std::size_t beginPlane,
+	float radius,
+	Vec3& result) { /* NOLINT(runtime/references) */
+	float distance = 0.0F;
+
+	for (std::size_t i = beginPlane; i < planes.size(); ++i) {
+		if (Vec3::Multiply(planes[i].Normal, (planes[i].Point - result)) > distance) {
+			/* Result does not satisfy constraint of plane i. */
+			std::vector<Plane> projPlanes;
+
+			for (std::size_t j = 0U; j < i; ++j) {
+				Plane plane;
+
+				const Vec3 crossProduct = planes[j].Normal.Cross(planes[i].Normal);
+
+				if (Vec3::AbsSq(crossProduct) <= FLT_EPSILON) {
+					/* Plane i and plane j are (almost) parallel. */
+					if (Vec3::Multiply(planes[i].Normal, planes[j].Normal) > 0.0F) {
+						/* Plane i and plane j point in the same direction. */
+						continue;
+					}
+
+					/* Plane i and plane j point in opposite direction. */
+					plane.Point = 0.5F * (planes[i].Point + planes[j].Point);
+				}
+				else {
+					/* Plane.point is point on line of intersection between plane i and
+					 * plane j.
+					 */
+					const Vec3 lineNormal = crossProduct.Cross(planes[i].Normal);
+					plane.Point =
+						planes[i].Point +
+						(((planes[j].Point - planes[i].Point) * planes[j].Normal) /
+							(lineNormal * planes[j].Normal)) *
+						lineNormal;
+				}
+
+				plane.Normal = Vector3::Normalized(planes[j].Normal - planes[i].Normal);
+				projPlanes.push_back(plane);
+			}
+
+			const Vec3 tempResult = result;
+
+			if (LinearProgram3(projPlanes, radius, planes[i].Normal, true, result) <
+				projPlanes.size()) {
+				/* This should in principle not happen. The result is by definition
+				 * already in the feasible region of this linear program. If it fails,
+				 * it is due to small floating point error, and the current result is
+				 * kept.
+				 */
+				result = tempResult;
+			}
+
+			distance = Vec3::Multiply(planes[i].Normal, (planes[i].Point - result));
+		}
+	}
+} 
+
+
+void Agent::ComputeNewVelocity()
+{
+	mORCAPlanes.clear();
+	const float invTimeHorizon = 1.f / mTimeHorizon;
+
+	for (int i = 0; i < mAgentNeighbors.size(); ++i) {
+		const Agent* const other = mAgentNeighbors[i].second;
+		const Vec3 relativePosition = other->GetWorldPosition() - mObject->GetPosition();
+		const Vec3 relativeVelocity = mVelocity - other->GetVelocity();
+		const float distSq = Vec3::AbsSq(relativePosition);
+		const float combinedRadius = mRadius + other->GetRadius();
+		const float combinedRadiusSq = combinedRadius * combinedRadius;
+
+		Plane plane;
+		Vec3 u;
+		
+		if (distSq > combinedRadiusSq) {
+			const Vec3 w = relativeVelocity - invTimeHorizon * relativePosition;
+			const float wLengthSq = Vec3::AbsSq(w);
+			const float dotProduct = Vec3::Multiply(w, relativePosition);
+
+			if (dotProduct < 0.f && dotProduct * dotProduct > combinedRadiusSq * wLengthSq) {
+				const float wLength = std::sqrt(wLengthSq);
+				const Vec3 unitW = w / wLength;
+
+				plane.Normal = unitW;
+				u = (combinedRadius * invTimeHorizon - wLength) * unitW;
+			}
+			else {
+				/* Project on cone. */
+				const float a = distSq;
+				const float b = Vec3::Multiply(relativePosition, relativeVelocity);
+				const float c = Vec3::AbsSq(relativeVelocity) - Vec3::AbsSq(relativePosition.Cross(relativeVelocity)) /(distSq - combinedRadiusSq);
+				const float t = (b + std::sqrt(b * b - a * c)) / a;
+				const Vec3 ww = relativeVelocity - t * relativePosition;
+				const float wwLength = Vec3::Abs(ww);
+				const Vec3 unitWW = ww / wwLength;
+
+				plane.Normal = unitWW;
+				u = (combinedRadius * t - wwLength) * unitWW;
+			}
+		}
+		else {
+			/* Collision. */
+			const float invTimeStep = 1.0F / DeltaTime();
+			const Vec3 w = relativeVelocity - invTimeStep * relativePosition;
+			const float wLength = Vec3::Abs(w);
+			const Vec3 unitW = w / wLength;
+
+			plane.Normal = unitW;
+			u = (combinedRadius * invTimeStep - wLength) * unitW;
+		}
+
+		plane.Point = mVelocity + 0.5f * u;
+		mORCAPlanes.push_back(plane);
+	}
+
+	const std::size_t planeFail = LinearProgram3(mORCAPlanes, mMaxSpeed, mPrefVelocity, false, mNewVelocity);
+	if (planeFail < mORCAPlanes.size()) {
+		LinearProgram4(mORCAPlanes, planeFail, mMaxSpeed, mNewVelocity);
+	}
+}
+
+void Agent::SetPreferredVelocity()
+{
+	Vec3 goalVector = mTarget - mObject->GetPosition();
+
+	if (Vec3::AbsSq(goalVector) > 1.f) {
+		goalVector = Vector3::Normalized(goalVector);
+	}
+
+	mPrefVelocity = goalVector;
 }
 
 void Agent::ClearPath()
@@ -545,21 +899,29 @@ void AgentManager::Start()
 
 void AgentManager::Update()
 {
-	bool finish{};
-	for (Agent* agent : mAgents) {
-		if (agent->IsStart()) {
-			mFinishAllAgentMoveToPath = false;
-			return;
-		}
+	SetPreferredVelocities();
+
+	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
+		mAgents[i]->MoveToPath();
 	}
-	mFinishAllAgentMoveToPath = true;
 
 	mKdTree->BuildAgentTree();
 
 	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
 		mAgents[i]->ComputeNeighbors();
+		mAgents[i]->ComputeNewVelocity();
 	}
 
+	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
+		mAgents[i]->UpdatePosition();
+	}
+}
+
+void AgentManager::SetPreferredVelocities()
+{
+	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
+		mAgents[i]->SetPreferredVelocity();
+	}
 }
 
 void AgentManager::StartMoveToPath()

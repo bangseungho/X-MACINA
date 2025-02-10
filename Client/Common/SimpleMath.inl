@@ -1328,6 +1328,22 @@ inline void Vector3::TransformNormal(const Vector3* varray, size_t count, const 
     XMVector3TransformNormalStream(resultArray, sizeof(XMFLOAT3), varray, sizeof(XMFLOAT3), count, M);
 }
 
+inline float Vector3::Abs(const Vector3& v) noexcept
+{
+	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+
+inline float Vector3::AbsSq(const Vector3& v) noexcept
+{
+    return v.x * v.x + v.y * v.y + v.z * v.z;
+}
+
+inline float DirectX::SimpleMath::Vector3::Multiply(const Vector3& v1, const Vector3& v2) noexcept
+{
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
 
 /****************************************************************************
  *
