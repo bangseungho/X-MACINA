@@ -2,6 +2,7 @@
 #include "Component/Agent.h"
 #include "Component/Camera.h"
 #include "Component/Collider.h"
+#include "KdTree.h"
 
 #include "DXGIMgr.h"
 #include "Scene.h"
@@ -48,6 +49,9 @@ void Agent::Start()
 	SetWorldMatrix(mtxWorld);
 	mObject->GetComponent<ObjectCollider>()->SetScale(0.4f);
 	mObject->SetPosition(100, 0, 260);
+
+	mNeighborDist = 5.f;
+	mMaxNeighbors = 10;
 }
 
 void Agent::Update()
@@ -460,6 +464,41 @@ float Agent::GetEdgeCost(const Pos& nextPos, const Pos& dir)
 	return cost;
 }
 
+void Agent::InsertAgentNeightbor(const Agent* agent, float& rangeSq)
+{
+	if (this != agent) {
+		const float distSq = Vec3::DistanceSquared(mObject->GetPosition(), agent->GetWorldPosition());
+
+		if (distSq < rangeSq) {
+			if (mAgentNeighbors.size() < mMaxNeighbors) {
+				mAgentNeighbors.push_back(std::make_pair(distSq, agent));
+			}
+			
+			int i = mAgentNeighbors.size() - 1;
+			
+			while (i != 0 && distSq < mAgentNeighbors[i - 1].first) {
+				mAgentNeighbors[i] = mAgentNeighbors[i - 1];
+				--i;
+			}
+
+			mAgentNeighbors[i] = std::make_pair(distSq, agent);
+
+			if (mAgentNeighbors.size() == mMaxNeighbors) {
+				rangeSq = mAgentNeighbors.back().first;
+			}
+		}
+	}
+}
+
+void Agent::ComputeNeighbors()
+{
+	mAgentNeighbors.clear();
+
+	if (mMaxNeighbors > 0) {
+		AgentManager::I->mKdTree->ComputeAgentNeighbors(this, mNeighborDist * mNeighborDist);
+	}
+}
+
 void Agent::ClearPath()
 {
 	mGlobalPath.clear();
@@ -499,6 +538,11 @@ void Agent::RenderCloseList()
 	}
 }
 
+void AgentManager::Start()
+{
+	mKdTree = std::make_shared<KdTree>();
+}
+
 void AgentManager::Update()
 {
 	bool finish{};
@@ -509,6 +553,13 @@ void AgentManager::Update()
 		}
 	}
 	mFinishAllAgentMoveToPath = true;
+
+	mKdTree->BuildAgentTree();
+
+	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
+		mAgents[i]->ComputeNeighbors();
+	}
+
 }
 
 void AgentManager::StartMoveToPath()

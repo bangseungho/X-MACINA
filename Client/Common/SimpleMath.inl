@@ -1,3 +1,4 @@
+#include "SimpleMath.h"
 //-------------------------------------------------------------------------------------
 // SimpleMath.inl -- Simplified C++ Math wrapper for DirectXMath
 //
@@ -793,6 +794,19 @@ inline Vector3& Vector3::operator/= (float S) noexcept
     XMVECTOR X = XMVectorScale(v1, 1.f / S);
     XMStoreFloat3(this, X);
     return *this;
+}
+
+inline float& Vector3::operator[](std::size_t index) noexcept
+{
+	if (index == 0) {
+		return this->x;
+	}
+	else if (index == 1) {
+		return this->y;
+	}
+	else {
+		return this->z;
+	}
 }
 
 //------------------------------------------------------------------------------

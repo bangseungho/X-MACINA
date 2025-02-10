@@ -270,6 +270,9 @@
     <ClCompile Include="Imgui\ImguiCode\ImGuizmo.cpp">
       <Filter>Imgui\ImguiCode</Filter>
     </ClCompile>
+    <ClCompile Include="src\KdTree.cpp">
+      <Filter>소스 파일\AI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DDSTextureLoader12.h">
@@ -466,6 +469,9 @@
     </ClInclude>
     <ClInclude Include="Imgui\ImguiCode\ImGuizmo.h">
       <Filter>Imgui\ImguiCode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\KdTree.h">
+      <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

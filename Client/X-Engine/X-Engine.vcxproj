@@ -245,6 +245,7 @@
     <ClCompile Include="src\FrameResource.cpp" />
     <ClCompile Include="src\Grid.cpp" />
     <ClCompile Include="src\InputMgr.cpp" />
+    <ClCompile Include="src\KdTree.cpp" />
     <ClCompile Include="src\Light.cpp" />
     <ClCompile Include="src\LUTFilter.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
@@ -287,6 +288,7 @@
     <ClInclude Include="..\Common\Component\Transform.h" />
     <ClInclude Include="..\Common\Component\UI.h" />
     <ClInclude Include="..\Common\DwordOverloader.h" />
+    <ClInclude Include="..\Common\KdTree.h" />
     <ClInclude Include="..\Common\Object.h" />
     <ClInclude Include="..\Common\SimpleMath.h" />
     <ClInclude Include="..\Common\Singleton.h" />

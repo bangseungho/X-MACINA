@@ -782,6 +782,8 @@ void Scene::Start()
 
 	UpdateGridInfo();
 	UpdateVoxelsOnTerrain();
+
+	AgentManager::I->Start();
 }
 
 void Scene::Update()

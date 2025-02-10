@@ -245,6 +245,7 @@ namespace DirectX
             Vector3& operator*= (const Vector3& V) noexcept;
             Vector3& operator*= (float S) noexcept;
             Vector3& operator/= (float S) noexcept;
+            float& operator[](std::size_t index) noexcept;
 
             // Unary operators
             Vector3 operator+ () const noexcept { return *this; }

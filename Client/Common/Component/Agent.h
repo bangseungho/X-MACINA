@@ -77,6 +77,9 @@ struct AgentOption {
 class Agent : public Component {
 	COMPONENT(Agent, Component)
 
+	friend class AgentManager;
+	friend class KdTree;
+
 public:
 	AgentOption mOption{};
 
@@ -112,6 +115,7 @@ public:
 	const Pos		GetPathDest() const { return mDest; }
 	const Matrix	GetWorldMatrix() const { return mObject->GetWorldTransform(); }
 	const Vec3		GetWorldPosition() const { return mObject->GetPosition(); }
+	Vec3			GetWorldPosition()  { return mObject->GetPosition(); }
 	const Vec3		GetPathDirection() const { return mPathDir; }
 	const Pos		GetVoxelIndex() const { return mVoxelIndex; }
 	const bool		IsStart() const { return mIsStart; }
@@ -144,23 +148,40 @@ private:
 	void	RePlanningToPathAvoidStatic(const Pos& crntPathIndex);
 	void	RePlanningToPathAvoidDynamic();
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
+
+private:
+	std::vector<std::pair<float, const Agent*>> mAgentNeighbors{};
+	int mMaxNeighbors{};
+	float mNeighborDist{};
+
+public:
+	void InsertAgentNeightbor(const Agent* agent, float& rangeSq);
+	void ComputeNeighbors();
 };
 
 
 class AgentManager : public Singleton<AgentManager> {
 	friend Singleton;
 
+	friend class KdTree;
+	friend class Agent;
+
 private:
+	sptr<class KdTree> mKdTree{};
+	
 	int mAgentIDs{};
-	std::set<Agent*> mAgents{};
+	std::vector<Agent*> mAgents{};
 	bool mFinishAllAgentMoveToPath{};
 
 public:
 	const bool IsFinishAllAgentMoveToPath() const { return mFinishAllAgentMoveToPath; }
 
 public:
-	void AddAgent(Agent* agent) { agent->SetAgentID(++mAgentIDs); mAgents.insert(agent); }
-	void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
+	void AddAgent(Agent* agent) { agent->SetAgentID(++mAgentIDs); mAgents.push_back(agent); }
+	//void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
+
+public:
+	void Start();
 	void Update();
 
 public:
