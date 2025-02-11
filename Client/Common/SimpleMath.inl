@@ -788,11 +788,16 @@ inline Vector3& Vector3::operator*= (float S) noexcept
 
 inline Vector3& Vector3::operator/= (float S) noexcept
 {
+	if (S == 0.f) {
+		return *this;
+	}
+
     using namespace DirectX;
     assert(S != 0.0f);
     XMVECTOR v1 = XMLoadFloat3(this);
     XMVECTOR X = XMVectorScale(v1, 1.f / S);
     XMStoreFloat3(this, X);
+
     return *this;
 }
 
@@ -878,6 +883,17 @@ inline Vector3 operator/ (const Vector3& V1, const Vector3& V2) noexcept
     XMVECTOR X = XMVectorDivide(v1, v2);
     Vector3 R;
     XMStoreFloat3(&R, X);
+
+    if (V2.x == 0) {
+        R.x = 0.f;
+    }
+	if (V2.y == 0) {
+		R.y = 0.f;
+	}
+	if (V2.z == 0) {
+		R.z = 0.f;
+	}
+
     return R;
 }
 
@@ -888,6 +904,7 @@ inline Vector3 operator/ (const Vector3& V, float S) noexcept
     XMVECTOR X = XMVectorScale(v1, 1.f / S);
     Vector3 R;
     XMStoreFloat3(&R, X);
+
     return R;
 }
 

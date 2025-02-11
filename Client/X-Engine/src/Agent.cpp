@@ -52,10 +52,10 @@ void Agent::Start()
 
 	mMaxNeighbors = 10;
 	mNeighborDist = 15.f;
-	mTimeHorizon = 3.f;
-	mRadius = 0.3f;
-	mMaxSpeed = 3.f;
-	//mVelocity = Vec3{ 2.f, 0.f, 0.f };
+	mTimeHorizon = 2.f;
+	mRadius = 0.2f;
+	mMaxSpeed = 2.f;
+	mTarget = mObject->GetPosition();
 }
 
 void Agent::UpdatePosition()
@@ -68,21 +68,6 @@ void Agent::UpdatePosition()
 		return;
 	}
 
-	//MoveToPath();
-
-	//Pos voxelIndex = Scene::I->GetVoxelIndex(mObject->GetPosition());
-	//if (mVoxelIndex != voxelIndex) {
-	//	mVoxelIndex = voxelIndex;
-	//	RePlanningToPathAvoidDynamic();
-	//}
-
-	mVelocity = mNewVelocity;
-
-	Vec3 newPos = mObject->GetPosition() + mVelocity * DeltaTime();
-	if (XMVector3IsNaN(newPos)) {
-		return;
-	}
-
 	Vec3 nextPos = (mTarget - mObject->GetPosition());
 	const float kMinDistance = 0.1f;
 	if (nextPos.Length() < kMinDistance) {
@@ -90,7 +75,8 @@ void Agent::UpdatePosition()
 		return;
 	}
 
-	mObject->SetPosition(newPos);
+	mVelocity = mNewVelocity;
+	mObject->SetPosition(mObject->GetPosition() + mVelocity * DeltaTime());
 }
 
 const Pos Agent::GetPathIndex(int index) const
@@ -392,23 +378,6 @@ void Agent::MakeSplinePath(std::vector<Vec3>& path)
 	path = splinePath;
 }
 
-
-
-void Agent::MoveToPath()
-{
-	if (!mIsStart) {
-		return;
-	}
-
-	//if (mGlobalPath.empty()) {
-	//	mIsStart = false;
-	//	return;
-	//}
-
-	Vec3 toNextPath = mTarget - mObject->GetPosition();
-	mPrefVelocity = Vector3::Normalized(toNextPath);
-}
-
 void Agent::RePlanningToPathAvoidStatic(const Pos& crntPathIndex)
 {
 	for (int i = mkAvoidForwardStaticObjectCount; i > 0; --i) {
@@ -650,11 +619,7 @@ bool LinearProgram2(const std::vector<Plane>& planes, std::size_t planeNo,
 			Line line;
 			line.Direction = Vector3::Normalized(crossProduct);
 			const Vec3 lineNormal = line.Direction.Cross(planes[planeNo].Normal);
-			line.Point =
-				planes[planeNo].Point +
-				(((planes[i].Point - planes[planeNo].Point) * planes[i].Normal) /
-					(lineNormal * planes[i].Normal)) *
-				lineNormal;
+			line.Point = planes[planeNo].Point + (((planes[i].Point - planes[planeNo].Point) * planes[i].Normal) / (lineNormal * planes[i].Normal)) * lineNormal;
 
 			if (!LinearProgram1(planes, i, line, radius, optVelocity, directionOpt,
 				result)) {
@@ -680,6 +645,7 @@ bool LinearProgram2(const std::vector<Plane>& planes, std::size_t planeNo,
 std::size_t LinearProgram3(const std::vector<Plane>& planes, float radius,
 	const Vec3& optVelocity, bool directionOpt,
 	Vec3& result) { /* NOLINT(runtime/references) */
+
 	if (directionOpt) {
 		/* Optimize direction. Note that the optimization velocity is of unit length
 		 * in this case.
@@ -899,10 +865,8 @@ void AgentManager::Start()
 
 void AgentManager::Update()
 {
-	SetPreferredVelocities();
-
 	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
-		mAgents[i]->MoveToPath();
+		mAgents[i]->SetPreferredVelocity();
 	}
 
 	mKdTree->BuildAgentTree();
@@ -914,13 +878,6 @@ void AgentManager::Update()
 
 	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
 		mAgents[i]->UpdatePosition();
-	}
-}
-
-void AgentManager::SetPreferredVelocities()
-{
-	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
-		mAgents[i]->SetPreferredVelocity();
 	}
 }
 

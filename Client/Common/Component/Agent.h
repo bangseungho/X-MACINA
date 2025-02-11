@@ -166,7 +166,6 @@ private:
 	void	MakeSplinePath(std::vector<Vec3>& path);
 
 private:
-	void	MoveToPath();
 	void	RePlanningToPathAvoidStatic(const Pos& crntPathIndex);
 	void	RePlanningToPathAvoidDynamic();
 	float	GetEdgeCost(const Pos& nextPos, const Pos& dir);
@@ -219,9 +218,6 @@ public:
 public:
 	void Start();
 	void Update();
-
-private:
-	void SetPreferredVelocities();
 
 public:
 	void StartMoveToPath();
