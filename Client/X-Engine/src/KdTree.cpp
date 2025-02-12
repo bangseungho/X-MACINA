@@ -19,7 +19,6 @@ void KdTree::BuildAgentTree()
 
 void KdTree::BuildAgentTreeRecursive(int Begin, int End, int Node)
 {
-
 	mAgentTree[Node].Begin = Begin;
 	mAgentTree[Node].End = End;
 	mAgentTree[Node].MinCoord = mAgents[Begin]->GetWorldPosition();

@@ -52,9 +52,9 @@ void Agent::Start()
 
 	mMaxNeighbors = 10;
 	mNeighborDist = 15.f;
-	mTimeHorizon = 2.f;
+	mTimeHorizon = 4.f;
 	mRadius = 0.2f;
-	mMaxSpeed = 2.f;
+	mMaxSpeed = 1.5f;
 	mTarget = mObject->GetPosition();
 }
 
@@ -68,15 +68,23 @@ void Agent::UpdatePosition()
 		return;
 	}
 
-	Vec3 nextPos = (mTarget - mObject->GetPosition());
-	const float kMinDistance = 0.1f;
-	if (nextPos.Length() < kMinDistance) {
-		mIsStart = false;
-		return;
-	}
 
+	mNewVelocity.y = mPrefVelocity.y;
 	mVelocity = mNewVelocity;
 	mObject->SetPosition(mObject->GetPosition() + mVelocity * DeltaTime());
+
+	const float kMinDistance = 0.05f;
+	if (!mGlobalPath.empty() && (mGlobalPath.back() - mObject->GetPosition()).Length() < kMinDistance) {
+		const Vec3& crntPathPos = mGlobalPath.back();
+		const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
+		mGlobalPath.pop_back();
+		mGlobalPathCache.erase(crntPathIndex);
+		RePlanningToPathAvoidStatic(crntPathIndex);
+
+		if (!mGlobalPath.empty()) {
+			mPathDir = Vector3::Normalized(mGlobalPath.back() - mObject->GetPosition());
+		}
+	}
 }
 
 const Pos Agent::GetPathIndex(int index) const
@@ -251,19 +259,20 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, const std::unorder
 		mPrevPathMinusCost[Scene::I->GetVoxelIndex(path)] = -20;
 	}
 
-
 	return finalPath;
 }
 
 void Agent::ReadyPlanningToPath(const Pos& start)
 {
-	//mStart = start;
+	mStart = start;
 	mIsStart = false;
 	mCloseList.push_back(mStart);
+	mNewVelocity = Vec3{};
+	mPrefVelocity = Vec3{};
 	mVelocity = Vec3{};
 	mObject->SetPosition(Scene::I->GetVoxelPos(start));
 	ClearPath();
-	//mOption.Heuri = Heuristic::Manhattan;
+	mOption.Heuri = Heuristic::Manhattan;
 }
 
 bool Agent::CheckCurNodeContainPathCache(const Pos& curNode)
@@ -810,13 +819,18 @@ void Agent::ComputeNewVelocity()
 
 void Agent::SetPreferredVelocity()
 {
-	Vec3 goalVector = mTarget - mObject->GetPosition();
+	Vec3 toDest = Scene::I->GetVoxelPos(mDest) - mObject->GetPosition();
 
-	if (Vec3::AbsSq(goalVector) > 1.f) {
-		goalVector = Vector3::Normalized(goalVector);
+	if (!mGlobalPath.empty()) {
+		Vec3 toNext = mGlobalPath.back() - mObject->GetPosition();
+		if (!Vector3::IsZero(toNext)) {
+			mPrefVelocity = Vector3::Normalized(toNext);
+		}
 	}
 
-	mPrefVelocity = goalVector;
+	if (Vec3::AbsSq(toDest) <= 1.f) {
+		mPrefVelocity = toDest;
+	}
 }
 
 void Agent::ClearPath()
