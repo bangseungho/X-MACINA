@@ -240,7 +240,6 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, const std::unorder
 	mDest = dest;
 	std::stack<Pos>	path{};
 	std::unordered_map<Pos, Pos>	parent;
-	std::unordered_map<Pos, int>	onVoxel;
 	std::unordered_map<Pos, float>	distance;
 	std::unordered_map<Pos, bool>	visited;
 
@@ -949,11 +948,11 @@ void Agent::SetPreferredVelocity()
 	//	}
 	//}
 
-	if (Vec3::AbsSq(toDest) > 1.f) {
-		toDest = Vector3::Normalized(toDest);
-	}
+	//if (Vec3::AbsSq(toDest) > 1.f) {
+	//	toDest = Vector3::Normalized(toDest);
+	//}
 
-	mPrefVelocity = toDest;
+	mPrefVelocity = AgentManager::I->GetFlowFieldDirection(mVoxelIndex);
 
 	if (mVoxelIndex == mDest) {
 		mPrefVelocity = Vec3{};
@@ -999,6 +998,11 @@ void Agent::RenderCloseList()
 	}
 }
 
+Vec3 AgentManager::GetFlowFieldDirection(const Pos& pos)
+{
+	return mFlowFieldMap[pos];
+}
+
 void AgentManager::Start()
 {
 	mKdTree = std::make_shared<KdTree>();
@@ -1019,6 +1023,44 @@ void AgentManager::Update()
 
 	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
 		mAgents[i]->UpdatePosition();
+	}
+}
+
+void AgentManager::PathPlanningToFlowField(const Pos& dest)
+{
+	std::unordered_map<Pos, float>	distance;
+	std::unordered_map<Pos, bool>	visited;
+
+	std::priority_queue<std::pair<float, Pos>, std::vector<std::pair<float, Pos>>, std::greater<std::pair<float, Pos>>> pq;
+	pq.push({ 0, dest });
+	distance[dest] = 0;
+
+	std::pair<int, Pos> curNode{};
+	while (!pq.empty()) {
+		curNode = pq.top();
+		pq.pop();
+
+		if (distance[curNode.second] < curNode.first) 
+			continue;
+
+		for (int dir = 0; dir < 8; ++dir) {
+			Pos nextPosZX = curNode.second + gkFront[dir];
+			PairMapRange range = Scene::I->GetCanWalkVoxels(nextPosZX);
+			for (auto it = range.first; it != range.second; ++it) {
+				Pos nextPos = Pos{ it->first.first, it->first.second, it->second };
+				int diffPosY = abs(nextPos.Y - curNode.second.Y);
+				int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
+				int nextCost = distance[curNode.second] + gkCost[dir] + proximityCost;
+
+				if (diffPosY >= 1) continue;
+				if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
+				if (nextCost >= distance[nextPos]) continue;
+
+				pq.push({ nextCost, nextPos });
+				distance[nextPos] = nextCost;
+				mFlowFieldMap[nextPos] = Vector3::Normalized(Scene::I->GetVoxelPos(curNode.second) - Scene::I->GetVoxelPos(nextPos));
+			}
+		}
 	}
 }
 

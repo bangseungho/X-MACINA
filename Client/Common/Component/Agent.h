@@ -202,7 +202,8 @@ class AgentManager : public Singleton<AgentManager> {
 
 private:
 	sptr<class KdTree> mKdTree{};
-	
+	std::unordered_map<Pos, Vec3> mFlowFieldMap{};
+
 	int mAgentIDs{};
 	std::vector<Agent*> mAgents{};
 	bool mFinishAllAgentMoveToPath{};
@@ -214,12 +215,14 @@ public:
 	void AddAgent(Agent* agent) { agent->SetAgentID(++mAgentIDs); mAgents.push_back(agent); }
 	//void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
 	void SetAgentPrefVelocity(int agentNo, const Vec3& prefVelocity) { mAgents[agentNo]->mPrefVelocity = prefVelocity; }
+	Vec3 GetFlowFieldDirection(const Pos& pos);
 
 public:
 	void Start();
 	void Update();
 
 public:
+	void PathPlanningToFlowField(const Pos& dest);
 	void AllAgentPathPlanning(const Pos& dest);
 	void StartMoveToPath();
 	void RenderPathList();
