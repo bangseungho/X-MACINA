@@ -129,6 +129,13 @@ void Agent::UpdatePosition()
 
 	mObject->SetPosition(objectPos + mVelocity * DeltaTime());
 
+	const float kMinDistance = 0.05f;
+	if ((mObject->GetPosition() - Scene::I->GetVoxelPos(mDest)).Length() < kMinDistance) {
+		mPrefVelocity = Vec3{};
+		mVelocity = Vec3{};
+		mIsFinish = true;
+	}
+
 	//const float kMinDistance = 0.05f;
 	//if (!mGlobalPath.empty() && (mGlobalPath.back() - mObject->GetPosition()).Length() < kMinDistance) {
 	//	const Vec3& crntPathPos = mGlobalPath.back();
@@ -320,6 +327,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, const std::unorder
 void Agent::ReadyPlanningToPath(const Pos& start)
 {
 	mStart = start;
+	mIsFinish = false;
 	mIsStart = false;
 	mCloseList.push_back(mStart);
 	mNewVelocity = Vec3{};
@@ -852,28 +860,22 @@ void Agent::ComputeNewVelocity()
 
 void Agent::SetPreferredVelocity()
 {
-	Vec3 toDest = Scene::I->GetVoxelPos(mDest) - mObject->GetPosition();
-
-	//if (!mGlobalPath.empty()) {
-	//	Vec3 toNext = mGlobalPath.back() - mObject->GetPosition();
-	//	if (!Vector3::IsZero(toNext)) {
-	//		mPrefVelocity = Vector3::Normalized(toNext);
-	//	}
-	//}
-
-	//if (Vec3::AbsSq(toDest) > 1.f) {
-	//	toDest = Vector3::Normalized(toDest);
-	//}
-
-	mPrefVelocity = AgentManager::I->GetFlowFieldDirection(mVoxelIndex) * mOption.AgentSpeed;
-
-	if (mVoxelIndex == mDest) {
-		mPrefVelocity = Vec3{};
+	if (mIsFinish) {
+		return;
 	}
+
+	Vec3 toNext = AgentManager::I->GetFlowFieldDirection(mVoxelIndex);
+	Vec3 toDest = Scene::I->GetVoxelPos(mDest) - mObject->GetPosition();
+	if (Vec3::AbsSq(toDest) > 1.f) {
+		toDest = Vector3::Normalized(toNext);
+	}
+
+	mPrefVelocity = toDest * mOption.AgentSpeed;
 }
 
 void Agent::ClearPath()
 {
+	mIsFinish = false;
 	mGlobalPath.clear();
 	mLocalPath.clear();
 	mGlobalPathCache.clear();
@@ -911,9 +913,9 @@ void Agent::RenderCloseList()
 	}
 }
 
-Vec3 AgentManager::GetFlowFieldDirection(const Pos& pos)
+Vec3 AgentManager::GetFlowFieldDirection(const Pos& index)
 {
-	return mFlowFieldMap[pos];
+	return mFlowFieldMap[index] - Scene::I->GetVoxelPos(index);
 }
 
 void AgentManager::Start()
@@ -971,9 +973,14 @@ void AgentManager::PathPlanningToFlowField(const Pos& dest)
 
 				pq.push({ nextCost, nextPos });
 				distance[nextPos] = nextCost;
-				mFlowFieldMap[nextPos] = Vector3::Normalized(Scene::I->GetVoxelPos(curNode.second) - Scene::I->GetVoxelPos(nextPos));
+				mFlowFieldMap[nextPos] = Scene::I->GetVoxelPos(curNode.second);
 			}
 		}
+	}
+
+	for (auto agent : mAgents) {
+		agent->ClearPath();
+		agent->SetPathDest(dest);
 	}
 }
 

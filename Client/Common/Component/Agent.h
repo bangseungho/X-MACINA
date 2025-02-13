@@ -117,6 +117,7 @@ private:
 	std::vector<Pos>	mCloseList{};
 	std::vector<Pos>	mOpenList{};
 	
+	bool				mIsFinish{};
 	bool				mIsStart{};
 	int					mSlowSpeedCount{};
 	float				mAngleSpeedRatio{};
