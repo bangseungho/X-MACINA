@@ -220,6 +220,7 @@ public:
 	void Update();
 
 public:
+	void AllAgentPathPlanning(const Pos& dest);
 	void StartMoveToPath();
 	void RenderPathList();
 	void ClearPathList();

@@ -53,6 +53,9 @@ void VoxelManager::ProcessKeyboardMsg(UINT messageID, WPARAM wParam, LPARAM lPar
 		case '3':
 			mOption.CreateMode = CreateMode::Remove;
 			break;
+		case '4':
+			Scene::I->Instantiate("Shield")->AddComponent<Agent>();
+			break;
 		default:
 			break;
 		}
@@ -247,22 +250,27 @@ void VoxelManager::UpdatePlanningPathMode(bool makePath, VoxelState selectedVoxe
 		return;
 	}
 
-	if (!mPickedAgent) {
-		return;
-	}
+	AgentManager::I->AllAgentPathPlanning(mSelectedVoxel);
 
-	if (!mReadyMakePath) {
-		std::vector<Vec3> path = mPickedAgent->PathPlanningToAstar(mSelectedVoxel, {}, true);
-		if (!path.empty()) {
-			mPickedAgent->SetPath(path);
-		}
-		
-	}
-	else {
-		mPickedAgent->ReadyPlanningToPath(mSelectedVoxel);
-		mPickedAgent->ClearPathList();
-	}
-	mReadyMakePath = !mReadyMakePath;
+	//if (!mPickedAgent) {
+	//	return;
+	//}
+
+	//if (!mReadyMakePath) {
+
+
+
+	//	std::vector<Vec3> path = mPickedAgent->PathPlanningToAstar(mSelectedVoxel, {}, true);
+	//	if (!path.empty()) {
+	//		mPickedAgent->SetPath(path);
+	//	}
+	//	
+	//}
+	//else {
+	//	mPickedAgent->ReadyPlanningToPath(mSelectedVoxel);
+	//	mPickedAgent->ClearPathList();
+	//}
+	//mReadyMakePath = !mReadyMakePath;
 }
 
 void VoxelManager::CalcRenderVoxelCount(int renderVoxelRows)

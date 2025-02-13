@@ -712,8 +712,8 @@ struct Pos
 
 	Pos Up() const { return *this + Pos{ 0, 0, +1 }; }
 	Pos Down() const { return *this + Pos{ 0, 0, -1 }; }
-	Pos Left() const { return *this + Pos{ 0, +1, 0 }; }
-	Pos Right() const { return *this + Pos{ 0, -1, 0 }; }
+	Pos Left() const { return *this + Pos{ 0, -1, 0 }; }
+	Pos Right() const { return *this + Pos{ 0, +1, 0 }; }
 	Pos Forward() const { return *this + Pos{ +1, 0, 0 }; }
 	Pos Backward() const { return *this + Pos{ -1, 0, 0 }; }
 	Pos XZ() const { return Pos{ Z, X, 0 }; }

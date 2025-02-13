@@ -60,6 +60,9 @@ void Agent::Start()
 
 void Agent::UpdatePosition()
 {
+	const Vec3& objectPos = mObject->GetPosition();
+	mVoxelIndex = Scene::I->GetVoxelIndex(objectPos);
+
 	if (!PathOption::I->GetStartFlag()) {
 		mIsStart = true;
 	}
@@ -71,25 +74,122 @@ void Agent::UpdatePosition()
 	mNewVelocity.y = mPrefVelocity.y;
 	mVelocity = mNewVelocity;
 
-	static const int dx[4]{ +1, -1, 0, 0 };
-	static const int dz[4]{ 0, 0, +1, -1 };
+	static const float dx[4]{ -0.1f, +0.1f, -0.1f, +0.1f };
+	static const float dz[4]{ -0.1f, -0.1f, +0.1f, +0.1f };
 
-	const Vec3& objectPos = mObject->GetPosition();
-	const Vec3& nextPos = objectPos + mVelocity * DeltaTime();
 	const Pos& crntIndex = Scene::I->GetVoxelIndex(objectPos);
-	for (int i = 0; i < 4; ++i) {
-		Pos obstacleIndex = crntIndex + Pos{ dz[i], dx[i], 0 };
+	Vec3 nextPos = objectPos + mVelocity * DeltaTime();
 
-		if (Scene::I->GetVoxelState(obstacleIndex.Up()) != VoxelState::Dynamic) {
+	for (int i = 0; i < 4; ++i) {
+		const Vec3& vertexPos = nextPos + Vec3{ dx[i], 0.f, dz[i] };
+		const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
+		const VoxelState vertexState = Scene::I->GetVoxelState(vertexIndex.Up());
+
+		if (vertexState != VoxelState::Dynamic) {
 			continue;
 		}
 
-		const Vec3& obstaclePos = Scene::I->GetVoxelPos(obstacleIndex);
-		if ((i == 0 || i == 1) && abs(obstaclePos.x - nextPos.x) < 0.45f) {
-			mVelocity.x = 0.f;
+		const Vec3& obstaclePos = Scene::I->GetVoxelPos(vertexIndex);
+
+		if (i == 0) {
+			const VoxelState forwardNeighbor = Scene::I->GetVoxelState(vertexIndex.Forward().Up());
+			const VoxelState rightNeighbor = Scene::I->GetVoxelState(vertexIndex.Right().Up());
+			int both{};
+			if (objectPos.x - 0.1f > obstaclePos.x + 0.25f) {
+				mVelocity.x = 0.f;
+				both++;
+			}
+			if (objectPos.z - 0.1f > obstaclePos.z + 0.25f) {
+				mVelocity.z = 0.f;
+				both++;
+			}
+
+			if (both == 2) {
+				if (forwardNeighbor == VoxelState::Dynamic && rightNeighbor != VoxelState::Dynamic) {
+					mVelocity.z = mNewVelocity.z;
+				}
+				else if (rightNeighbor == VoxelState::Dynamic && forwardNeighbor != VoxelState::Dynamic) {
+					mVelocity.x = mNewVelocity.x;
+				}
+			}
 		}
-		else if (( i == 2 || i == 3 ) && abs(obstaclePos.z - nextPos.z) < 0.45f) {
-			mVelocity.z = 0.f;
+		else if (i == 1) {
+			const VoxelState forwardNeighbor = Scene::I->GetVoxelState(vertexIndex.Forward().Up());
+			const VoxelState rightNeighbor = Scene::I->GetVoxelState(vertexIndex.Left().Up());
+			int both{};
+			if (objectPos.x + 0.1f < obstaclePos.x - 0.25f) {
+				mVelocity.x = 0.f;
+				both++;
+			}
+			if (objectPos.z - 0.1f > obstaclePos.z + 0.25f) {
+				mVelocity.z = 0.f;
+				both++;
+			}
+
+			if (both == 2) {
+				if (forwardNeighbor == VoxelState::Dynamic && rightNeighbor != VoxelState::Dynamic) {
+					mVelocity.z = mNewVelocity.z;
+				}
+				else if (rightNeighbor == VoxelState::Dynamic && forwardNeighbor != VoxelState::Dynamic) {
+					mVelocity.x = mNewVelocity.x;
+				}
+			}
+		}
+		else if (i == 2) {
+			const VoxelState forwardNeighbor = Scene::I->GetVoxelState(vertexIndex.Backward().Up());
+			const VoxelState rightNeighbor = Scene::I->GetVoxelState(vertexIndex.Right().Up());
+			int both{};
+			if (objectPos.x - 0.1f > obstaclePos.x + 0.25f) {
+				mVelocity.x = 0.f;
+				both++;
+			}
+			if (objectPos.z + 0.1f < obstaclePos.z - 0.25f) {
+				mVelocity.z = 0.f;
+				both++;
+			}
+
+			if (both == 2) {
+				if (forwardNeighbor == VoxelState::Dynamic && rightNeighbor != VoxelState::Dynamic) {
+					mVelocity.z = mNewVelocity.z;
+				}
+				else if (rightNeighbor == VoxelState::Dynamic && forwardNeighbor != VoxelState::Dynamic) {
+					mVelocity.x = mNewVelocity.x;
+				}
+			}
+		}
+		else {
+			const VoxelState forwardNeighbor = Scene::I->GetVoxelState(vertexIndex.Backward().Up());
+			const VoxelState rightNeighbor = Scene::I->GetVoxelState(vertexIndex.Left().Up());
+			int both{};
+			if (objectPos.x + 0.1f < obstaclePos.x - 0.25f) {
+				mVelocity.x = 0.f;
+				both++;
+			}
+			if (objectPos.z + 0.1f < obstaclePos.z - 0.25f) {
+				mVelocity.z = 0.f;
+				both++;
+			}
+
+			if (both == 2) {
+				if (forwardNeighbor == VoxelState::Dynamic && rightNeighbor != VoxelState::Dynamic) {
+					mVelocity.z = mNewVelocity.z;
+				}
+				else if (rightNeighbor == VoxelState::Dynamic && forwardNeighbor != VoxelState::Dynamic) {
+					mVelocity.x = mNewVelocity.x;
+				}
+			}
+		}
+	}
+
+	nextPos = objectPos + mVelocity * DeltaTime();
+	for (int i = 0; i < 4; ++i) {
+		const Vec3& vertexPos = nextPos + Vec3{ dx[i], 0.f, dz[i] };
+		const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
+		const VoxelState vertexState = Scene::I->GetVoxelState(vertexIndex.Up());
+
+		if (vertexState == VoxelState::Dynamic) {
+			mVelocity = Vec3{};
+			break;
 		}
 	}
 
@@ -292,7 +392,6 @@ void Agent::ReadyPlanningToPath(const Pos& start)
 	mNewVelocity = Vec3{};
 	mPrefVelocity = Vec3{};
 	mVelocity = Vec3{};
-	mObject->SetPosition(Scene::I->GetVoxelPos(start));
 	ClearPath();
 	mOption.Heuri = Heuristic::Manhattan;
 }
@@ -843,18 +942,20 @@ void Agent::SetPreferredVelocity()
 {
 	Vec3 toDest = Scene::I->GetVoxelPos(mDest) - mObject->GetPosition();
 
-	if (!mGlobalPath.empty()) {
-		Vec3 toNext = mGlobalPath.back() - mObject->GetPosition();
-		if (!Vector3::IsZero(toNext)) {
-			mPrefVelocity = Vector3::Normalized(toNext);
-		}
+	//if (!mGlobalPath.empty()) {
+	//	Vec3 toNext = mGlobalPath.back() - mObject->GetPosition();
+	//	if (!Vector3::IsZero(toNext)) {
+	//		mPrefVelocity = Vector3::Normalized(toNext);
+	//	}
+	//}
+
+	if (Vec3::AbsSq(toDest) > 1.f) {
+		toDest = Vector3::Normalized(toDest);
 	}
 
-	if (Vec3::AbsSq(toDest) <= 1.f) {
-		mPrefVelocity = toDest;
-	}
+	mPrefVelocity = toDest;
 
-	if (mGlobalPath.empty()) {
+	if (mVoxelIndex == mDest) {
 		mPrefVelocity = Vec3{};
 	}
 }
@@ -918,6 +1019,14 @@ void AgentManager::Update()
 
 	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
 		mAgents[i]->UpdatePosition();
+	}
+}
+
+void AgentManager::AllAgentPathPlanning(const Pos& dest)
+{
+	for (auto agent : mAgents) {
+		agent->ReadyPlanningToPath(agent->GetVoxelIndex());
+		agent->PathPlanningToAstar(dest, {}, true);
 	}
 }
 
