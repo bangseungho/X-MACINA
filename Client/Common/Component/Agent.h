@@ -68,7 +68,7 @@ public:
 
 
 struct AgentOption {
-	float		AgentSpeed = 1.5f;
+	float		AgentSpeed = 3.5f;
 	int			AllowedHeight = 0;
 	Heuristic	Heuri = Heuristic::Manhattan;
 };
@@ -117,7 +117,6 @@ private:
 	std::vector<Pos>	mCloseList{};
 	std::vector<Pos>	mOpenList{};
 	
-	bool				mIsFinish{};
 	bool				mIsStart{};
 	int					mSlowSpeedCount{};
 	float				mAngleSpeedRatio{};

@@ -49,13 +49,23 @@ void Agent::Start()
 	SetWorldMatrix(mtxWorld);
 	mObject->GetComponent<ObjectCollider>()->SetScale(0.4f);
 	mObject->SetPosition(100, 0, 260);
-
-	mMaxNeighbors = 10;
-	mNeighborDist = 15.f;
-	mTimeHorizon = 1.5f;
+	mMaxNeighbors = 1;
+	mNeighborDist = 5.f;
+	mTimeHorizon = 2.5f;
 	mRadius = 0.2f;
-	mMaxSpeed = 2.5f;
+	mMaxSpeed = 3.5f;
 	mTarget = mObject->GetPosition();
+}
+
+bool Compare(float a, float b, int flag)
+{
+	if (flag == 1) {
+		return a > b;
+	}
+	else if (flag == -1) {
+		return a < b;
+	}
+	return false;
 }
 
 void Agent::UpdatePosition()
@@ -84,6 +94,7 @@ void Agent::UpdatePosition()
 	const Pos& crntIndex = Scene::I->GetVoxelIndex(objectPos);
 	Vec3 nextPos = objectPos + mVelocity * DeltaTime();
 
+
 	for (int i = 0; i < 4; ++i) {
 		const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
 		const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
@@ -95,17 +106,17 @@ void Agent::UpdatePosition()
 		const Vec3& obstaclePos = Scene::I->GetVoxelPos(vertexIndex);
 
 		int both{};
-		if (objectPos.x + mdx[i] > obstaclePos.x + odx[i]) {
+		if (Compare(objectPos.x + mdx[i], obstaclePos.x + odx[i], idx[i])) {
 			mVelocity.x = 0.f;
 			both++;
 		}
-		if (objectPos.z + mdz[i] > obstaclePos.z + odz[i]) {
+		if (Compare(objectPos.z + mdz[i], obstaclePos.z + odz[i], idz[i])) {
 			mVelocity.z = 0.f;
 			both++;
 		}
 
-		Pos neighborZ = vertexIndex + Pos{ idz[i], 0, 1 };
 		Pos neighborX = vertexIndex + Pos{ 0, idx[i], 1 };
+		Pos neighborZ = vertexIndex + Pos{ idz[i], 0, 1 };
 		if (both == 2) {
 			if (!Scene::I->CanGoNextVoxel(neighborZ) && Scene::I->CanGoNextVoxel(neighborX)) {
 				mVelocity.z = mNewVelocity.z;
@@ -128,26 +139,6 @@ void Agent::UpdatePosition()
 	}
 
 	mObject->SetPosition(objectPos + mVelocity * DeltaTime());
-
-	const float kMinDistance = 0.05f;
-	if ((mObject->GetPosition() - Scene::I->GetVoxelPos(mDest)).Length() < kMinDistance) {
-		mPrefVelocity = Vec3{};
-		mVelocity = Vec3{};
-		mIsFinish = true;
-	}
-
-	//const float kMinDistance = 0.05f;
-	//if (!mGlobalPath.empty() && (mGlobalPath.back() - mObject->GetPosition()).Length() < kMinDistance) {
-	//	const Vec3& crntPathPos = mGlobalPath.back();
-	//	const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
-	//	mGlobalPath.pop_back();
-	//	mGlobalPathCache.erase(crntPathIndex);
-	//	//RePlanningToPathAvoidStatic(crntPathIndex);
-
-	//	if (!mGlobalPath.empty()) {
-	//		mPathDir = Vector3::Normalized(mGlobalPath.back() - mObject->GetPosition());
-	//	}
-	//}
 }
 
 const Pos Agent::GetPathIndex(int index) const
@@ -327,7 +318,6 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, const std::unorder
 void Agent::ReadyPlanningToPath(const Pos& start)
 {
 	mStart = start;
-	mIsFinish = false;
 	mIsStart = false;
 	mCloseList.push_back(mStart);
 	mNewVelocity = Vec3{};
@@ -860,10 +850,6 @@ void Agent::ComputeNewVelocity()
 
 void Agent::SetPreferredVelocity()
 {
-	if (mIsFinish) {
-		return;
-	}
-
 	Vec3 toNext = AgentManager::I->GetFlowFieldDirection(mVoxelIndex);
 	Vec3 toDest = Scene::I->GetVoxelPos(mDest) - mObject->GetPosition();
 	if (Vec3::AbsSq(toDest) > 1.f) {
@@ -875,7 +861,6 @@ void Agent::SetPreferredVelocity()
 
 void Agent::ClearPath()
 {
-	mIsFinish = false;
 	mGlobalPath.clear();
 	mLocalPath.clear();
 	mGlobalPathCache.clear();
