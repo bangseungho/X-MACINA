@@ -861,6 +861,17 @@ void Scene::PopObjectBuffer()
 	}
 }
 
+bool Scene::CanGoNextVoxel(const Pos& pos) const
+{
+	VoxelState state = GetVoxelState(pos);
+
+	if (state == VoxelState::Static || state == VoxelState::Dynamic) {
+		return false;
+	}
+
+	return true;
+}
+
 //////////////////* Others *//////////////////
 int Scene::GetGridIndex(const Pos& index) const {
 	const int gridX = static_cast<int>(index.X * Grid::mkVoxelWidth / kGridWidth);

@@ -68,7 +68,7 @@ public:
 
 
 struct AgentOption {
-	float		AgentSpeed = 1.2f;
+	float		AgentSpeed = 1.5f;
 	int			AllowedHeight = 0;
 	Heuristic	Heuri = Heuristic::Manhattan;
 };

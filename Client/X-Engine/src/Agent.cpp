@@ -54,7 +54,7 @@ void Agent::Start()
 	mNeighborDist = 15.f;
 	mTimeHorizon = 1.5f;
 	mRadius = 0.2f;
-	mMaxSpeed = 1.5f;
+	mMaxSpeed = 2.5f;
 	mTarget = mObject->GetPosition();
 }
 
@@ -74,120 +74,54 @@ void Agent::UpdatePosition()
 	mNewVelocity.y = mPrefVelocity.y;
 	mVelocity = mNewVelocity;
 
-	static const float dx[4]{ -0.1f, +0.1f, -0.1f, +0.1f };
-	static const float dz[4]{ -0.1f, -0.1f, +0.1f, +0.1f };
+	static const float mdx[4]{ -0.1f, +0.1f, -0.1f, +0.1f };
+	static const float mdz[4]{ -0.1f, -0.1f, +0.1f, +0.1f };
+	static const float odx[4]{ +0.25f, -0.25f, +0.25f, -0.25f };
+	static const float odz[4]{ +0.25f, +0.25f, -0.25f, -0.25f };
+	static const int idx[4]{ +1, -1, +1, -1 };
+	static const int idz[4]{ +1, +1, -1, -1 };
 
 	const Pos& crntIndex = Scene::I->GetVoxelIndex(objectPos);
 	Vec3 nextPos = objectPos + mVelocity * DeltaTime();
 
 	for (int i = 0; i < 4; ++i) {
-		const Vec3& vertexPos = nextPos + Vec3{ dx[i], 0.f, dz[i] };
+		const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
 		const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
-		const VoxelState vertexState = Scene::I->GetVoxelState(vertexIndex.Up());
 
-		if (vertexState != VoxelState::Dynamic) {
+		if (Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
 			continue;
 		}
 
 		const Vec3& obstaclePos = Scene::I->GetVoxelPos(vertexIndex);
 
-		if (i == 0) {
-			const VoxelState forwardNeighbor = Scene::I->GetVoxelState(vertexIndex.Forward().Up());
-			const VoxelState rightNeighbor = Scene::I->GetVoxelState(vertexIndex.Right().Up());
-			int both{};
-			if (objectPos.x - 0.1f > obstaclePos.x + 0.25f) {
-				mVelocity.x = 0.f;
-				both++;
-			}
-			if (objectPos.z - 0.1f > obstaclePos.z + 0.25f) {
-				mVelocity.z = 0.f;
-				both++;
-			}
-
-			if (both == 2) {
-				if (forwardNeighbor == VoxelState::Dynamic && rightNeighbor != VoxelState::Dynamic) {
-					mVelocity.z = mNewVelocity.z;
-				}
-				else if (rightNeighbor == VoxelState::Dynamic && forwardNeighbor != VoxelState::Dynamic) {
-					mVelocity.x = mNewVelocity.x;
-				}
-			}
+		int both{};
+		if (objectPos.x + mdx[i] > obstaclePos.x + odx[i]) {
+			mVelocity.x = 0.f;
+			both++;
 		}
-		else if (i == 1) {
-			const VoxelState forwardNeighbor = Scene::I->GetVoxelState(vertexIndex.Forward().Up());
-			const VoxelState rightNeighbor = Scene::I->GetVoxelState(vertexIndex.Left().Up());
-			int both{};
-			if (objectPos.x + 0.1f < obstaclePos.x - 0.25f) {
-				mVelocity.x = 0.f;
-				both++;
-			}
-			if (objectPos.z - 0.1f > obstaclePos.z + 0.25f) {
-				mVelocity.z = 0.f;
-				both++;
-			}
-
-			if (both == 2) {
-				if (forwardNeighbor == VoxelState::Dynamic && rightNeighbor != VoxelState::Dynamic) {
-					mVelocity.z = mNewVelocity.z;
-				}
-				else if (rightNeighbor == VoxelState::Dynamic && forwardNeighbor != VoxelState::Dynamic) {
-					mVelocity.x = mNewVelocity.x;
-				}
-			}
+		if (objectPos.z + mdz[i] > obstaclePos.z + odz[i]) {
+			mVelocity.z = 0.f;
+			both++;
 		}
-		else if (i == 2) {
-			const VoxelState forwardNeighbor = Scene::I->GetVoxelState(vertexIndex.Backward().Up());
-			const VoxelState rightNeighbor = Scene::I->GetVoxelState(vertexIndex.Right().Up());
-			int both{};
-			if (objectPos.x - 0.1f > obstaclePos.x + 0.25f) {
-				mVelocity.x = 0.f;
-				both++;
-			}
-			if (objectPos.z + 0.1f < obstaclePos.z - 0.25f) {
-				mVelocity.z = 0.f;
-				both++;
-			}
 
-			if (both == 2) {
-				if (forwardNeighbor == VoxelState::Dynamic && rightNeighbor != VoxelState::Dynamic) {
-					mVelocity.z = mNewVelocity.z;
-				}
-				else if (rightNeighbor == VoxelState::Dynamic && forwardNeighbor != VoxelState::Dynamic) {
-					mVelocity.x = mNewVelocity.x;
-				}
+		Pos neighborZ = vertexIndex + Pos{ idz[i], 0, 1 };
+		Pos neighborX = vertexIndex + Pos{ 0, idx[i], 1 };
+		if (both == 2) {
+			if (!Scene::I->CanGoNextVoxel(neighborZ) && Scene::I->CanGoNextVoxel(neighborX)) {
+				mVelocity.z = mNewVelocity.z;
 			}
-		}
-		else {
-			const VoxelState forwardNeighbor = Scene::I->GetVoxelState(vertexIndex.Backward().Up());
-			const VoxelState rightNeighbor = Scene::I->GetVoxelState(vertexIndex.Left().Up());
-			int both{};
-			if (objectPos.x + 0.1f < obstaclePos.x - 0.25f) {
-				mVelocity.x = 0.f;
-				both++;
-			}
-			if (objectPos.z + 0.1f < obstaclePos.z - 0.25f) {
-				mVelocity.z = 0.f;
-				both++;
-			}
-
-			if (both == 2) {
-				if (forwardNeighbor == VoxelState::Dynamic && rightNeighbor != VoxelState::Dynamic) {
-					mVelocity.z = mNewVelocity.z;
-				}
-				else if (rightNeighbor == VoxelState::Dynamic && forwardNeighbor != VoxelState::Dynamic) {
-					mVelocity.x = mNewVelocity.x;
-				}
+			else if (!Scene::I->CanGoNextVoxel(neighborX) && Scene::I->CanGoNextVoxel(neighborZ)) {
+				mVelocity.x = mNewVelocity.x;
 			}
 		}
 	}
 
 	nextPos = objectPos + mVelocity * DeltaTime();
 	for (int i = 0; i < 4; ++i) {
-		const Vec3& vertexPos = nextPos + Vec3{ dx[i], 0.f, dz[i] };
+		const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
 		const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
-		const VoxelState vertexState = Scene::I->GetVoxelState(vertexIndex.Up());
 
-		if (vertexState == VoxelState::Dynamic) {
+		if (!Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
 			mVelocity = Vec3{};
 			break;
 		}
@@ -195,18 +129,18 @@ void Agent::UpdatePosition()
 
 	mObject->SetPosition(objectPos + mVelocity * DeltaTime());
 
-	const float kMinDistance = 0.05f;
-	if (!mGlobalPath.empty() && (mGlobalPath.back() - mObject->GetPosition()).Length() < kMinDistance) {
-		const Vec3& crntPathPos = mGlobalPath.back();
-		const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
-		mGlobalPath.pop_back();
-		mGlobalPathCache.erase(crntPathIndex);
-		//RePlanningToPathAvoidStatic(crntPathIndex);
+	//const float kMinDistance = 0.05f;
+	//if (!mGlobalPath.empty() && (mGlobalPath.back() - mObject->GetPosition()).Length() < kMinDistance) {
+	//	const Vec3& crntPathPos = mGlobalPath.back();
+	//	const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
+	//	mGlobalPath.pop_back();
+	//	mGlobalPathCache.erase(crntPathIndex);
+	//	//RePlanningToPathAvoidStatic(crntPathIndex);
 
-		if (!mGlobalPath.empty()) {
-			mPathDir = Vector3::Normalized(mGlobalPath.back() - mObject->GetPosition());
-		}
-	}
+	//	if (!mGlobalPath.empty()) {
+	//		mPathDir = Vector3::Normalized(mGlobalPath.back() - mObject->GetPosition());
+	//	}
+	//}
 }
 
 const Pos Agent::GetPathIndex(int index) const
@@ -516,7 +450,7 @@ void Agent::RePlanningToPathAvoidStatic(const Pos& crntPathIndex)
 
 		Pos nextPathIndex = Scene::I->GetVoxelIndex(mGlobalPath[mGlobalPath.size() - i]);
 		VoxelState nextPathUpVoxelState = Scene::I->GetVoxelState(nextPathIndex.Up());
-		if (nextPathUpVoxelState == VoxelState::Dynamic || nextPathUpVoxelState == VoxelState::Static) {
+		if (!Scene::I->CanGoNextVoxel(nextPathIndex)) {
 			for (int j = 0; j < i; ++j) {
 				mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
 				mGlobalPath.pop_back();
@@ -760,17 +694,6 @@ bool LinearProgram2(const std::vector<Plane>& planes, std::size_t planeNo,
 	return true;
 }
 
-/**
- * @brief      Solves a three-dimensional linear program subject to linear
- *             constraints defined by planes and a spherical constraint.
- * @param[in]  planes       Planes defining the linear constraints.
- * @param[in]  radius       The radius of the spherical constraint.
- * @param[in]  optVelocity  The optimization velocity.
- * @param[in]  directionOpt True if the direction should be optimized.
- * @param[out] result       A reference to the result of the linear program.
- * @return     The number of the plane it fails on, and the number of planes if
- *             successful.
- */
 std::size_t LinearProgram3(const std::vector<Plane>& planes, float radius,
 	const Vec3& optVelocity, bool directionOpt,
 	Vec3& result) { /* NOLINT(runtime/references) */
@@ -806,15 +729,6 @@ std::size_t LinearProgram3(const std::vector<Plane>& planes, float radius,
 	return planes.size();
 }
 
-/**
- * @brief      Solves a four-dimensional linear program subject to linear
- *             constraints defined by planes and a spherical constraint.
- * @param[in]  planes     Planes defining the linear constraints.
- * @param[in]  beginPlane The plane on which the three-dimensional linear
- *                        program failed.
- * @param[in]  radius     The radius of the spherical constraint.
- * @param[out] result     A reference to the result of the linear program.
- */
 void LinearProgram4(const std::vector<Plane>& planes, std::size_t beginPlane,
 	float radius,
 	Vec3& result) { /* NOLINT(runtime/references) */
@@ -872,7 +786,6 @@ void LinearProgram4(const std::vector<Plane>& planes, std::size_t beginPlane,
 		}
 	}
 } 
-
 
 void Agent::ComputeNewVelocity()
 {
@@ -952,7 +865,7 @@ void Agent::SetPreferredVelocity()
 	//	toDest = Vector3::Normalized(toDest);
 	//}
 
-	mPrefVelocity = AgentManager::I->GetFlowFieldDirection(mVoxelIndex);
+	mPrefVelocity = AgentManager::I->GetFlowFieldDirection(mVoxelIndex) * mOption.AgentSpeed;
 
 	if (mVoxelIndex == mDest) {
 		mPrefVelocity = Vec3{};
@@ -1186,7 +1099,6 @@ void AgentManager::PickAgent(Agent** agent)
 	}
 }
 
-
 Pos AgentManager::FindEmptyDestVoxel(Agent* invoker)
 {
 	std::queue<Pos> q;
@@ -1231,7 +1143,6 @@ Pos AgentManager::FindEmptyDestVoxel(Agent* invoker)
 
 	return curPos;
 }
-
 
 Pos AgentManager::RandomDest(int x, int z)
 {

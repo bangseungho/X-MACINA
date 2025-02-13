@@ -170,7 +170,10 @@ void VoxelManager::PickTopVoxel(bool makePath)
 	for (const auto& voxel : mRenderVoxels) {
 		Vec3 voxelPosW = Scene::I->GetVoxelPos(voxel);
 		Scene::I->SetVoxelCondition(voxel, VoxelCondition::None);
+
 		if (Scene::I->GetVoxelState(voxel) == VoxelState::None) continue;
+		if (Scene::I->GetVoxelState(voxel.Up()) != VoxelState::None) continue;
+
 		BoundingBox bb{ voxelPosW, Grid::mkVoxelExtent };
 		float dist{};
 		if (ray.Intersects(bb, dist)) {
@@ -179,6 +182,10 @@ void VoxelManager::PickTopVoxel(bool makePath)
 				mSelectedVoxel = voxel;
 			}
 		}
+	}
+
+	if (minValue == FLT_MAX) {
+		return;
 	}
 
 	VoxelState selectedVoxelState = Scene::I->GetVoxelState(mSelectedVoxel);
