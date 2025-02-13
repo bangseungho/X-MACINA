@@ -84,59 +84,59 @@ void Agent::UpdatePosition()
 	mNewVelocity.y = mPrefVelocity.y;
 	mVelocity = mNewVelocity;
 
-	static const float mdx[4]{ -0.1f, +0.1f, -0.1f, +0.1f };
-	static const float mdz[4]{ -0.1f, -0.1f, +0.1f, +0.1f };
-	static const float odx[4]{ +0.25f, -0.25f, +0.25f, -0.25f };
-	static const float odz[4]{ +0.25f, +0.25f, -0.25f, -0.25f };
-	static const int idx[4]{ +1, -1, +1, -1 };
-	static const int idz[4]{ +1, +1, -1, -1 };
+	//static const float mdx[4]{ -0.1f, +0.1f, -0.1f, +0.1f };
+	//static const float mdz[4]{ -0.1f, -0.1f, +0.1f, +0.1f };
+	//static const float odx[4]{ +0.25f, -0.25f, +0.25f, -0.25f };
+	//static const float odz[4]{ +0.25f, +0.25f, -0.25f, -0.25f };
+	//static const int idx[4]{ +1, -1, +1, -1 };
+	//static const int idz[4]{ +1, +1, -1, -1 };
 
-	const Pos& crntIndex = Scene::I->GetVoxelIndex(objectPos);
-	Vec3 nextPos = objectPos + mVelocity * DeltaTime();
+	//const Pos& crntIndex = Scene::I->GetVoxelIndex(objectPos);
+	//Vec3 nextPos = objectPos + mVelocity * DeltaTime();
 
 
-	for (int i = 0; i < 4; ++i) {
-		const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
-		const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
+	//for (int i = 0; i < 4; ++i) {
+	//	const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
+	//	const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
 
-		if (Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
-			continue;
-		}
+	//	if (Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
+	//		continue;
+	//	}
 
-		const Vec3& obstaclePos = Scene::I->GetVoxelPos(vertexIndex);
+	//	const Vec3& obstaclePos = Scene::I->GetVoxelPos(vertexIndex);
 
-		int both{};
-		if (Compare(objectPos.x + mdx[i], obstaclePos.x + odx[i], idx[i])) {
-			mVelocity.x = 0.f;
-			both++;
-		}
-		if (Compare(objectPos.z + mdz[i], obstaclePos.z + odz[i], idz[i])) {
-			mVelocity.z = 0.f;
-			both++;
-		}
+	//	int both{};
+	//	if (Compare(objectPos.x + mdx[i], obstaclePos.x + odx[i], idx[i])) {
+	//		mVelocity.x = 0.f;
+	//		both++;
+	//	}
+	//	if (Compare(objectPos.z + mdz[i], obstaclePos.z + odz[i], idz[i])) {
+	//		mVelocity.z = 0.f;
+	//		both++;
+	//	}
 
-		Pos neighborX = vertexIndex + Pos{ 0, idx[i], 1 };
-		Pos neighborZ = vertexIndex + Pos{ idz[i], 0, 1 };
-		if (both == 2) {
-			if (!Scene::I->CanGoNextVoxel(neighborZ) && Scene::I->CanGoNextVoxel(neighborX)) {
-				mVelocity.z = mNewVelocity.z;
-			}
-			else if (!Scene::I->CanGoNextVoxel(neighborX) && Scene::I->CanGoNextVoxel(neighborZ)) {
-				mVelocity.x = mNewVelocity.x;
-			}
-		}
-	}
+	//	Pos neighborX = vertexIndex + Pos{ 0, idx[i], 1 };
+	//	Pos neighborZ = vertexIndex + Pos{ idz[i], 0, 1 };
+	//	if (both == 2) {
+	//		if (!Scene::I->CanGoNextVoxel(neighborZ) && Scene::I->CanGoNextVoxel(neighborX)) {
+	//			mVelocity.z = mNewVelocity.z;
+	//		}
+	//		else if (!Scene::I->CanGoNextVoxel(neighborX) && Scene::I->CanGoNextVoxel(neighborZ)) {
+	//			mVelocity.x = mNewVelocity.x;
+	//		}
+	//	}
+	//}
 
-	nextPos = objectPos + mVelocity * DeltaTime();
-	for (int i = 0; i < 4; ++i) {
-		const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
-		const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
+	//nextPos = objectPos + mVelocity * DeltaTime();
+	//for (int i = 0; i < 4; ++i) {
+	//	const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
+	//	const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
 
-		if (!Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
-			mVelocity = Vec3{};
-			break;
-		}
-	}
+	//	if (!Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
+	//		mVelocity = Vec3{};
+	//		break;
+	//	}
+	//}
 
 	mObject->SetPosition(objectPos + mVelocity * DeltaTime());
 }
@@ -850,7 +850,12 @@ void Agent::ComputeNewVelocity()
 
 void Agent::SetPreferredVelocity()
 {
-	Vec3 toNext = AgentManager::I->GetFlowFieldDirection(mVoxelIndex);
+	const Vec3& toNext = AgentManager::I->GetFlowFieldDirection(mVoxelIndex);
+
+	if (Vector3::IsZero(toNext)) {
+		return;
+	}
+
 	Vec3 toDest = Scene::I->GetVoxelPos(mDest) - mObject->GetPosition();
 	if (Vec3::AbsSq(toDest) > 1.f) {
 		toDest = Vector3::Normalized(toNext);
@@ -900,7 +905,11 @@ void Agent::RenderCloseList()
 
 Vec3 AgentManager::GetFlowFieldDirection(const Pos& index)
 {
-	return mFlowFieldMap[index] - Scene::I->GetVoxelPos(index);
+	if (mFlowFieldMap.count(index)) {
+		return mFlowFieldMap[index] - Scene::I->GetVoxelPos(index);
+	}
+
+	return Vec3{};
 }
 
 void AgentManager::Start()
@@ -952,7 +961,7 @@ void AgentManager::PathPlanningToFlowField(const Pos& dest)
 				int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
 				int nextCost = distance[curNode.second] + gkCost[dir] + proximityCost;
 
-				if (diffPosY >= 1) continue;
+				if (diffPosY >= 10) continue;
 				if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
 				if (nextCost >= distance[nextPos]) continue;
 
