@@ -54,7 +54,9 @@ void VoxelManager::ProcessKeyboardMsg(UINT messageID, WPARAM wParam, LPARAM lPar
 			mOption.CreateMode = CreateMode::Remove;
 			break;
 		case '4':
-			Scene::I->Instantiate("Shield")->AddComponent<Agent>();
+		{
+			VoxelManager::I->SetAgent(Scene::I->Instantiate("Shield")->AddComponent<Agent>().get());
+		}
 			break;
 		default:
 			break;
@@ -79,6 +81,7 @@ void VoxelManager::Init()
 	for (auto& buffer : mInstanceBuffers) {
 		buffer = std::make_unique<UploadBuffer<InstanceData>>(DEVICE.Get(), mkMaxRenderVoxelCount, false);
 	}
+
 }
 
 void VoxelManager::UpdateRenderVoxels(const Pos& pos, bool checkCenterPos)

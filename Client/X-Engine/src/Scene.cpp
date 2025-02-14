@@ -248,7 +248,6 @@ void Scene::BuildObjects()
 	// skybox
 	mSkyBox = std::make_shared<SkyBox>();
 
-	VoxelManager::I->Init();
 }
 
 void Scene::ReleaseObjects()
@@ -783,6 +782,7 @@ void Scene::Start()
 	UpdateGridInfo();
 	UpdateVoxelsOnTerrain();
 
+	VoxelManager::I->Init();
 	AgentManager::I->Start();
 }
 

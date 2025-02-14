@@ -69,7 +69,7 @@ public:
 
 struct AgentOption {
 	float		AgentSpeed = 3.5f;
-	int			AllowedHeight = 0;
+	int			ClimbHeight = 0;
 	Heuristic	Heuri = Heuristic::Manhattan;
 };
 
@@ -182,6 +182,10 @@ private:
 	Vec3 mVelocity{};
 	Vec3 mNewVelocity{};
 	Vec3 mPrefVelocity{};
+	Vec3 mPrevNextPos{};
+	float mNewVelocityY{};
+	bool mUseRVO{};
+
 public:
 	Vec3 GetVelocity() const { return mVelocity; }
 	float GetRadius() const { return mRadius; }
@@ -196,9 +200,12 @@ public:
 
 class AgentManager : public Singleton<AgentManager> {
 	friend Singleton;
-
 	friend class KdTree;
 	friend class Agent;
+
+public:
+	bool mIsInit{};
+	AgentOption mOption{};
 
 private:
 	sptr<class KdTree> mKdTree{};
@@ -216,6 +223,11 @@ public:
 	//void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
 	void SetAgentPrefVelocity(int agentNo, const Vec3& prefVelocity) { mAgents[agentNo]->mPrefVelocity = prefVelocity; }
 	Vec3 GetFlowFieldDirection(const Pos& pos);
+	Vec3 GetFlowFieldPos(const Pos& pos);
+
+public:
+	void SetClimbHeightAllAgent(int height);
+	void SetAgentSpeedAllAgent(float speed);
 
 public:
 	void Start();

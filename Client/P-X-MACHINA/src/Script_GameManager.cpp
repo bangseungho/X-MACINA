@@ -19,7 +19,6 @@
 void Script_GameManager::Awake()
 {
 	base::Awake();
-	VoxelManager::I->SetAgent(Scene::I->Instantiate("Shield")->AddComponent<Agent>().get());
 }
 
 void Script_GameManager::Start()

@@ -342,17 +342,41 @@ void ImGuiAgentFunc::Execute(GameObject* selectedObject)
 		float value = mCrntAgent->mOption.AgentSpeed;
 		ImGui::Text("AgentSpeed :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
-		ImGui::InputFloat("##float_AgentSpeed", &value, 0.5f, 1.0f, "%.3f"); // float 입력 박스
-		mCrntAgent->mOption.AgentSpeed = max(0.f, value);
+		if (ImGui::InputFloat("##float_AgentSpeed", &value, 0.5f, 1.0f, "%.3f")) {
+			mCrntAgent->mOption.AgentSpeed = max(0.f, value);
+		}
 	}
 
 	// allowed height
 	{
-		int value = mCrntAgent->mOption.AllowedHeight;
-		ImGui::Text("AllowedHeight :"); // 안내 텍스트
+		int value = mCrntAgent->mOption.ClimbHeight;
+		ImGui::Text("ClimbHeight :"); // 안내 텍스트
 		ImGui::SameLine(mTextSpacing);
-		ImGui::InputInt("##int_AllowedHeight", &value, 1, 10);
-		mCrntAgent->mOption.AllowedHeight = max(0, value);
+		if (ImGui::InputInt("##int_ClimbHeight", &value, 1, 10)) {
+			mCrntAgent->mOption.ClimbHeight = max(0, value);
+		}
+	}
+
+	// all agent speed
+	{
+		float value = AgentManager::I->mOption.AgentSpeed;
+		ImGui::Text("All AgentSpeed :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+		if (ImGui::InputFloat("##float_AllAgentSpeed", &value, 0.5f, 1.0f, "%.3f")) {
+			value = max(0.f, value);
+			AgentManager::I->SetAgentSpeedAllAgent(value);
+		}
+	}
+
+	// all allowed height
+	{
+		int value = AgentManager::I->mOption.ClimbHeight;
+		ImGui::Text("All ClimbHeight :"); // 안내 텍스트
+		ImGui::SameLine(mTextSpacing);
+		if (ImGui::InputInt("##int_AllClimbHeight", &value, 1, 10)) {
+			value = max(0, value);
+			AgentManager::I->SetClimbHeightAllAgent(value);
+		}
 	}
 
 	{

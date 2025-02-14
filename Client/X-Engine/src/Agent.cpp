@@ -48,13 +48,15 @@ void Agent::Start()
 	mtxWorld = mtxWorld.CreateScale(0.4f);
 	SetWorldMatrix(mtxWorld);
 	mObject->GetComponent<ObjectCollider>()->SetScale(0.4f);
-	mObject->SetPosition(100, 0, 260);
+	mObject->SetPosition(100.f, 0, 260.f);
 	mMaxNeighbors = 1;
-	mNeighborDist = 5.f;
-	mTimeHorizon = 2.5f;
+	mNeighborDist = 3.f;
+	mTimeHorizon = 1.5f;
 	mRadius = 0.2f;
 	mMaxSpeed = 3.5f;
-	mTarget = mObject->GetPosition();
+	mPrefVelocity = Vec3{};
+	mNewVelocity = Vec3{};
+	mVelocity = Vec3{};
 }
 
 bool Compare(float a, float b, int flag)
@@ -81,63 +83,64 @@ void Agent::UpdatePosition()
 		return;
 	}
 
-	mNewVelocity.y = mPrefVelocity.y;
 	mVelocity = mNewVelocity;
+	mVelocity.y = mNewVelocityY;
 
-	//static const float mdx[4]{ -0.1f, +0.1f, -0.1f, +0.1f };
-	//static const float mdz[4]{ -0.1f, -0.1f, +0.1f, +0.1f };
-	//static const float odx[4]{ +0.25f, -0.25f, +0.25f, -0.25f };
-	//static const float odz[4]{ +0.25f, +0.25f, -0.25f, -0.25f };
-	//static const int idx[4]{ +1, -1, +1, -1 };
-	//static const int idz[4]{ +1, +1, -1, -1 };
+	static const float mdx[4]{ -0.1f, +0.1f, -0.1f, +0.1f };
+	static const float mdz[4]{ -0.1f, -0.1f, +0.1f, +0.1f };
+	static const float odx[4]{ +0.25f, -0.25f, +0.25f, -0.25f };
+	static const float odz[4]{ +0.25f, +0.25f, -0.25f, -0.25f };
+	static const int idx[4]{ +1, -1, +1, -1 };
+	static const int idz[4]{ +1, +1, -1, -1 };
 
-	//const Pos& crntIndex = Scene::I->GetVoxelIndex(objectPos);
-	//Vec3 nextPos = objectPos + mVelocity * DeltaTime();
+	const Pos& crntIndex = Scene::I->GetVoxelIndex(objectPos);
+	Vec3 nextPos = objectPos + mVelocity * DeltaTime();
 
+	if (abs(mPrevNextPos.y - objectPos.y) <= FLT_EPSILON) {
+		for (int i = 0; i < 4; ++i) {
+			const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
+			const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
 
-	//for (int i = 0; i < 4; ++i) {
-	//	const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
-	//	const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
+			if (Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
+				continue;
+			}
 
-	//	if (Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
-	//		continue;
-	//	}
+			const Vec3& obstaclePos = Scene::I->GetVoxelPos(vertexIndex);
 
-	//	const Vec3& obstaclePos = Scene::I->GetVoxelPos(vertexIndex);
+			int both{};
+			if (Compare(objectPos.x + mdx[i], obstaclePos.x + odx[i], idx[i])) {
+				mVelocity.x = 0.f;
+				both++;
+			}
+			if (Compare(objectPos.z + mdz[i], obstaclePos.z + odz[i], idz[i])) {
+				mVelocity.z = 0.f;
+				both++;
+			}
 
-	//	int both{};
-	//	if (Compare(objectPos.x + mdx[i], obstaclePos.x + odx[i], idx[i])) {
-	//		mVelocity.x = 0.f;
-	//		both++;
-	//	}
-	//	if (Compare(objectPos.z + mdz[i], obstaclePos.z + odz[i], idz[i])) {
-	//		mVelocity.z = 0.f;
-	//		both++;
-	//	}
+			Pos neighborX = vertexIndex + Pos{ 0, idx[i], 1 };
+			Pos neighborZ = vertexIndex + Pos{ idz[i], 0, 1 };
+			if (both == 2) {
+				if (!Scene::I->CanGoNextVoxel(neighborZ) && Scene::I->CanGoNextVoxel(neighborX)) {
+					mVelocity.z = mNewVelocity.z;
+				}
+				else if (!Scene::I->CanGoNextVoxel(neighborX) && Scene::I->CanGoNextVoxel(neighborZ)) {
+					mVelocity.x = mNewVelocity.x;
+				}
+			}
+		}
 
-	//	Pos neighborX = vertexIndex + Pos{ 0, idx[i], 1 };
-	//	Pos neighborZ = vertexIndex + Pos{ idz[i], 0, 1 };
-	//	if (both == 2) {
-	//		if (!Scene::I->CanGoNextVoxel(neighborZ) && Scene::I->CanGoNextVoxel(neighborX)) {
-	//			mVelocity.z = mNewVelocity.z;
-	//		}
-	//		else if (!Scene::I->CanGoNextVoxel(neighborX) && Scene::I->CanGoNextVoxel(neighborZ)) {
-	//			mVelocity.x = mNewVelocity.x;
-	//		}
-	//	}
-	//}
+		nextPos = objectPos + mVelocity * DeltaTime();
+		for (int i = 0; i < 4; ++i) {
+			const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
+			const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
 
-	//nextPos = objectPos + mVelocity * DeltaTime();
-	//for (int i = 0; i < 4; ++i) {
-	//	const Vec3& vertexPos = nextPos + Vec3{ mdx[i], 0.f, mdz[i] };
-	//	const Pos& vertexIndex = Scene::I->GetVoxelIndex(vertexPos);
-
-	//	if (!Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
-	//		mVelocity = Vec3{};
-	//		break;
-	//	}
-	//}
-
+			if (!Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
+				mVelocity = -mVelocity;
+				break;
+			}
+		}
+	}
+	
 	mObject->SetPosition(objectPos + mVelocity * DeltaTime());
 }
 
@@ -222,7 +225,7 @@ std::vector<Vec3> Agent::PathPlanningToAstar(const Pos& dest, const std::unorder
 				int avoidCost{}, dirPathCost{};
 				int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
 				float edgeCost = GetEdgeCost(nextPos, gkFront[dir]) * PathOption::I->GetEdgeWeight();
-				if (diffPosY > mOption.AllowedHeight) continue;
+				if (diffPosY > mOption.ClimbHeight) continue;
 				if (visited.contains(nextPos)) continue;
 				if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
 				if (prevDir != gkFront[dir]) dirPathCost = gkCost[dir];
@@ -537,6 +540,10 @@ void Agent::InsertAgentNeightbor(const Agent* agent, float& rangeSq)
 
 void Agent::ComputeNeighbors()
 {
+	if (!mUseRVO) {
+		return;
+	}
+
 	mAgentNeighbors.clear();
 
 	if (mMaxNeighbors > 0) {
@@ -787,13 +794,17 @@ void LinearProgram4(const std::vector<Plane>& planes, std::size_t beginPlane,
 
 void Agent::ComputeNewVelocity()
 {
+	if (!mUseRVO) {
+		return;
+	}
+
 	mORCAPlanes.clear();
 	const float invTimeHorizon = 1.f / mTimeHorizon;
 
 	for (int i = 0; i < mAgentNeighbors.size(); ++i) {
 		const Agent* const other = mAgentNeighbors[i].second;
-		const Vec3 relativePosition = other->GetWorldPosition() - mObject->GetPosition();
-		const Vec3 relativeVelocity = mVelocity - other->GetVelocity();
+		const Vec3 relativePosition = other->GetWorldPosition().xz() - mObject->GetPosition().xz();
+		const Vec3 relativeVelocity = mVelocity.xz() - other->GetVelocity().xz();
 		const float distSq = Vec3::AbsSq(relativePosition);
 		const float combinedRadius = mRadius + other->GetRadius();
 		const float combinedRadiusSq = combinedRadius * combinedRadius;
@@ -842,7 +853,7 @@ void Agent::ComputeNewVelocity()
 		mORCAPlanes.push_back(plane);
 	}
 
-	const std::size_t planeFail = LinearProgram3(mORCAPlanes, mMaxSpeed, mPrefVelocity, false, mNewVelocity);
+	const std::size_t planeFail = LinearProgram3(mORCAPlanes, mMaxSpeed, mPrefVelocity.xz(), false, mNewVelocity);
 	if (planeFail < mORCAPlanes.size()) {
 		LinearProgram4(mORCAPlanes, planeFail, mMaxSpeed, mNewVelocity);
 	}
@@ -850,18 +861,26 @@ void Agent::ComputeNewVelocity()
 
 void Agent::SetPreferredVelocity()
 {
-	const Vec3& toNext = AgentManager::I->GetFlowFieldDirection(mVoxelIndex);
+	const Vec3& nextPos = AgentManager::I->GetFlowFieldPos(mVoxelIndex);
 
-	if (Vector3::IsZero(toNext)) {
-		return;
+	Vec3 toDest{};
+	if (Vector3::IsZero(nextPos) && AgentManager::I->mIsInit) {
+		toDest = (mPrevNextPos - mObject->GetPosition()) * mOption.AgentSpeed;
+		mNewVelocity = toDest;
+		mUseRVO = false;
+	}
+	else {
+		toDest = Scene::I->GetVoxelPos(mDest) - mObject->GetPosition();
+		Vec3 toNext = nextPos - mObject->GetPosition();
+		if (Vec3::AbsSq(toDest) > 1.f) {
+			toDest = Vector3::Normalized(toNext) * mOption.AgentSpeed;
+		}
+		mPrefVelocity = toDest;
+		mPrevNextPos = nextPos;
+		mUseRVO = true;
 	}
 
-	Vec3 toDest = Scene::I->GetVoxelPos(mDest) - mObject->GetPosition();
-	if (Vec3::AbsSq(toDest) > 1.f) {
-		toDest = Vector3::Normalized(toNext);
-	}
-
-	mPrefVelocity = toDest * mOption.AgentSpeed;
+	mNewVelocityY = toDest.y;
 }
 
 void Agent::ClearPath()
@@ -912,9 +931,35 @@ Vec3 AgentManager::GetFlowFieldDirection(const Pos& index)
 	return Vec3{};
 }
 
+Vec3 AgentManager::GetFlowFieldPos(const Pos& index)
+{
+	if (mFlowFieldMap.count(index)) {
+		return mFlowFieldMap[index];
+	}
+
+	return Vec3{};
+}
+
+void AgentManager::SetClimbHeightAllAgent(int height)
+{
+	mOption.ClimbHeight = height;
+	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
+		mAgents[i]->mOption.ClimbHeight = height;
+	}
+}
+
+void AgentManager::SetAgentSpeedAllAgent(float speed)
+{
+	mOption.AgentSpeed = speed;
+	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
+		mAgents[i]->mOption.AgentSpeed = speed;
+	}
+}
+
 void AgentManager::Start()
 {
 	mKdTree = std::make_shared<KdTree>();
+	PathPlanningToFlowField(Scene::I->GetVoxelIndex({ 100.f, 0, 260.f }));
 }
 
 void AgentManager::Update()
@@ -937,6 +982,7 @@ void AgentManager::Update()
 
 void AgentManager::PathPlanningToFlowField(const Pos& dest)
 {
+	mIsInit = true;
 	std::unordered_map<Pos, float>	distance;
 	std::unordered_map<Pos, bool>	visited;
 
@@ -961,7 +1007,7 @@ void AgentManager::PathPlanningToFlowField(const Pos& dest)
 				int proximityCost = Scene::I->GetProximityCost(nextPos) * PathOption::I->GetProximityWeight();
 				int nextCost = distance[curNode.second] + gkCost[dir] + proximityCost;
 
-				if (diffPosY >= 10) continue;
+				if (diffPosY > mOption.ClimbHeight) continue;
 				if (!distance.contains(nextPos)) distance[nextPos] = FLT_MAX;
 				if (nextCost >= distance[nextPos]) continue;
 
