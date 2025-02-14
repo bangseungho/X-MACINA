@@ -122,14 +122,19 @@ private:
 	float				mAngleSpeedRatio{};
 	int					mAgentID{};
 
+	Vec3				mFormationOffset{};
+	Vec3				mRelativeVelocity{};
+
 private:
 	static constexpr int mkAvoidForwardStaticObjectCount = 3;
 
 public:
 	virtual void Start() override;
+	virtual void Update() override;
 
 public:
 	void UpdatePosition();
+	void UpdatePositionToPath();
 	
 public:
 	const Pos		GetPathIndex(int index) const;
@@ -137,6 +142,7 @@ public:
 	const Matrix	GetWorldMatrix() const { return mObject->GetWorldTransform(); }
 	const Vec3		GetWorldPosition() const { return mObject->GetPosition(); }
 	Vec3			GetWorldPosition()  { return mObject->GetPosition(); }
+	const Vec3		GetFormationOffset() const { return mFormationOffset; }
 	const Vec3		GetPathDirection() const { return mPathDir; }
 	const Pos		GetVoxelIndex() const { return mVoxelIndex; }
 	const bool		IsStart() const { return mIsStart; }
@@ -148,6 +154,8 @@ public:
 	void SetAgentID(int id) { mAgentID = id; }
 	void SetPathDest(const Pos& dest) { mDest = dest; }
 	void SetTarget(const Vec3& target);
+	void SetFormationOffset(const Vec3& offset) { mFormationOffset = offset; }
+
 
 public:
 	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, const std::unordered_map<Pos, int>& avoidCostMap, bool clearPathList = true, bool inputDest = true, int maxOpenNodeCount = 50000);
@@ -194,7 +202,7 @@ public:
 	void InsertAgentNeightbor(const Agent* agent, float& rangeSq);
 	void ComputeNeighbors();
 	void ComputeNewVelocity();
-	void SetPreferredVelocity();
+	void SetPreferredVelocity(const Vec3& target);
 };
 
 
@@ -212,6 +220,7 @@ private:
 	std::unordered_map<Pos, Vec3> mFlowFieldMap{};
 
 	int mAgentIDs{};
+	Agent* mReader{};
 	std::vector<Agent*> mAgents{};
 	bool mFinishAllAgentMoveToPath{};
 
@@ -219,7 +228,7 @@ public:
 	const bool IsFinishAllAgentMoveToPath() const { return mFinishAllAgentMoveToPath; }
 
 public:
-	void AddAgent(Agent* agent) { agent->SetAgentID(++mAgentIDs); mAgents.push_back(agent); }
+	void AddAgent(Agent* agent);
 	//void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
 	void SetAgentPrefVelocity(int agentNo, const Vec3& prefVelocity) { mAgents[agentNo]->mPrefVelocity = prefVelocity; }
 	Vec3 GetFlowFieldDirection(const Pos& pos);
@@ -234,6 +243,7 @@ public:
 	void Update();
 
 public:
+	void PathPlanningToAstarOnlyReader(const Pos& dest);
 	void PathPlanningToFlowField(const Pos& dest);
 	void AllAgentPathPlanning(const Pos& dest);
 	void StartMoveToPath();

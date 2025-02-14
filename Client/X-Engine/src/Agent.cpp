@@ -51,12 +51,17 @@ void Agent::Start()
 	mObject->SetPosition(100.f, 0, 260.f);
 	mMaxNeighbors = 1;
 	mNeighborDist = 3.f;
-	mTimeHorizon = 1.5f;
+	mTimeHorizon = 2.5f;
 	mRadius = 0.2f;
 	mMaxSpeed = 3.5f;
 	mPrefVelocity = Vec3{};
 	mNewVelocity = Vec3{};
 	mVelocity = Vec3{};
+}
+
+void Agent::Update()
+{
+	mVoxelIndex = Scene::I->GetVoxelIndex(mObject->GetPosition());
 }
 
 bool Compare(float a, float b, int flag)
@@ -142,6 +147,25 @@ void Agent::UpdatePosition()
 	}
 	
 	mObject->SetPosition(objectPos + mVelocity * DeltaTime());
+}
+
+void Agent::UpdatePositionToPath()
+{
+	if (mGlobalPath.empty()) {
+		return;
+	}
+
+	const Vec3& nextPos = mGlobalPath.back() - mObject->GetPosition();
+
+	const float kMinDistance = 0.05f;
+	if (nextPos.Length() <= kMinDistance) {
+		mGlobalPath.pop_back();
+	}
+	else {
+		mVelocity = Vector3::Normalized(nextPos) * mOption.AgentSpeed * DeltaTime();
+		mPrefVelocity = Vector3::Normalized(nextPos);
+		mObject->SetPosition(mObject->GetPosition() + mVelocity);
+	}
 }
 
 const Pos Agent::GetPathIndex(int index) const
@@ -859,24 +883,22 @@ void Agent::ComputeNewVelocity()
 	}
 }
 
-void Agent::SetPreferredVelocity()
+void Agent::SetPreferredVelocity(const Vec3& target)
 {
-	const Vec3& nextPos = AgentManager::I->GetFlowFieldPos(mVoxelIndex);
-
 	Vec3 toDest{};
-	if (Vector3::IsZero(nextPos) && AgentManager::I->mIsInit) {
+	if (Vector3::IsZero(target) && AgentManager::I->mIsInit) {
 		toDest = (mPrevNextPos - mObject->GetPosition()) * mOption.AgentSpeed;
 		mNewVelocity = toDest;
 		mUseRVO = false;
 	}
 	else {
 		toDest = Scene::I->GetVoxelPos(mDest) - mObject->GetPosition();
-		Vec3 toNext = nextPos - mObject->GetPosition();
+		Vec3 toNext = target - mObject->GetPosition();
 		if (Vec3::AbsSq(toDest) > 1.f) {
 			toDest = Vector3::Normalized(toNext) * mOption.AgentSpeed;
 		}
 		mPrefVelocity = toDest;
-		mPrevNextPos = nextPos;
+		mPrevNextPos = target;
 		mUseRVO = true;
 	}
 
@@ -940,6 +962,16 @@ Vec3 AgentManager::GetFlowFieldPos(const Pos& index)
 	return Vec3{};
 }
 
+void AgentManager::AddAgent(Agent* agent)
+{
+	agent->SetAgentID(++mAgentIDs);
+	mAgents.push_back(agent);
+
+	if (!mReader) {
+		mReader = mAgents[0];
+	}
+}
+
 void AgentManager::SetClimbHeightAllAgent(int height)
 {
 	mOption.ClimbHeight = height;
@@ -964,8 +996,16 @@ void AgentManager::Start()
 
 void AgentManager::Update()
 {
+	if (!mReader) {
+		return;
+	}
+
+	mReader->UpdatePositionToPath();
+
 	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
-		mAgents[i]->SetPreferredVelocity();
+		if (mAgents[i] != mReader) {
+			mAgents[i]->SetPreferredVelocity(mReader->GetWorldPosition() + mAgents[i]->GetFormationOffset());
+		}
 	}
 
 	mKdTree->BuildAgentTree();
@@ -977,6 +1017,20 @@ void AgentManager::Update()
 
 	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
 		mAgents[i]->UpdatePosition();
+	}
+
+}
+
+void AgentManager::PathPlanningToAstarOnlyReader(const Pos& dest)
+{
+	mReader->ReadyPlanningToPath(mReader->GetVoxelIndex());
+	auto path = mReader->PathPlanningToAstar(dest, {}, true);
+	mReader->SetPath(path);
+	
+	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
+		if (mAgents[i] != mReader) {
+			mAgents[i]->SetFormationOffset(mAgents[i]->GetWorldPosition() - mReader->GetWorldPosition());
+		}
 	}
 }
 
