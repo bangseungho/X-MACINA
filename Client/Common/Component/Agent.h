@@ -100,6 +100,7 @@ class Agent : public Component {
 
 public:
 	AgentOption mOption{};
+	class Rigidbody* mRigidbody{};
 
 private:
 	std::vector<Vec3>	mGlobalPath{};
@@ -156,7 +157,6 @@ public:
 	void SetTarget(const Vec3& target);
 	void SetFormationOffset(const Vec3& offset) { mFormationOffset = offset; }
 
-
 public:
 	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, const std::unordered_map<Pos, int>& avoidCostMap, bool clearPathList = true, bool inputDest = true, int maxOpenNodeCount = 50000);
 	void				ReadyPlanningToPath(const Pos& start);
@@ -203,6 +203,15 @@ public:
 	void ComputeNeighbors();
 	void ComputeNewVelocity();
 	void SetPreferredVelocity(const Vec3& target);
+};
+
+
+class ReaderAgent : public Agent {
+	COMPONENT(ReaderAgent, Agent)
+
+
+
+
 };
 
 

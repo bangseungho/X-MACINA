@@ -789,6 +789,7 @@ void Scene::Start()
 void Scene::Update()
 {
 	//CheckCollisions();
+	AgentManager::I->Update();
 	mGameManager->Update();
 	UpdateObjects();
 	mGameManager->LateUpdate();
@@ -801,7 +802,6 @@ void Scene::Update()
 	UpdateShaderVars();
 
 	PopObjectBuffer();
-	AgentManager::I->Update();
 }
 
 void Scene::CheckCollisions()

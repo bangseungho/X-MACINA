@@ -320,12 +320,16 @@ void ImGuiAgentFunc::Execute(GameObject* selectedObject)
 
 	const Vec3& crntAgentPos = mCrntAgent->GetWorldPosition();
 	const Pos& crntAgentIndex = Scene::I->GetVoxelIndex(crntAgentPos);
+	const Vec3& crntAgentVelocity = mCrntAgent->GetVelocity();
 
 	// index
 	ImGui::Text("Index : x = %d, y = %d, z = %d", crntAgentIndex.X, crntAgentIndex.Y, crntAgentIndex.Z);
 
 	// position
 	ImGui::Text("Pos : x = %.2f, y = %.2f, z = %.2f", crntAgentPos.x, crntAgentPos.y, crntAgentPos.z);
+
+	// velocity
+	ImGui::Text("Pos : x = %.2f, y = %.2f, z = %.2f", crntAgentVelocity.x, crntAgentVelocity.y, crntAgentVelocity.z);
 
 	// heuristic
 	{

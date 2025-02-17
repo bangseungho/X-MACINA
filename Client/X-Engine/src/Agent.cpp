@@ -9,6 +9,7 @@
 #include "Timer.h"
 #include "VoxelManager.h"
 #include "InputMgr.h"
+#include "Component/Rigidbody.h"
 
 namespace {
 	float HeuristicManhattan(const Pos& start, const Pos& dest) {
@@ -40,6 +41,8 @@ void Agent::ClearPathList()
 void Agent::Start()
 {
 	AgentManager::I->AddAgent(this);
+	mRigidbody = mObject->AddComponent<Rigidbody>().get();
+	mRigidbody->SetMass(1.f);
 	mCloseList.reserve(10000);
 	mOpenList.reserve(10000);
 	mPathDir = mObject->GetLook();
@@ -115,10 +118,12 @@ void Agent::UpdatePosition()
 			int both{};
 			if (Compare(objectPos.x + mdx[i], obstaclePos.x + odx[i], idx[i])) {
 				mVelocity.x = 0.f;
+				mRigidbody->SetVelocityX(0.f);
 				both++;
 			}
 			if (Compare(objectPos.z + mdz[i], obstaclePos.z + odz[i], idz[i])) {
 				mVelocity.z = 0.f;
+				mRigidbody->SetVelocityZ(0.f);
 				both++;
 			}
 
@@ -127,9 +132,11 @@ void Agent::UpdatePosition()
 			if (both == 2) {
 				if (!Scene::I->CanGoNextVoxel(neighborZ) && Scene::I->CanGoNextVoxel(neighborX)) {
 					mVelocity.z = mNewVelocity.z;
+					mRigidbody->SetVelocityX(0.f);
 				}
 				else if (!Scene::I->CanGoNextVoxel(neighborX) && Scene::I->CanGoNextVoxel(neighborZ)) {
 					mVelocity.x = mNewVelocity.x;
+					mRigidbody->SetVelocityZ(0.f);
 				}
 			}
 		}
@@ -141,12 +148,13 @@ void Agent::UpdatePosition()
 
 			if (!Scene::I->CanGoNextVoxel(vertexIndex.Up())) {
 				mVelocity = -mVelocity;
+				mRigidbody->Stop();
 				break;
 			}
 		}
 	}
-	
-	mObject->SetPosition(objectPos + mVelocity * DeltaTime());
+
+	mRigidbody->AddForce(mVelocity, ForceMode::Accleration);
 }
 
 void Agent::UpdatePositionToPath()
@@ -162,7 +170,7 @@ void Agent::UpdatePositionToPath()
 		mGlobalPath.pop_back();
 	}
 	else {
-		mVelocity = Vector3::Normalized(nextPos) * mOption.AgentSpeed * DeltaTime();
+		mVelocity = Vector3::Normalized(nextPos) * mOption.AgentSpeed * 0.6f * DeltaTime();
 		mPrefVelocity = Vector3::Normalized(nextPos);
 		mObject->SetPosition(mObject->GetPosition() + mVelocity);
 	}
@@ -964,12 +972,17 @@ Vec3 AgentManager::GetFlowFieldPos(const Pos& index)
 
 void AgentManager::AddAgent(Agent* agent)
 {
-	agent->SetAgentID(++mAgentIDs);
-	mAgents.push_back(agent);
-
 	if (!mReader) {
-		mReader = mAgents[0];
+		mReader = agent;
 	}
+	else {
+		agent->SetAgentID(++mAgentIDs);
+		mAgents.push_back(agent);
+	}
+
+	//if (!mReader) {
+	//	mReader = mAgents[0];
+	//}
 }
 
 void AgentManager::SetClimbHeightAllAgent(int height)
@@ -1002,23 +1015,22 @@ void AgentManager::Update()
 
 	mReader->UpdatePositionToPath();
 
-	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
-		if (mAgents[i] != mReader) {
-			mAgents[i]->SetPreferredVelocity(mReader->GetWorldPosition() + mAgents[i]->GetFormationOffset());
-		}
+	for (auto agent : mAgents) {
+		const Vec3& formation = mReader->GetWorldPosition() + agent->GetFormationOffset();
+		agent->SetPathDest(Scene::I->GetVoxelIndex(formation));
+		agent->SetPreferredVelocity(formation);
 	}
 
 	mKdTree->BuildAgentTree();
 
-	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
-		mAgents[i]->ComputeNeighbors();
-		mAgents[i]->ComputeNewVelocity();
+	for (auto agent : mAgents) {
+		agent->ComputeNeighbors();
+		agent->ComputeNewVelocity();
 	}
 
-	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
-		mAgents[i]->UpdatePosition();
+	for (auto agent : mAgents) {
+		agent->UpdatePosition();
 	}
-
 }
 
 void AgentManager::PathPlanningToAstarOnlyReader(const Pos& dest)

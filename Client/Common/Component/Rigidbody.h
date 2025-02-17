@@ -33,10 +33,15 @@ public:
 	void SetFriction(float fFriction)			{ mFriction = fFriction; }
 	void SetVelocity(const Vec3& xmf3Velocity)  { mVelocity = xmf3Velocity; }
 	void SetVelocity(float speed);
+	void SetVelocityX(float speed) { mVelocity.x = speed; }
+	void SetVelocityZ(float speed) { mVelocity.z = speed; }
 
 public:
 	virtual void Start() override;
 	virtual void Update() override;
+
+public:
+	void OtherUpdate();
 
 	virtual void OnCollisionStay(Object& other) override;
 
