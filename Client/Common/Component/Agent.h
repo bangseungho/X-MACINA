@@ -68,7 +68,7 @@ public:
 
 
 struct AgentOption {
-	float		AgentSpeed = 3.5f;
+	float		AgentSpeed = 1.5f;
 	int			ClimbHeight = 0;
 	Heuristic	Heuri = Heuristic::Manhattan;
 };
@@ -137,6 +137,7 @@ public:
 	void UpdatePositionToPath();
 	
 public:
+	const std::unordered_map<Pos, int>& GetPathCache() const { return mGlobalPathCache; }
 	const Pos		GetPathIndex(int index) const;
 	const Pos		GetPathDest() const { return mDest; }
 	const Matrix	GetWorldMatrix() const { return mObject->GetWorldTransform(); }
@@ -160,7 +161,8 @@ public:
 public:
 	std::vector<Vec3>	PathPlanningToAstar(const Pos& dest, const std::unordered_map<Pos, int>& avoidCostMap, bool clearPathList = true, bool inputDest = true, int maxOpenNodeCount = 50000);
 	void				ReadyPlanningToPath(const Pos& start);
-	void				SetPath(std::vector<Vec3>& path) { mGlobalPath = path; }
+	void				SetPath(std::vector<Vec3> path) { mGlobalPath = path; }
+	void				SetPathCache(std::unordered_map<Pos, int> cache) { mGlobalPathCache = cache; }
 	bool				PickAgent();
 	void				RenderOpenList();
 	void				RenderCloseList();
@@ -229,7 +231,6 @@ public:
 
 public:
 	void AddAgent(Agent* agent);
-	//void RemoveAgent(Agent* agent) { mAgents.erase(agent); }
 	void SetAgentPrefVelocity(int agentNo, const Vec3& prefVelocity) { mAgents[agentNo]->mPrefVelocity = prefVelocity; }
 	Vec3 GetFlowFieldDirection(const Pos& pos);
 	Vec3 GetFlowFieldPos(const Pos& pos);

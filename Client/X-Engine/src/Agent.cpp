@@ -158,8 +158,12 @@ void Agent::UpdatePositionToPath()
 	const Vec3& nextPos = mGlobalPath.back() - mObject->GetPosition();
 
 	const float kMinDistance = 0.05f;
+	const Vec3& crntPathPos = mGlobalPath.back();
+	const Pos& crntPathIndex = Scene::I->GetVoxelIndex(crntPathPos);
 	if (nextPos.Length() <= kMinDistance) {
 		mGlobalPath.pop_back();
+		mGlobalPathCache.erase(crntPathIndex);
+		RePlanningToPathAvoidStatic(crntPathIndex);
 	}
 	else {
 		mVelocity = Vector3::Normalized(nextPos) * mOption.AgentSpeed * DeltaTime();
@@ -474,8 +478,7 @@ void Agent::RePlanningToPathAvoidStatic(const Pos& crntPathIndex)
 		}
 
 		Pos nextPathIndex = Scene::I->GetVoxelIndex(mGlobalPath[mGlobalPath.size() - i]);
-		VoxelState nextPathUpVoxelState = Scene::I->GetVoxelState(nextPathIndex.Up());
-		if (!Scene::I->CanGoNextVoxel(nextPathIndex)) {
+		if (!Scene::I->CanGoNextVoxel(nextPathIndex.Up())) {
 			for (int j = 0; j < i; ++j) {
 				mGlobalPathCache.erase(Scene::I->GetVoxelIndex(mGlobalPath.back()));
 				mGlobalPath.pop_back();
@@ -1000,7 +1003,9 @@ void AgentManager::Update()
 		return;
 	}
 
-	mReader->UpdatePositionToPath();
+	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
+		mAgents[i]->UpdatePositionToPath();
+	}
 
 	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
 		if (mAgents[i] != mReader) {
@@ -1018,19 +1023,27 @@ void AgentManager::Update()
 	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
 		mAgents[i]->UpdatePosition();
 	}
-
 }
 
 void AgentManager::PathPlanningToAstarOnlyReader(const Pos& dest)
 {
 	mReader->ReadyPlanningToPath(mReader->GetVoxelIndex());
-	auto path = mReader->PathPlanningToAstar(dest, {}, true);
-	mReader->SetPath(path);
-	
+	const auto& path = mReader->PathPlanningToAstar(dest, {}, true);
+	const auto& cache = mReader->GetPathCache();
 	for (int i = 0; i < static_cast<int>(mAgents.size()); ++i) {
-		if (mAgents[i] != mReader) {
-			mAgents[i]->SetFormationOffset(mAgents[i]->GetWorldPosition() - mReader->GetWorldPosition());
+		Vec3 formation = mAgents[i]->GetWorldPosition() - mReader->GetWorldPosition();
+
+		auto tempPath = path;
+		std::unordered_map<Pos, int> tempCache{};
+
+		for (int i = 0; i < path.size(); ++i) {
+			tempPath[i] = path[i] + formation;
+			tempCache.insert({ Scene::I->GetVoxelIndex(tempPath[i]), cache.at(Scene::I->GetVoxelIndex(path[i])) });
 		}
+
+
+		mAgents[i]->SetPath(tempPath);
+		mAgents[i]->SetPathCache(tempCache);
 	}
 }
 
